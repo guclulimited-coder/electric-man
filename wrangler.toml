@@ -10,3 +10,4 @@ database_id = "ff6c38eb-6238-4399-97e7-41ca3ae26ced"
 
 [vars]
 EM_EMAIL_ENABLED = "false"
+EM_GOOGLE_CLIENT_ID = "41728285329-57ufbn6uq8u891enlriivf4c8h74sc3b.apps.googleusercontent.com"
