@@ -1,0 +1,12 @@
+# Cloudflare Pages configuration for Electric Man
+name = "electric-man"
+pages_build_output_dir = "./public"
+compatibility_date = "2026-09-30"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "electric-man"
+database_id = "ff6c38eb-6238-4399-97e7-41ca3ae26ced"
+
+[vars]
+EM_EMAIL_ENABLED = "false"
