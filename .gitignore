@@ -1,0 +1,8 @@
+node_modules/
+.dev.vars
+.env
+*.p8
+*.p12
+*.keystore
+*.jks
+.DS_Store
