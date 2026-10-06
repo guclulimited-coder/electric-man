@@ -989,12 +989,13 @@ const Shop = {
     await this.loadPrice();
     const app = Native.app, left = Ads.left();
     const body = Online.sheet(T('shopTitle'), `
-      <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coins500')}</span><button class="btn small alt" id="buyPack" ${app ? '' : 'disabled'}>${this.price || '₺99,99'}</button></div>
+      ${app && !this.price && !SHOT ? '' : `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coins500')}</span><button class="btn small alt" id="buyPack" ${app ? '' : 'disabled'}>${this.price || '₺99,99'}</button></div>`}
       <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('watchAd')}<small>${T('adReward', {n: AD_REWARD})} · ${T('adsLeft', {n: left})}</small></span><button class="btn small" id="watchAd" ${app && left ? '' : 'disabled'}>▶</button></div>
       ${app ? '' : `<p class="note">${T('inAppOnly')}</p>`}
       <div class="err" id="shopErr"></div>`);
     if (!app) return;
-    body.querySelector('#buyPack').onclick = async ev => {
+    // the coin pack only shows once the store returned the product (e.g. not before the paid-apps agreement is active)
+    if (body.querySelector('#buyPack')) body.querySelector('#buyPack').onclick = async ev => {
       const b = ev.currentTarget; b.disabled = true;
       try { const r = await Native.call({action:'buy', id: COIN_PACK.id}); if (r && r.ok) { await this.grant(r); $('sheet').hidden = true; } }
       catch (e){ if (e.message !== 'CANCELLED') $('shopErr').textContent = T('buyFail'); }
