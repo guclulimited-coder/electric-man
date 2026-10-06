@@ -128,9 +128,9 @@ jobs:
             -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME_CI" DEVELOPMENT_TEAM="$TEAM_ID" OTHER_CODE_SIGN_FLAGS="--keychain $RUNNER_TEMP/em.keychain-db" \
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" $AD_SETTINGS archive > archive.log 2>&1 \
-            || { grep -E "error:" archive.log | sort -u | head -30 | while read -r l; do echo "::error::$l"; done; exit 1; }
+            || { { grep -E "error:|Signing|signing" archive.log | sort -u | head -20; tail -15 archive.log; } | while read -r l; do echo "::error::$l"; done; exit 1; }
           xcodebuild -exportArchive -archivePath build/ElectricMan.xcarchive -exportPath release -exportOptionsPlist ExportOptions.plist "${AUTH[@]}" > export.log 2>&1 \
-            || { grep -iE "error" export.log | sort -u | head -20 | while read -r l; do echo "::error::$l"; done; exit 1; }
+            || { tail -25 export.log | while read -r l; do echo "::error::$l"; done; exit 1; }
           echo "::notice::Uploaded build $GITHUB_RUN_NUMBER to App Store Connect"
       - name: Clean up signing files (revoke temporary certificate)
         if: always()
