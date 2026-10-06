@@ -34,7 +34,11 @@ jobs:
           echo "EM_VERSION_NAME=1.0.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
           grep -E '^EM_' native/ads.env >> "$GITHUB_ENV"
       - name: Debug APK (official test ads)
-        run: gradle -p android assembleDebug --no-daemon --stacktrace
+        run: |
+          set +e
+          gradle -p android assembleDebug --no-daemon > build.log 2>&1; code=$?
+          grep -E "^e: |error:|FAILURE|What went wrong|BUILD (SUCCESSFUL|FAILED)" -A2 build.log | head -40 | while read -r l; do echo "::warning::$l"; done
+          exit $code
       - name: Signed release bundle
         env:
           KEYSTORE_B64: ${{ secrets.EM_ANDROID_KEYSTORE_B64 }}
