@@ -293,10 +293,11 @@ def build():
 build()
 
 # ---------------------------------------------------------------- in-app purchases (consumable coin packs)
-PACKS = [('em_coins_500', 500, 99.99), ('em_coins_1200', 1200, 149.99), ('em_coins_3000', 3000, 249.99),
-         ('em_coins_7000', 7000, 499.99), ('em_coins_15000', 15000, 999.99)]
+# (product id, coins, TRY price, USD price) — USA is the base territory (Apple equalizes the rest, e.g. €4.99), Türkiye is set by hand
+PACKS = [('em_coins_500', 500, 99.99, 4.99), ('em_coins_1200', 1200, 149.99, 7.49), ('em_coins_3000', 3000, 249.99, 12.49),
+         ('em_coins_7000', 7000, 499.99, 24.99), ('em_coins_15000', 15000, 999.99, 49.99)]
 
-def iap_pack(pid, n, price):
+def iap_pack(pid, n, price, usd):
     IAP = None
     def create():
         nonlocal IAP
@@ -317,27 +318,35 @@ def iap_pack(pid, n, price):
         step(f'{pid} text {loc}')(lambda loc=loc, nm=nm, ds=ds: upsert_loc(f'/v2/inAppPurchases/{IAP}/inAppPurchaseLocalizations', 'inAppPurchaseLocalizations',
             'inAppPurchaseV2', 'inAppPurchases', IAP, loc, {'name': nm, 'description': ds}))()
 
-    def set_price():
-        try:
-            cur = api('GET', f'/v2/inAppPurchases/{IAP}/iapPriceSchedule?include=manualPrices')
-            if cur.get('included'):
-                return 'already set'
-        except ApiError:
-            pass
-        url = f'/v2/inAppPurchases/{IAP}/pricePoints?filter[territory]=TUR&limit=200'
-        pt = None
-        while url and not pt:
+    def point(terr, amount):
+        url = f'/v2/inAppPurchases/{IAP}/pricePoints?filter[territory]={terr}&limit=200'
+        while url:
             r = api('GET', url)
-            pt = next((p for p in r['data'] if abs(float(p['attributes']['customerPrice']) - price) < 0.001), None)
+            pt = next((p for p in r['data'] if abs(float(p['attributes']['customerPrice']) - amount) < 0.001), None)
+            if pt:
+                return pt['id']
             url = (r.get('links') or {}).get('next')
-        if not pt:
-            raise ApiError(f'no {price} TRY price point')
+        raise ApiError(f'no {amount} {terr} price point')
+
+    def set_price():
+        # a new schedule replaces the old one: base USA (equalized everywhere) + Türkiye by hand
+        usa, tur = point('USA', usd), point('TUR', price)
         api('POST', '/v1/inAppPurchasePriceSchedules', {'data': {'type': 'inAppPurchasePriceSchedules', 'relationships': {
-            'inAppPurchase': {'data': {'type': 'inAppPurchases', 'id': IAP}}, 'baseTerritory': {'data': {'type': 'territories', 'id': 'TUR'}},
-            'manualPrices': {'data': [{'type': 'inAppPurchasePrices', 'id': '${p0}'}]}}},
+            'inAppPurchase': {'data': {'type': 'inAppPurchases', 'id': IAP}}, 'baseTerritory': {'data': {'type': 'territories', 'id': 'USA'}},
+            'manualPrices': {'data': [{'type': 'inAppPurchasePrices', 'id': '${p0}'}, {'type': 'inAppPurchasePrices', 'id': '${p1}'}]}}},
             'included': [{'type': 'inAppPurchasePrices', 'id': '${p0}', 'attributes': {'startDate': None},
-                          'relationships': {'inAppPurchasePricePoint': {'data': {'type': 'inAppPurchasePricePoints', 'id': pt['id']}}}}]})
-        return f'₺{price}'
+                          'relationships': {'inAppPurchasePricePoint': {'data': {'type': 'inAppPurchasePricePoints', 'id': usa}}}},
+                         {'type': 'inAppPurchasePrices', 'id': '${p1}', 'attributes': {'startDate': None},
+                          'relationships': {'inAppPurchasePricePoint': {'data': {'type': 'inAppPurchasePricePoints', 'id': tur}}}}]})
+        eur = ''
+        try:
+            r = api('GET', f'/v2/inAppPurchases/{IAP}/iapPriceSchedule')
+            sid = r['data']['id']
+            r = api('GET', f'/v1/inAppPurchasePriceSchedules/{sid}/automaticPrices?filter[territory]=DEU&include=inAppPurchasePricePoint&limit=5')
+            eur = ' DE €' + ','.join(x['attributes']['customerPrice'] for x in r.get('included', []) if x['type'] == 'inAppPurchasePricePoints')
+        except ApiError as e:
+            eur = ' (DE price unknown: ' + str(e)[:80] + ')'
+        return f'${usd} base, ₺{price} TR' + eur
     step(f'{pid} price')(set_price)()
 
     def avail():
