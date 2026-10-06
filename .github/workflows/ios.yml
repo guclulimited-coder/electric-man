@@ -52,11 +52,11 @@ jobs:
         if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[ios-upload]')
         env:
           API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
-          KEY_ID: ${{ secrets.EM_ASC_KEY_ID }}
-          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
         run: |
           set -euo pipefail
-          if [ -z "$API_PRIVATE_KEY" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER" ]; then echo "::error::EM_ASC_PRIVATE_KEY / EM_ASC_KEY_ID / EM_ASC_ISSUER_ID secrets are missing"; exit 1; fi
+          if [ -z "$API_PRIVATE_KEY" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER" ]; then echo "::error::EM_ASC_PRIVATE_KEY secret is missing"; exit 1; fi
           mkdir -p "$HOME/.appstoreconnect/private_keys"
           KEY="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"; printf '%s\n' "$API_PRIVATE_KEY" > "$KEY"; chmod 600 "$KEY"
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
