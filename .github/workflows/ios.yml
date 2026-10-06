@@ -70,6 +70,24 @@ jobs:
           print('::notice::API key normalised: ' + str(len(body)) + ' base64 chars, lines in secret: ' + str(raw.count(chr(10)) + 1))
           PY
           chmod 600 "$KEY"
+          # make sure the bundle id exists in the developer account (needed for the App Store Connect app record)
+          python3 -m venv "$RUNNER_TEMP/asc" && "$RUNNER_TEMP/asc/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/asc/bin/python" - "$KEY" <<'PY'
+          import json, os, sys, time, urllib.request, urllib.error, jwt
+          key = open(sys.argv[1]).read()
+          tok = jwt.encode({'iss': os.environ['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': os.environ['KEY_ID'], 'typ': 'JWT'})
+          def api(method, path, body=None):
+              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, method=method, data=json.dumps(body).encode() if body else None, headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(req, timeout=60) as r: return json.load(r)
+          bid = os.environ['BUNDLE_ID']
+          found = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + bid)['data'] if b['attributes']['identifier'] == bid]
+          if found: print('::notice::bundle id registered: ' + bid)
+          else:
+              api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': bid, 'name': 'Electric Man', 'platform': 'IOS'}}})
+              print('::notice::bundle id created: ' + bid)
+          apps = api('GET', '/v1/apps?filter[bundleId]=' + bid)['data']
+          print('::notice::App Store Connect app record: ' + (apps[0]['id'] + ' ' + apps[0]['attributes']['name'] if apps else 'MISSING (create it in App Store Connect)'))
+          PY
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/ElectricMan.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO DEVELOPMENT_TEAM="$TEAM_ID" \
