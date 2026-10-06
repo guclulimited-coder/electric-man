@@ -74,7 +74,10 @@ jobs:
           # through the App Store Connect API, sign and upload, then revoke the certificate (see the cleanup step).
           python3 -m venv "$RUNNER_TEMP/asc" && "$RUNNER_TEMP/asc/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
           "$RUNNER_TEMP/asc/bin/python" - "$KEY" <<'PY'
-          import base64, json, os, pathlib, plistlib, secrets, subprocess, sys, time, urllib.request, urllib.error, jwt
+          import base64, json, os, pathlib, plistlib, secrets, subprocess, sys, time, traceback, urllib.request, urllib.error, jwt
+          def report(t, v, tb):
+              print('::error::signing script: ' + ''.join(traceback.format_exception(t, v, tb))[-600:].replace(chr(10), ' | '))
+          sys.excepthook = report
           env = os.environ; temp = pathlib.Path(env['RUNNER_TEMP']); key = open(sys.argv[1]).read()
           def api(method, path, body=None):
               tok = jwt.encode({'iss': env['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': env['KEY_ID'], 'typ': 'JWT'})
@@ -95,7 +98,10 @@ jobs:
           der = temp / 'em.cer'; der.write_bytes(base64.b64decode(cert['attributes']['certificateContent']))
           pem = temp / 'em.pem'; subprocess.run(['openssl', 'x509', '-inform', 'DER', '-in', str(der), '-out', str(pem)], check=True)
           pw = secrets.token_urlsafe(24); p12 = temp / 'em.p12'
-          subprocess.run(['openssl', 'pkcs12', '-export', '-legacy', '-inkey', str(k), '-in', str(pem), '-out', str(p12), '-passout', 'pass:' + pw], check=True, capture_output=True)
+          r = subprocess.run(['openssl', 'pkcs12', '-export', '-legacy', '-inkey', str(k), '-in', str(pem), '-out', str(p12), '-passout', 'pass:' + pw], capture_output=True, text=True)
+          if r.returncode:  # LibreSSL has no -legacy and already writes the classic format
+              r = subprocess.run(['openssl', 'pkcs12', '-export', '-inkey', str(k), '-in', str(pem), '-out', str(p12), '-passout', 'pass:' + pw], capture_output=True, text=True)
+          if r.returncode: print('::error::pkcs12 export failed: ' + r.stderr[:300].replace(chr(10), ' ')); sys.exit(1)
           kc = str(temp / 'em.keychain-db'); kpw = secrets.token_urlsafe(24)
           for args in [['create-keychain', '-p', kpw, kc], ['set-keychain-settings', '-lut', '21600', kc], ['unlock-keychain', '-p', kpw, kc],
                        ['import', str(p12), '-P', pw, '-A', '-t', 'cert', '-f', 'pkcs12', '-k', kc], ['set-key-partition-list', '-S', 'apple-tool:,apple:,codesign:', '-s', '-k', kpw, kc],
