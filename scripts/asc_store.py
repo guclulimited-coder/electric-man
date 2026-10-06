@@ -293,6 +293,7 @@ def build():
 build()
 
 # ---------------------------------------------------------------- in-app purchases (consumable coin packs)
+EUROZONE = ['AUT', 'BEL', 'HRV', 'CYP', 'EST', 'FIN', 'FRA', 'DEU', 'GRC', 'IRL', 'ITA', 'LVA', 'LTU', 'LUX', 'MLT', 'NLD', 'PRT', 'SVK', 'SVN', 'ESP']
 # (product id, coins, TRY price, USD price) — USA is the base territory (Apple equalizes the rest, e.g. €4.99), Türkiye is set by hand
 PACKS = [('em_coins_500', 500, 99.99, 4.99), ('em_coins_1200', 1200, 149.99, 7.49), ('em_coins_3000', 3000, 249.99, 12.49),
          ('em_coins_7000', 7000, 499.99, 24.99), ('em_coins_15000', 15000, 999.99, 49.99)]
@@ -330,23 +331,22 @@ def iap_pack(pid, n, price, usd):
 
     def set_price():
         # a new schedule replaces the old one: base USA (equalized everywhere) + Türkiye by hand
-        usa, tur = point('USA', usd), point('TUR', price)
+        manual = [('USA', usd), ('TUR', price)] + [(t, usd) for t in EUROZONE]   # €4.99 like $4.99, as on Google Play
+        pts = [point(t, a) for t, a in manual]
         api('POST', '/v1/inAppPurchasePriceSchedules', {'data': {'type': 'inAppPurchasePriceSchedules', 'relationships': {
             'inAppPurchase': {'data': {'type': 'inAppPurchases', 'id': IAP}}, 'baseTerritory': {'data': {'type': 'territories', 'id': 'USA'}},
-            'manualPrices': {'data': [{'type': 'inAppPurchasePrices', 'id': '${p0}'}, {'type': 'inAppPurchasePrices', 'id': '${p1}'}]}}},
-            'included': [{'type': 'inAppPurchasePrices', 'id': '${p0}', 'attributes': {'startDate': None},
-                          'relationships': {'inAppPurchasePricePoint': {'data': {'type': 'inAppPurchasePricePoints', 'id': usa}}}},
-                         {'type': 'inAppPurchasePrices', 'id': '${p1}', 'attributes': {'startDate': None},
-                          'relationships': {'inAppPurchasePricePoint': {'data': {'type': 'inAppPurchasePricePoints', 'id': tur}}}}]})
+            'manualPrices': {'data': [{'type': 'inAppPurchasePrices', 'id': f'${{p{i}}}'} for i in range(len(pts))]}}},
+            'included': [{'type': 'inAppPurchasePrices', 'id': f'${{p{i}}}', 'attributes': {'startDate': None},
+                          'relationships': {'inAppPurchasePricePoint': {'data': {'type': 'inAppPurchasePricePoints', 'id': pt}}}} for i, pt in enumerate(pts)]})
         eur = ''
         try:
             r = api('GET', f'/v2/inAppPurchases/{IAP}/iapPriceSchedule')
             sid = r['data']['id']
-            r = api('GET', f'/v1/inAppPurchasePriceSchedules/{sid}/automaticPrices?filter[territory]=DEU&include=inAppPurchasePricePoint&limit=5')
+            r = api('GET', f'/v1/inAppPurchasePriceSchedules/{sid}/manualPrices?filter[territory]=DEU&include=inAppPurchasePricePoint&limit=5')
             eur = ' DE €' + ','.join(x['attributes']['customerPrice'] for x in r.get('included', []) if x['type'] == 'inAppPurchasePricePoints')
         except ApiError as e:
             eur = ' (DE price unknown: ' + str(e)[:80] + ')'
-        return f'${usd} base, ₺{price} TR' + eur
+        return f'${usd} base, ₺{price} TR, euro area €{usd}' + eur
     step(f'{pid} price')(set_price)()
 
     def avail():
