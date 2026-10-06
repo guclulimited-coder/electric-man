@@ -1339,3 +1339,4 @@ function shotScene(){
 }
 window.__em = { generate, diff, stepsCW, setDir(cw){ dirCW = cw; }, get S(){ return S; }, start, tap, act, screenOf(){ const r = canvas.getBoundingClientRect(); return S.tiles.filter(t => t.kind === 'cable').map(t => { const v = new THREE.Vector3(t.g.position.x, .165, t.g.position.z).project(camera); return {idx:t.idx, fixed:!!t.fixed || !!t.fog, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height}; }); } };
 </script>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0f22bce0294547dbb49f14ec3e283ddb"}'></script>
