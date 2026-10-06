@@ -197,5 +197,6 @@
   "adFail": "No hay anuncios ahora, inténtalo en un rato.",
   "noCoins": "No tienes suficientes monedas. Puedes conseguir más en la tienda.",
   "undoNoCoins": "Deshacer cuesta {p} monedas. No tienes suficientes.",
-  "loginApp": "Inicia sesión en el navegador"
+  "loginApp": "Inicia sesión en el navegador",
+  "coinsN": "{n} monedas"
 }

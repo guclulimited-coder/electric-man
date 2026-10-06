@@ -197,5 +197,6 @@
   "adFail": "Şu an reklam yok, biraz sonra dene.",
   "noCoins": "Jetonun yetmiyor. Mağazadan jeton alabilirsin.",
   "undoNoCoins": "Geri almak {p} jeton. Jetonun yetmiyor.",
-  "loginApp": "Tarayıcıda giriş yap"
+  "loginApp": "Tarayıcıda giriş yap",
+  "coinsN": "{n} jeton"
 }

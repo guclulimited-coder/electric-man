@@ -197,5 +197,6 @@
   "adFail": "Nenhum anúncio agora, tente daqui a pouco.",
   "noCoins": "Moedas insuficientes. Você pode pegar mais na loja.",
   "undoNoCoins": "Desfazer custa {p} moedas. Você não tem o suficiente.",
-  "loginApp": "Entrar pelo navegador"
+  "loginApp": "Entrar pelo navegador",
+  "coinsN": "{n} moedas"
 }

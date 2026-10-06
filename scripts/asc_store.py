@@ -292,28 +292,32 @@ def build():
     return 'build ' + b['attributes'].get('version')
 build()
 
-# ---------------------------------------------------------------- in-app purchase
-IAP = None
-@step('IAP em_coins_500')
-def iap():
-    global IAP
-    have = get_all(f'/v1/apps/{APP}/inAppPurchasesV2?filter[productId]={IAP_ID}')
-    if have:
-        IAP = have[0]['id']; return 'exists ' + IAP + ' state=' + str(have[0]['attributes'].get('state'))
-    r = api('POST', '/v2/inAppPurchases', {'data': {'type': 'inAppPurchases', 'attributes': {
-        'name': '500 Coins', 'productId': IAP_ID, 'inAppPurchaseType': 'CONSUMABLE', 'familySharable': False,
-        'reviewNote': 'Adds 500 coins. Open the coin counter (top-left) to reach the shop; coins buy hints, extra moves and undo.'},
-        'relationships': {'app': {'data': {'type': 'apps', 'id': APP}}}}})
-    IAP = r['data']['id']; return 'created ' + IAP
-iap()
+# ---------------------------------------------------------------- in-app purchases (consumable coin packs)
+PACKS = [('em_coins_500', 500, 99.99), ('em_coins_1200', 1200, 149.99), ('em_coins_3000', 3000, 249.99),
+         ('em_coins_7000', 7000, 499.99), ('em_coins_15000', 15000, 999.99)]
 
-if IAP:
-    for loc, t in L.items():
-        step(f'IAP text {loc}')(lambda loc=loc, t=t: upsert_loc(f'/v2/inAppPurchases/{IAP}/inAppPurchaseLocalizations', 'inAppPurchaseLocalizations',
-            'inAppPurchaseV2', 'inAppPurchases', IAP, loc, {'name': t['iap_name'], 'description': t['iap_desc']}))()
+def iap_pack(pid, n, price):
+    IAP = None
+    def create():
+        nonlocal IAP
+        have = get_all(f'/v1/apps/{APP}/inAppPurchasesV2?filter[productId]={pid}')
+        if have:
+            IAP = have[0]['id']; return 'exists ' + IAP + ' state=' + str(have[0]['attributes'].get('state'))
+        r = api('POST', '/v2/inAppPurchases', {'data': {'type': 'inAppPurchases', 'attributes': {
+            'name': f'{n} Coins', 'productId': pid, 'inAppPurchaseType': 'CONSUMABLE', 'familySharable': False,
+            'reviewNote': f'Adds {n} coins. Tap the coin counter (top-left) to open the shop; coins buy hints, extra moves and undo.'},
+            'relationships': {'app': {'data': {'type': 'apps', 'id': APP}}}}})
+        IAP = r['data']['id']; return 'created ' + IAP
+    step(f'{pid}')(create)()
+    if not IAP:
+        return
+    texts = {'tr': (f'{n:,} Jeton'.replace(',', '.'), f'Oyun içi {n:,} jeton'.replace(',', '.')),
+             'en-US': (f'{n:,} Coins', f'{n:,} in-game coins')}
+    for loc, (nm, ds) in texts.items():
+        step(f'{pid} text {loc}')(lambda loc=loc, nm=nm, ds=ds: upsert_loc(f'/v2/inAppPurchases/{IAP}/inAppPurchaseLocalizations', 'inAppPurchaseLocalizations',
+            'inAppPurchaseV2', 'inAppPurchases', IAP, loc, {'name': nm, 'description': ds}))()
 
-    @step('IAP price ₺99.99 (base TUR)')
-    def iap_price():
+    def set_price():
         try:
             cur = api('GET', f'/v2/inAppPurchases/{IAP}/iapPriceSchedule?include=manualPrices')
             if cur.get('included'):
@@ -324,20 +328,19 @@ if IAP:
         pt = None
         while url and not pt:
             r = api('GET', url)
-            pt = next((p for p in r['data'] if abs(float(p['attributes']['customerPrice']) - 99.99) < 0.001), None)
+            pt = next((p for p in r['data'] if abs(float(p['attributes']['customerPrice']) - price) < 0.001), None)
             url = (r.get('links') or {}).get('next')
         if not pt:
-            raise ApiError('no 99.99 TRY price point')
+            raise ApiError(f'no {price} TRY price point')
         api('POST', '/v1/inAppPurchasePriceSchedules', {'data': {'type': 'inAppPurchasePriceSchedules', 'relationships': {
             'inAppPurchase': {'data': {'type': 'inAppPurchases', 'id': IAP}}, 'baseTerritory': {'data': {'type': 'territories', 'id': 'TUR'}},
             'manualPrices': {'data': [{'type': 'inAppPurchasePrices', 'id': '${p0}'}]}}},
             'included': [{'type': 'inAppPurchasePrices', 'id': '${p0}', 'attributes': {'startDate': None},
                           'relationships': {'inAppPurchasePricePoint': {'data': {'type': 'inAppPurchasePricePoints', 'id': pt['id']}}}}]})
-        return 'price point ' + pt['id']
-    iap_price()
+        return f'₺{price}'
+    step(f'{pid} price')(set_price)()
 
-    @step('IAP availability')
-    def iap_avail():
+    def avail():
         try:
             api('GET', f'/v2/inAppPurchases/{IAP}/inAppPurchaseAvailability')
             return 'already set'
@@ -346,10 +349,9 @@ if IAP:
         api('POST', '/v1/inAppPurchaseAvailabilities', {'data': {'type': 'inAppPurchaseAvailabilities', 'attributes': {'availableInNewTerritories': True},
             'relationships': {'inAppPurchase': {'data': {'type': 'inAppPurchases', 'id': IAP}},
                               'availableTerritories': {'data': [{'type': 'territories', 'id': t} for t in TERR]}}}})
-    iap_avail()
+    step(f'{pid} availability')(avail)()
 
-    @step('IAP review screenshot')
-    def iap_shot():
+    def shot():
         f = os.path.join(SHOTS, 'tr', '7.png')
         if not os.path.exists(f):
             return 'no shop screenshot'
@@ -360,6 +362,9 @@ if IAP:
         except ApiError:
             pass
         upload_asset('inAppPurchaseAppStoreReviewScreenshots', 'inAppPurchaseV2', 'inAppPurchases', IAP, f)
-    iap_shot()
+    step(f'{pid} review screenshot')(shot)()
+
+for pack in PACKS:
+    iap_pack(*pack)
 
 note('done — App Privacy questionnaire and the final "Submit for Review" are done in App Store Connect web UI')

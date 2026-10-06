@@ -197,5 +197,6 @@
   "adFail": "No ad right now, try again in a bit.",
   "noCoins": "Not enough coins. You can get more in the shop.",
   "undoNoCoins": "Undo costs {p} coins. You don't have enough.",
-  "loginApp": "Sign in in the browser"
+  "loginApp": "Sign in in the browser",
+  "coinsN": "{n} coins"
 }

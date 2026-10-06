@@ -197,5 +197,6 @@
   "adFail": "Pas de pub pour l'instant, réessaie dans un moment.",
   "noCoins": "Pas assez de pièces. Tu peux en obtenir dans la boutique.",
   "undoNoCoins": "Annuler coûte {p} pièces. Tu n'en as pas assez.",
-  "loginApp": "Se connecter dans le navigateur"
+  "loginApp": "Se connecter dans le navigateur",
+  "coinsN": "{n} pièces"
 }

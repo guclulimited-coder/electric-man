@@ -197,5 +197,6 @@
   "adFail": "Gerade keine Werbung, versuch es gleich noch mal.",
   "noCoins": "Nicht genug Münzen. Im Shop bekommst du mehr.",
   "undoNoCoins": "Zurücknehmen kostet {p} Münzen. Du hast nicht genug.",
-  "loginApp": "Im Browser anmelden"
+  "loginApp": "Im Browser anmelden",
+  "coinsN": "{n} Münzen"
 }

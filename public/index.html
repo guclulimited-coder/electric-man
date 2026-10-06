@@ -161,6 +161,7 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
 .shop-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:#f6f9fe}
 .shop-item .big{font-size:18px;font-weight:800;flex:1}
 .shop-item .big small{display:block;font-size:12px;font-weight:600;color:var(--ink-soft)}
+.shop-item .big small.bonus{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:8px;background:#2fae5a;color:#fff;font-size:12px;font-weight:800;vertical-align:middle}
 .shop-item .coin{width:30px;height:30px}.shop-item .coin svg{width:18px;height:18px}
 .adcover{position:absolute;inset:0;z-index:60;background:rgba(10,20,40,.55)}
 [dir=rtl] .bubble::before{left:auto;right:-7px;border-right-color:transparent;border-left:7px solid #fff;border-right:0}
@@ -247,7 +248,8 @@ function applyStatic(){
   const md = document.querySelector('meta[name=description]'); if (md && L.metaDesc) md.content = L.metaDesc;
 }
 applyStatic();
-const HINT_PRICE = 20, MOVES_PRICE = 25, UNDO_PRICE = 10, AD_REWARD = 20, ADS_PER_DAY = 15, COIN_PACK = {id:'em_coins_500', coins:500};
+const HINT_PRICE = 20, MOVES_PRICE = 25, UNDO_PRICE = 10, AD_REWARD = 20, ADS_PER_DAY = 15, COIN_PACKS = [{id:'em_coins_500', coins:500, tl:'₺99,99'}, {id:'em_coins_1200', coins:1200, tl:'₺149,99'}, {id:'em_coins_3000', coins:3000, tl:'₺249,99'}, {id:'em_coins_7000', coins:7000, tl:'₺499,99'}, {id:'em_coins_15000', coins:15000, tl:'₺999,99'}];
+const packOf = id => COIN_PACKS.find(p => p.id === id);
 const BOLT = '<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6l-1.5 8.5L19 10h-6.2z"/></svg>';
 
 /* ================= three.js helpers ================= */
@@ -968,39 +970,42 @@ const Ads = {
   }
 };
 const Shop = {
-  price: null,
+  prices: {},
   async loadPrice(){
-    if (!Native.app || this.price) return;
-    try { const list = await Native.call({action:'products', ids:[COIN_PACK.id]}); const p = (list || []).find(x => x.id === COIN_PACK.id); if (p) this.price = p.price; } catch (e){}
+    if (!Native.app || Object.keys(this.prices).length) return;
+    try { const list = await Native.call({action:'products', ids: COIN_PACKS.map(p => p.id)}); for (const x of list || []) if (packOf(x.id) && x.price) this.prices[x.id] = x.price; } catch (e){}
   },
   grant(tx){
-    const done = store.get('grantedTx', []);
+    const pack = packOf(tx.id) || COIN_PACKS[0], done = store.get('grantedTx', []);
     if (tx.txn && done.includes(tx.txn)) return Native.call({action:'finish', txn: tx.txn}).catch(() => {});
-    coins += COIN_PACK.coins; renderCoins(); snd('win'); say(T('buyOk', {n: COIN_PACK.coins}));
+    coins += pack.coins; renderCoins(); snd('win'); say(T('buyOk', {n: pack.coins}));
     if (tx.txn){ done.push(tx.txn); store.set('grantedTx', done.slice(-50)); }
     Online.saveSoon();
     return Native.call({action:'finish', txn: tx.txn}).catch(() => {});
   },
   async restorePending(){
     if (!Native.app) return;
-    try { const list = await Native.call({action:'pending'}); for (const tx of list || []) if (tx.id === COIN_PACK.id) await this.grant(tx); } catch (e){}
+    try { const list = await Native.call({action:'pending'}); for (const tx of list || []) if (packOf(tx.id)) await this.grant(tx); } catch (e){}
   },
   async open(){
     await this.loadPrice();
-    const app = Native.app, left = Ads.left();
+    const app = Native.app, left = Ads.left(), base = COIN_PACKS[0].coins / 99.99;
+    // a pack only shows once the store returned it (e.g. not before the paid-apps agreement / product is active)
+    const packs = COIN_PACKS.filter(p => !app || SHOT || this.prices[p.id]);
+    const row = p => { const bonus = Math.round((p.coins / parseFloat(p.tl.replace('₺', '').replace(',', '.')) / base - 1) * 100);
+      return `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coinsN', {n: p.coins.toLocaleString(LANG)})}${bonus > 0 ? `<small class="bonus">+%${bonus}</small>` : ''}</span><button class="btn small alt" data-buy="${p.id}" ${app ? '' : 'disabled'}>${this.prices[p.id] || p.tl}</button></div>`; };
     const body = Online.sheet(T('shopTitle'), `
-      ${app && !this.price && !SHOT ? '' : `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coins500')}</span><button class="btn small alt" id="buyPack" ${app ? '' : 'disabled'}>${this.price || '₺99,99'}</button></div>`}
+      ${packs.map(row).join('')}
       <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('watchAd')}<small>${T('adReward', {n: AD_REWARD})} · ${T('adsLeft', {n: left})}</small></span><button class="btn small" id="watchAd" ${app && left ? '' : 'disabled'}>▶</button></div>
       ${app ? '' : `<p class="note">${T('inAppOnly')}</p>`}
       <div class="err" id="shopErr"></div>`);
     if (!app) return;
-    // the coin pack only shows once the store returned the product (e.g. not before the paid-apps agreement is active)
-    if (body.querySelector('#buyPack')) body.querySelector('#buyPack').onclick = async ev => {
+    body.querySelectorAll('[data-buy]').forEach(btn => btn.onclick = async ev => {
       const b = ev.currentTarget; b.disabled = true;
-      try { const r = await Native.call({action:'buy', id: COIN_PACK.id}); if (r && r.ok) { await this.grant(r); $('sheet').hidden = true; } }
+      try { const r = await Native.call({action:'buy', id: b.dataset.buy}); if (r && r.ok) { await this.grant(Object.assign({id: b.dataset.buy}, r)); $('sheet').hidden = true; } }
       catch (e){ if (e.message !== 'CANCELLED') $('shopErr').textContent = T('buyFail'); }
       b.disabled = false;
-    };
+    });
     body.querySelector('#watchAd').onclick = async ev => { ev.currentTarget.disabled = true; await Ads.rewarded(); this.open(); };
   }
 };

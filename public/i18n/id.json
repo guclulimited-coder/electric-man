@@ -197,5 +197,6 @@
   "adFail": "Belum ada iklan, coba lagi sebentar.",
   "noCoins": "Koin tidak cukup. Kamu bisa beli di toko.",
   "undoNoCoins": "Urungkan butuh {p} koin. Koinmu tidak cukup.",
-  "loginApp": "Masuk lewat browser"
+  "loginApp": "Masuk lewat browser",
+  "coinsN": "{n} koin"
 }
