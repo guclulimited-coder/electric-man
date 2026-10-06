@@ -51,7 +51,7 @@ jobs:
           echo "::notice::$(xcodebuild -version | head -1) · simulator build exit $code"
           exit $code
       - name: Signing (App Store Connect API)
-        if: github.event_name == 'workflow_dispatch' && inputs.upload
+        if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[ios-upload]')
         env:
           SIGNING_BUNDLE: ${{ secrets.EM_APPLE_SIGNING_BUNDLE }}
           API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
@@ -108,7 +108,7 @@ jobs:
           with open(env['GITHUB_ENV'], 'a') as f: f.write('PROFILE_SPECIFIER=' + details['Name'] + '\n')
           PY
       - name: Archive, export and upload to App Store Connect
-        if: github.event_name == 'workflow_dispatch' && inputs.upload
+        if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[ios-upload]')
         run: |
           set -euo pipefail
           xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
