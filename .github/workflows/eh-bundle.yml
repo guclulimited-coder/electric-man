@@ -1,0 +1,42 @@
+name: Electric Hunter bundle ID
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  register:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[eh-bundle]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Register com.tusneldax.electrichunter in the Apple Developer account
+        env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/asc" && "$RUNNER_TEMP/asc/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/asc/bin/python" - <<'PY'
+          import json, os, re, textwrap, time, urllib.request, urllib.error, jwt
+          env = os.environ
+          raw = env['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw))
+          key = '-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n'
+          def api(method, path, data=None):
+              tok = jwt.encode({'iss': env['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': env['KEY_ID'], 'typ': 'JWT'})
+              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, method=method, data=json.dumps(data).encode() if data else None, headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: return json.load(r)
+              except urllib.error.HTTPError as e:
+                  print('::error::' + method + ' ' + path + ' -> ' + str(e.code) + ' ' + e.read().decode()[:400].replace(chr(10), ' ')); raise
+          ident = 'com.tusneldax.electrichunter'
+          found = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + ident)['data'] if b['attributes']['identifier'] == ident]
+          if found: print('::notice::bundle ID already registered: ' + found[0]['id'])
+          else:
+              b = api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': ident, 'name': 'Electric Hunter', 'platform': 'IOS'}}})['data']
+              print('::notice::bundle ID registered: ' + b['id'])
+          apps = api('GET', '/v1/apps?filter[bundleId]=' + ident)['data']
+          print('::notice::App Store Connect app record: ' + (apps[0]['id'] if apps else 'not created yet'))
+          PY
