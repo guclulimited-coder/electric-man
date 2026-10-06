@@ -17,6 +17,8 @@ env:
   PROFILE_NAME: Electric Man App Store
 jobs:
   build:
+    # macOS minutes are expensive: only run when an upload is requested
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')
     runs-on: macos-15
     timeout-minutes: 45
     steps:
