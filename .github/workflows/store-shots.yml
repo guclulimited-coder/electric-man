@@ -1,0 +1,112 @@
+name: Store screenshots
+# Real simulator / emulator screenshots of the app's demo scenes (index.html?shot=1..6).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  ios:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[shots]') || contains(github.event.head_commit.message, '[ios-shots]')
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bundle the game into the app
+        run: node scripts/bundle-native.mjs ios/ElectricMan/www
+      - name: Build for the simulator
+        run: |
+          set +e
+          latest=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest/Contents/Developer"; fi
+          brew install xcodegen >/dev/null
+          (cd ios && xcodegen generate)
+          xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build > build.log 2>&1
+          code=$?
+          grep -E "error:|BUILD (SUCCEEDED|FAILED)" build.log | sort -u | head -20 | while read -r l; do echo "::warning::$l"; done
+          exit $code
+      - name: Capture on a 6.9" iPhone
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys, re
+          d = json.load(sys.stdin)["devices"]
+          c = [(rt, x) for rt, xs in d.items() if "iOS" in rt for x in xs if "Pro Max" in x["name"]]
+          c.sort(key=lambda p: [int(n) for n in re.findall(r"\d+", p[0])] + [int(n) for n in re.findall(r"\d+", p[1]["name"])])
+          print(c[-1][1]["udid"]); print(c[-1][1]["name"], c[-1][0], file=sys.stderr)')
+          xcrun simctl boot "$UDID"; xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
+          APP=$(ls -d build/sim/Build/Products/Debug-iphonesimulator/*.app | head -1)
+          xcrun simctl install "$UDID" "$APP"
+          # warm-up launch (first WebGL start compiles shaders)
+          xcrun simctl launch "$UDID" com.tusneldax.electricman -emShot 1 -emShotLang tr >/dev/null; sleep 40
+          for L in tr en; do
+            LOC=$([ "$L" = tr ] && echo tr_TR || echo en_US)
+            mkdir -p "shots/ios/$L"
+            for N in 1 2 3 4 5 6; do
+              xcrun simctl terminate "$UDID" com.tusneldax.electricman || true
+              xcrun simctl launch "$UDID" com.tusneldax.electricman -AppleLanguages "($L)" -AppleLocale "$LOC" -emShot $N -emShotLang $L >/dev/null
+              if [ $N = 3 ]; then sleep 38; else sleep 30; fi
+              xcrun simctl io "$UDID" screenshot "shots/ios/$L/$N.png"
+            done
+          done
+          python3 -c '
+          import struct, glob
+          for f in sorted(glob.glob("shots/ios/*/*.png")):
+              w, h = struct.unpack(">II", open(f, "rb").read()[16:24]); print("::notice::" + f + " " + str(w) + "x" + str(h))'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shots-ios
+          path: shots/ios
+          retention-days: 30
+
+  android:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[shots]') || contains(github.event.head_commit.message, '[android-shots]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bundle the game into the app
+        run: node scripts/bundle-native.mjs android/app/src/main/assets/www
+      - name: Android SDK 36
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - name: Debug APK
+        run: gradle -p android assembleDebug --no-daemon -q
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Capture on a phone emulator (1080x1920)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash .github/scripts/android-shots.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shots-android
+          path: shots/android
+          retention-days: 30

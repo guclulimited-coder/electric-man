@@ -71,7 +71,11 @@ struct GameView: UIViewRepresentable {
         view.navigationDelegate = context.coordinator
         view.uiDelegate = context.coordinator
         context.coordinator.view = view
-        view.load(URLRequest(url: URL(string: "\(BundleSchemeHandler.scheme)://game/index.html")!))
+        // store screenshots: `-emShot 1..6 -emShotLang tr` launch arguments open the game's demo scenes
+        let shot = UserDefaults.standard.integer(forKey: "emShot")
+        let shotLang = UserDefaults.standard.string(forKey: "emShotLang") ?? ""
+        let query = shot > 0 ? "?shot=\(shot)&lang=\(shotLang)" : ""
+        view.load(URLRequest(url: URL(string: "\(BundleSchemeHandler.scheme)://game/index.html\(query)")!))
         return view
     }
     func updateUIView(_ view: WKWebView, context: Context) {}

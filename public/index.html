@@ -214,11 +214,16 @@ const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (win
   call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
 // apps keep a copy of the save outside the web view (restored before the game starts)
 try { if (Native.app && window.__EM_RESTORE && !localStorage.getItem('em_max')) for (const [k, v] of Object.entries(window.__EM_RESTORE)) if (k.startsWith('em_')) localStorage.setItem(k, v); } catch (e){}
+/* store screenshot mode (?shot=1..6): demo save + mocked online data, no ads/prompts */
+const SHOT = Math.max(0, Math.min(6, +(new URLSearchParams(location.search).get('shot') || 0) || 0));
+if (SHOT){ try { localStorage.clear(); const st = {}; for (let i = 1; i <= 58; i++) st[i] = i % 4 ? 3 : 2;
+  const lang = (new URLSearchParams(location.search).get('lang') || ''); if (lang) localStorage.setItem('em_lang', JSON.stringify(lang));
+  Object.entries({gender:'m', muted:true, coins:240, max:61, stars:st, level:[0,7,46,21,58,58,58][SHOT]}).forEach(([k, v]) => localStorage.setItem('em_' + k, JSON.stringify(v))); } catch (e){} }
 let persistTimer = null;
 const store = {
   get(k, d){ try { const v = localStorage.getItem('em_'+k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem('em_'+k, JSON.stringify(v)); } catch(e){}
-    if (Native.app){ clearTimeout(persistTimer); persistTimer = setTimeout(() => { try { const all = {}; for (let i = 0; i < localStorage.length; i++){ const key = localStorage.key(i); if (key.startsWith('em_')) all[key] = localStorage.getItem(key); } Native.call({action:'persist', data: JSON.stringify(all)}).catch(() => {}); } catch (e){} }, 300); } }
+    if (Native.app && !SHOT){ clearTimeout(persistTimer); persistTimer = setTimeout(() => { try { const all = {}; for (let i = 0; i < localStorage.length; i++){ const key = localStorage.key(i); if (key.startsWith('em_')) all[key] = localStorage.getItem(key); } Native.call({action:'persist', data: JSON.stringify(all)}).catch(() => {}); } catch (e){} }, 300); } }
 };
 
 /* ================= languages: Turkish + 12 most spoken, chosen from the device locale ================= */
@@ -1006,7 +1011,22 @@ const Online = (() => {
   let cfg = null, me = null, revision = 0, saveTimer = null, saving = false;
   let badges = {requests:0, unread:0}, badgeTimer = null, chat = null;
   const msg = e => { const k = 'e' + e; return L[k] ? T(k) : T('eNET'); };
+  function shotApi(path){
+    const tr = LANG === 'tr', n = tr ? {me:'Ömer', f1:'Elif', f2:'Hans', f3:'Ayşe'} : {me:'Alex', f1:'Mia', f2:'Hans', f3:'Lena'}, now = Date.now(), q = path.split('?')[0];
+    const R = {
+      '/config': {googleClientId:null, email:true, purchases:false, maxLevel:300},
+      '/me': {player:{name:n.me, code:'EM4F2A9C'}},
+      '/progress': {save:null, revision:0},
+      '/badges': {requests:1, unread:1},
+      '/friends': {me:{name:n.me, code:'EM4F2A9C'}, friends:[{code:'EMB1', name:n.f2, max:58, status:'accepted', incoming:false, unread:1, avatar:'serhat'}, {code:'EMB2', name:n.f1, max:73, status:'accepted', incoming:false, unread:0, avatar:'zeynep'}, {code:'EMB3', name:n.f3, max:12, status:'pending', incoming:true, unread:0, avatar:'zeynep'}]},
+      '/league': {week:'2026-10-05', ends:new Date(now + 3 * 864e5).toISOString(), rows:[{name:n.f1, points:390, levels:13, avatar:'zeynep', rank:1}, {name:n.me, points:360, levels:12, avatar:'serhat', rank:2, me:true}, {name:n.f2, points:270, levels:10, avatar:'serhat', rank:3}, {name:'Kenji', points:240, levels:8, avatar:'serhat', rank:4}, {name:'Sofia', points:180, levels:6, avatar:'zeynep', rank:5}]},
+      '/chat': {friend:{name:n.f2, code:'EMB1'}, messages: path.includes('after') ? [] : [{id:1, mine:false, text:'Hallo! Wie weit bist du schon?', lang:'de', created:now - 6e5}, {id:2, mine:true, text: tr ? 'Köy bitti, şimdi Sahil’deyim!' : 'Finished the Village, now at the Coast!', lang:LANG, created:now - 5e5}, {id:3, mine:false, text:'Super! Level 58 ist schwer, nutz den Tipp.', lang:'de', created:now - 3e5}]},
+      '/translate': {tr: tr ? {1:'Merhaba! Ne kadar ilerledin?', 3:'Süper! 58. bölüm zor, ipucunu kullan.'} : {1:'Hi! How far have you got?', 3:'Great! Level 58 is hard, use the hint.'}}
+    };
+    if (R[q]) return R[q]; throw new Error('NET');
+  }
   async function call(path, body){
+    if (SHOT) return shotApi(path);
     if (Native.app){
       const r = await Native.call({action:'api', path, method: body === undefined ? 'GET' : 'POST', body});
       if (!r || r.status >= 400) throw Object.assign(new Error((r && r.body && r.body.error) || 'NET'), {status: r && r.status});
@@ -1288,14 +1308,27 @@ try {
   $('loading').hidden = true;
   renderSound(); Profile.render();
   start(level);
-  if (!Profile.gender) setTimeout(() => Profile.ask(), 600);
-  Ads.launch(); Shop.restorePending();
+  if (SHOT) setTimeout(shotScene, 2500);
+  else { if (!Profile.gender) setTimeout(() => Profile.ask(), 600);
+  Ads.launch(); Shop.restorePending(); }
   requestAnimationFrame(loop);
   Online.init();
 } catch (e){
   $('loading').hidden = false;
   $('loading').textContent = T('noGL');
   console.error(e);
+}
+function shotScene(){
+  const solve = frac => { let k = 0; for (const t of S.tiles){ if (t.kind !== 'cable' || t.fixed) continue; if (t.broken) act(t); let g = 0; while (t.mask !== t.sol && g < 4){ act(t); g++; } if (++k > S.tiles.length * frac) break; } };
+  const click = sel => { const el = document.querySelector(sel); if (el) el.click(); };
+  if (SHOT === 1) solve(.45);
+  else if (SHOT === 2) solve(.3);
+  else if (SHOT === 3){ S.limit = Infinity; S.tiles.forEach(t => { if (t.fog){ t.fog = false; if (t.cloud) t.g.remove(t.cloud); if (t.rg) t.rg.visible = true; } });
+    for (const t of S.tiles){ if (t.kind !== 'cable' || t.fixed) continue; if (t.broken) act(t); const k = stepsCW(t); if (k === 3 && t.shape !== 'straight'){ dirCW = false; act(t); } else { dirCW = true; for (let g = 0; g < k && t.mask !== t.sol; g++) act(t); } if (S.over) break; } dirCW = true; }
+  else if (SHOT === 4){ click('#msgBtn'); setTimeout(() => click('[data-chat]'), 900); }
+  else if (SHOT === 5) click('#leagueBtn');
+  else if (SHOT === 6) click('#mapBtn');
+  setTimeout(() => { document.title = 'EM_SHOT_READY'; window.__emShotReady = true; }, SHOT === 3 ? 9000 : 5000);
 }
 window.__em = { generate, diff, stepsCW, setDir(cw){ dirCW = cw; }, get S(){ return S; }, start, tap, act, screenOf(){ const r = canvas.getBoundingClientRect(); return S.tiles.filter(t => t.kind === 'cable').map(t => { const v = new THREE.Vector3(t.g.position.x, .165, t.g.position.z).project(camera); return {idx:t.idx, fixed:!!t.fixed || !!t.fog, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height}; }); } };
 </script>

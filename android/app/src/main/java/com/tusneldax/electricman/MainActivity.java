@@ -132,7 +132,10 @@ public class MainActivity extends AppCompatActivity {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             WebViewCompat.addDocumentStartJavaScript(web, shim, origins);
         }
-        web.loadUrl(START);
+        // store screenshots: `am start ... --ei emShot 1..6 --es emShotLang tr` opens the game's demo scenes
+        int shot = getIntent().getIntExtra("emShot", 0);
+        String shotLang = getIntent().getStringExtra("emShotLang");
+        web.loadUrl(shot > 0 ? START + "?shot=" + shot + "&lang=" + (shotLang == null ? "" : shotLang) : START);
         handleIntent(getIntent());
     }
 
