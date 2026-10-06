@@ -119,10 +119,11 @@ jobs:
               d.mkdir(parents=True, exist_ok=True); (d / (info['UUID'] + '.mobileprovision')).write_bytes(pf.read_bytes())
           pathlib.Path('ExportOptions.plist').write_bytes(plistlib.dumps({'method': 'app-store-connect', 'destination': 'upload', 'signingStyle': 'manual', 'teamID': env['TEAM_ID'],
               'signingCertificate': 'Apple Distribution', 'provisioningProfiles': {bid_name: info['Name']}, 'manageAppVersionAndBuildNumber': False, 'uploadSymbols': True}))
-          with open(env['GITHUB_ENV'], 'a') as f: f.write('PROFILE_NAME_CI=' + info['Name'] + '\n')
+          (temp / 'em-profile-name').write_text(info['Name'])
           apps = api('GET', '/v1/apps?filter[bundleId]=' + bid_name)['data']
           print('::notice::temporary distribution certificate ' + cert['id'] + ', profile ' + info['Name'] + ', app record ' + (apps[0]['id'] if apps else 'MISSING'))
           PY
+          PROFILE_NAME_CI=$(cat "$RUNNER_TEMP/em-profile-name")
           AUTH=(-authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
