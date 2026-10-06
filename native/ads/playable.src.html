@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="ad.size" content="width=320,height=480">
+<title>Electric Man</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#6ec6ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+canvas{display:block;width:100%;height:100%}
+#bar{position:fixed;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.92);border-radius:18px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+#bar img{width:44px;height:44px;border-radius:11px}
+#bar b{flex:1;color:#16304f;font-size:15px;line-height:1.15}#bar b small{display:block;font-weight:600;color:#4f6a8a;font-size:12px}
+#bar button{appearance:none;border:0;border-radius:12px;padding:10px 14px;font:800 14px system-ui,sans-serif;color:#16304f;background:#ffd23f;box-shadow:inset 0 -3px 0 #d9a400}
+#end{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(14,40,80,.55);animation:fade .35s ease}
+#end .card{background:#fff;border-radius:26px;padding:26px 22px 22px;width:min(320px,84vw);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+#end img{width:96px;height:96px;border-radius:22px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+#end h1{margin:12px 0 2px;font-size:26px;color:#16304f;letter-spacing:.5px}
+#end p{margin:0 0 6px;color:#4f6a8a;font-size:15px}
+#end .stars{font-size:30px;color:#ffc61a;letter-spacing:4px;margin:4px 0 10px;text-shadow:0 2px 0 #d99a00}
+#end button{appearance:none;border:0;width:100%;padding:15px;border-radius:16px;font:800 19px system-ui,sans-serif;color:#16304f;background:#ffd23f;box-shadow:inset 0 -5px 0 #d9a400,0 6px 16px rgba(0,0,0,.2);animation:pulse 1.2s ease-in-out infinite}
+#end small{display:block;margin-top:10px;color:#8aa0b8;font-size:12px}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+@keyframes pulse{50%{transform:scale(1.04)}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bar"><img src="__ICON__" alt=""><b>Electric Man<small id="barSub"></small></b><button id="barBtn"></button></div>
+<div id="end"><div class="card">
+  <img src="__ICON__" alt="">
+  <h1>Electric Man</h1>
+  <p id="endSub"></p>
+  <div class="stars">★★★</div>
+  <button id="cta"></button>
+  <small id="endNote"></small>
+</div></div>
+<script>
+/* Electric Man — playable ad: one small level of the real game in 2D. Single file, no network. */
+(() => {
+const STORE = {android: 'https://play.google.com/store/apps/details?id=com.tusneldax.electricman',
+               ios: 'https://apps.apple.com/app/id6819511421'};
+const tr = /^tr/i.test(navigator.language || '');
+const TXT = tr ? {title: 'Kabloları döndür, evleri aydınlat!', tap: 'Kabloya dokun', moves: 'Hamle', lit: 'Işıklı ev',
+  sub: 'Mahalle aydınlandı! 300 bölüm daha seni bekliyor.', cta: 'HEMEN İNDİR', note: 'Ücretsiz · 13 dil · Arkadaşlarınla yarış', great: 'Harika!'}
+  : {title: 'Rotate the cables, light the houses!', tap: 'Tap a cable', moves: 'Moves', lit: 'Houses lit',
+  sub: 'The block is shining! 300 more levels are waiting.', cta: 'PLAY NOW', note: 'Free · 13 languages · Race your friends', great: 'Great!'};
+document.getElementById('endSub').textContent = TXT.sub;
+document.getElementById('cta').textContent = TXT.cta;
+document.getElementById('endNote').textContent = TXT.note;
+document.getElementById('barSub').textContent = TXT.note;
+document.getElementById('barBtn').textContent = TXT.cta;
+
+function openStore(){
+  const ios = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
+  const url = ios ? STORE.ios : STORE.android;
+  try { if (window.mraid && mraid.open) return mraid.open(url); } catch (e) {}
+  try { if (window.ExitApi && ExitApi.exit) return ExitApi.exit(); } catch (e) {}   // Google Ads HTML5
+  window.open(url, '_blank');
+}
+document.getElementById('end').addEventListener('click', openStore);
+document.getElementById('bar').addEventListener('click', openStore);
+
+/* ---------- level: N=1 E=2 S=4 W=8 ---------- */
+const COLS = 5, ROWS = 6;
+const rot = m => ((m << 1) | (m >> 3)) & 15;
+const tiles = [];
+const sol = {
+  '0,2': ['src', 2], '1,2': ['cab', 14], '2,2': ['cab', 13], '2,1': ['cab', 5], '2,0': ['house', 4, '#e8754f'],
+  '2,3': ['cab', 3], '3,3': ['cab', 10], '4,3': ['cab', 13], '4,2': ['cab', 5], '4,1': ['house', 4, '#7c6fe0'],
+  '4,4': ['house', 1, '#3bb37a'], '1,3': ['cab', 5], '1,4': ['cab', 5], '1,5': ['house', 1, '#e7b93b']
+};
+const filler = [5, 3, 6, 10, 12, 9, 5, 3];
+let fi = 0;
+for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++){
+  const s = sol[c + ',' + r];
+  const t = {c, r, kind: s ? s[0] : 'cab', sol: s ? s[1] : filler[fi++ % filler.length], color: s && s[2], spin: 0, decor: !s};
+  t.mask = t.sol;
+  tiles.push(t);
+}
+const at = (c, r) => tiles.find(t => t.c === c && t.r === r);
+// scramble the cables (fixed number of turns so the first tap usually helps)
+const scramble = {'1,2': 1, '2,2': 2, '2,1': 1, '2,3': 3, '3,3': 1, '4,3': 2, '4,2': 1, '1,3': 1, '1,4': 1};
+for (const t of tiles){
+  if (t.kind !== 'cab') continue;
+  const n = t.decor ? (t.c + t.r) % 3 + 1 : scramble[t.c + ',' + t.r] || 0;
+  for (let i = 0; i < n; i++) t.mask = rot(t.mask);
+}
+let moves = 0, won = false, lit = new Set(), powered = new Set();
+function flow(){
+  powered = new Set(); lit = new Set();
+  const src = tiles.find(t => t.kind === 'src'), q = [src]; powered.add(src);
+  const D = [[0, -1, 1, 4], [1, 0, 2, 8], [0, 1, 4, 1], [-1, 0, 8, 2]];
+  while (q.length){
+    const t = q.shift();
+    for (const [dc, dr, out, inn] of D){
+      if (!(t.mask & out)) continue;
+      const n = at(t.c + dc, t.r + dr);
+      if (!n || powered.has(n) || !(n.mask & inn)) continue;
+      powered.add(n); if (n.kind === 'house') lit.add(n); else q.push(n);
+    }
+  }
+}
+flow();
+const HOUSES = tiles.filter(t => t.kind === 'house').length;
+
+/* ---------- drawing ---------- */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W, H, DPR, cell, ox, oy;
+function resize(){
+  DPR = Math.min(3, window.devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const top = Math.min(140, H * .2), bottom = 84;
+  cell = Math.min((W - 28) / COLS, (H - top - bottom) / ROWS);
+  ox = (W - cell * COLS) / 2; oy = top + (H - top - bottom - cell * ROWS) / 2;
+}
+addEventListener('resize', resize); resize();
+const avatar = new Image(); avatar.src = '__AVATAR__';
+function rr(x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function drawCable(t, x, y, on, now){
+  const m = t.mask, cx = x + cell / 2, cy = y + cell / 2, L = cell / 2;
+  const dirs = [[0, -1, 1], [1, 0, 2], [0, 1, 4], [-1, 0, 8]];
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(-t.spin * Math.PI / 2); ctx.translate(-cx, -cy);
+  ctx.lineCap = 'round';
+  for (const pass of [0, 1]){
+    ctx.beginPath();
+    for (const [dx, dy, b] of dirs) if (m & b){ ctx.moveTo(cx, cy); ctx.lineTo(cx + dx * L, cy + dy * L); }
+    if (pass === 0){ ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = cell * .2; ctx.save(); ctx.translate(0, 3); ctx.stroke(); ctx.restore(); }
+    else {
+      ctx.strokeStyle = on ? '#ffc21a' : '#2b3442'; ctx.lineWidth = cell * .16;
+      if (on){ ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 14 + 6 * Math.sin(now / 160); }
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
+  }
+  // brass ferrules at the tile edges
+  ctx.fillStyle = '#c8962e';
+  for (const [dx, dy, b] of dirs) if (m & b){ ctx.beginPath(); ctx.arc(cx + dx * L * .86, cy + dy * L * .86, cell * .085, 0, 7); ctx.fill(); }
+  ctx.fillStyle = on ? '#ffd23f' : '#3c4757'; ctx.beginPath(); ctx.arc(cx, cy, cell * .1, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawHouse(t, x, y, on, now){
+  const cx = x + cell / 2, cy = y + cell / 2, s = cell * .34;
+  const m = t.mask, dirs = [[0, -1, 1], [1, 0, 2], [0, 1, 4], [-1, 0, 8]];
+  ctx.lineCap = 'round'; ctx.strokeStyle = on ? '#ffc21a' : '#2b3442'; ctx.lineWidth = cell * .16;
+  for (const [dx, dy, b] of dirs) if (m & b){ ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dx * cell / 2, cy + dy * cell / 2); ctx.stroke(); }
+  if (on){ ctx.save(); ctx.globalAlpha = .55 + .2 * Math.sin(now / 200); const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, cell * .7); g.addColorStop(0, '#fff6b0'); g.addColorStop(1, 'rgba(255,240,150,0)'); ctx.fillStyle = g; ctx.fillRect(x - cell * .2, y - cell * .2, cell * 1.4, cell * 1.4); ctx.restore(); }
+  ctx.fillStyle = '#f4efe6'; rr(cx - s, cy - s * .35, s * 2, s * 1.35, 4); ctx.fill();
+  ctx.fillStyle = t.color; ctx.beginPath(); ctx.moveTo(cx - s * 1.2, cy - s * .3); ctx.lineTo(cx, cy - s * 1.25); ctx.lineTo(cx + s * 1.2, cy - s * .3); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = on ? '#ffd84a' : '#5a6b80';
+  for (const wx of [-.55, .25]) { rr(cx + wx * s, cy - s * .05, s * .32, s * .32, 2); ctx.fill(); }
+  ctx.fillStyle = '#8a5a3c'; rr(cx - s * .15, cy + s * .45, s * .3, s * .55, 2); ctx.fill();
+}
+function drawSource(x, y, now){
+  const cx = x + cell / 2, cy = y + cell / 2;
+  ctx.lineCap = 'round'; ctx.strokeStyle = '#ffc21a'; ctx.lineWidth = cell * .16; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x + cell, cy); ctx.stroke();
+  ctx.fillStyle = '#7d8a99'; rr(x + cell * .14, y + cell * .16, cell * .62, cell * .7, 8); ctx.fill();
+  ctx.fillStyle = '#9aa8b8'; rr(x + cell * .2, y + cell * .22, cell * .5, cell * .2, 4); ctx.fill();
+  ctx.fillStyle = '#ffd23f'; ctx.font = `900 ${cell * .38}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.save(); ctx.shadowColor = '#fff3a0'; ctx.shadowBlur = 10 + 6 * Math.sin(now / 150); ctx.fillText('⚡', cx - cell * .05, cy + cell * .12); ctx.restore();
+}
+let hint = true, sparks = [];
+function frame(now){
+  ctx.clearRect(0, 0, W, H);
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#5ab8ff'); sky.addColorStop(1, '#bfe9ff'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  // header
+  const ah = Math.min(78, H * .11);
+  if (avatar.complete && avatar.naturalWidth) ctx.drawImage(avatar, 14, 14, ah, ah);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 ${Math.min(26, W * .065)}px system-ui`; ctx.fillText('ELECTRIC MAN', 24 + ah, 14 + ah * .45);
+  ctx.font = `600 ${Math.min(16, W * .04)}px system-ui`; ctx.fillStyle = '#0f2c55'; ctx.fillText(TXT.title, 24 + ah, 14 + ah * .8);
+  // counters
+  const cy0 = oy - 36; ctx.font = `800 ${Math.min(15, W * .038)}px system-ui`;
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; rr(ox, cy0, cell * COLS / 2 - 6, 28, 10); ctx.fill(); rr(ox + cell * COLS / 2 + 6, cy0, cell * COLS / 2 - 6, 28, 10); ctx.fill();
+  ctx.fillStyle = '#16304f'; ctx.fillText(`💡 ${TXT.lit}: ${lit.size}/${HOUSES}`, ox + 10, cy0 + 19); ctx.fillText(`↻ ${TXT.moves}: ${moves}`, ox + cell * COLS / 2 + 16, cy0 + 19);
+  // board base
+  ctx.fillStyle = '#5fbf4a'; rr(ox - 10, oy - 10, cell * COLS + 20, cell * ROWS + 26, 18); ctx.fill();
+  ctx.fillStyle = '#a3683a'; rr(ox - 10, oy + cell * ROWS + 4, cell * COLS + 20, 12, 8); ctx.fill();
+  for (const t of tiles){
+    const x = ox + t.c * cell, y = oy + t.r * cell;
+    ctx.fillStyle = t.kind === 'house' ? '#bde8a8' : '#ecebe6'; rr(x + 3, y + 3, cell - 6, cell - 6, 9); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.06)'; rr(x + 3, y + cell - 9, cell - 6, 6, 4); ctx.fill();
+    if (t.spin > 0) t.spin = Math.max(0, t.spin - .12);
+    if (t.kind === 'cab') drawCable(t, x, y, powered.has(t), now);
+    else if (t.kind === 'house') drawHouse(t, x, y, lit.has(t), now);
+    else drawSource(x, y, now);
+  }
+  // tutorial hand on the first scrambled cable
+  if (hint && !won){
+    const t = at(1, 2), x = ox + (t.c + .62) * cell, y = oy + (t.r + .62) * cell + 6 * Math.sin(now / 180);
+    ctx.font = `${cell * .55}px system-ui`; ctx.textAlign = 'center'; ctx.fillText('👆', x, y + cell * .3);
+    ctx.font = `800 ${Math.min(15, W * .04)}px system-ui`; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#16304f'; ctx.lineWidth = 4;
+    ctx.strokeText(TXT.tap, x, y + cell * .75); ctx.fillText(TXT.tap, x, y + cell * .75);
+  }
+  // sparks
+  sparks = sparks.filter(p => p.life > 0);
+  for (const p of sparks){ p.x += p.vx; p.y += p.vy; p.vy += .25; p.life--; ctx.fillStyle = p.col; ctx.globalAlpha = Math.min(1, p.life / 20); ctx.fillRect(p.x, p.y, 5, 5); ctx.globalAlpha = 1; }
+  if (won){ ctx.font = `900 ${Math.min(44, W * .11)}px system-ui`; ctx.textAlign = 'center'; ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#16304f'; ctx.lineWidth = 7;
+    ctx.strokeText(TXT.great, W / 2, oy + cell * ROWS / 2); ctx.fillText(TXT.great, W / 2, oy + cell * ROWS / 2); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+function burst(x, y, n){ for (let i = 0; i < n; i++) sparks.push({x, y, vx: (Math.random() - .5) * 9, vy: -Math.random() * 8 - 2, life: 40 + Math.random() * 30, col: ['#ffd23f', '#ff8a3d', '#fff', '#7cd1ff'][i % 4]}); }
+function endCard(){ document.getElementById('end').style.display = 'flex'; }
+cv.addEventListener('pointerdown', e => {
+  if (won) return openStore();
+  const c = Math.floor((e.clientX - ox) / cell), r = Math.floor((e.clientY - oy) / cell), t = at(c, r);
+  if (!t || t.kind !== 'cab') return;
+  hint = false; t.mask = rot(t.mask); t.spin = 1; moves++;
+  const before = lit.size; flow();
+  if (lit.size > before) for (const h of lit) burst(ox + (h.c + .5) * cell, oy + (h.r + .5) * cell, 14);
+  if (lit.size === HOUSES){ won = true; burst(W / 2, oy + cell * 3, 80); setTimeout(endCard, 1300); }
+});
+// players who stop interacting still see the end card
+setTimeout(() => { if (!won) endCard(); }, 30000);
+// expose a tiny hook for recording the promo video
+window.__pa = {tiles, at, solveStep(){ const t = tiles.find(t => t.kind === 'cab' && !t.decor && t.mask !== t.sol); if (!t) return false; const r = t.c, s = t.r; cv.dispatchEvent(new PointerEvent('pointerdown', {clientX: ox + (r + .5) * cell, clientY: oy + (s + .5) * cell})); return true; }};
+})();
+</script>
+</body>
+</html>
