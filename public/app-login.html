@@ -51,6 +51,7 @@ input{font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1.
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const challenge = q.get('challenge') || '', state = q.get('state') || '';
+const HUNTER = q.get('app') === 'hunter', SCHEME = HUNTER ? 'electrichunter' : 'electricman';
 const LANGS = ['tr','en','zh','hi','es','ar','fr','bn','pt','ru','id','de','ja'];
 const lang = LANGS.includes(q.get('lang')) ? q.get('lang') : 'tr';
 document.documentElement.lang = lang; if (lang === 'ar') document.documentElement.dir = 'rtl';
@@ -64,7 +65,7 @@ async function call(path, body){
   if (!r.ok) throw new Error(j.error || 'NET');
   return j;
 }
-$('title').textContent = 'Electric Man · ' + T('loginTitle');
+$('title').textContent = (HUNTER ? 'Electric Hunter' : 'Electric Man') + ' · ' + T('loginTitle');
 $('intro').textContent = T('loginIntro');
 if (!/^[a-f0-9]{64}$/.test(challenge) || !/^[a-f0-9]{32,64}$/.test(state)){ err(T('eLOGIN_EXPIRED')); throw new Error('bad request'); }
 
@@ -72,7 +73,7 @@ async function handBack(){
   err(''); $('continue').disabled = true;
   try {
     const {ticket} = await call('/native/ticket', {challenge});
-    location.href = 'electricman://signin?ticket=' + ticket + '&state=' + state;
+    location.href = SCHEME + '://signin?ticket=' + ticket + '&state=' + state;
   } catch (e){ err(msg(e.message)); $('continue').disabled = false; }
 }
 async function showSignedIn(me){
