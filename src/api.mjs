@@ -36,6 +36,7 @@ export function safeSave(p){
     out.stars[k] = v;
   }
   if (typeof p.char === 'string' && /^[a-z]{1,16}$/.test(p.char)) out.char = p.char;
+  if (p.avatar === 'serhat' || p.avatar === 'zeynep') out.avatar = p.avatar;
   return out;
 }
 
@@ -136,6 +137,7 @@ const SCHEMA = [
   'CREATE INDEX IF NOT EXISTS em_messages_pair ON em_messages(pair, id)',
   'CREATE INDEX IF NOT EXISTS em_messages_unread ON em_messages(recipient, read)',
   'CREATE TABLE IF NOT EXISTS em_translations(msg INTEGER NOT NULL, lang TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(msg, lang))',
+  'CREATE TABLE IF NOT EXISTS em_tickets(id TEXT PRIMARY KEY, player TEXT NOT NULL, challenge TEXT NOT NULL, expires INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS em_reports(id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, msg INTEGER, snapshot TEXT, reason TEXT, created INTEGER NOT NULL)',
 ];
 let schemaReady = null;
@@ -202,6 +204,15 @@ export async function emAPI(req, env, deps = {}){
       headers.append('Set-Cookie', await newSession(db, id)); headers.append('Set-Cookie', ck(NONCE, '', 0));
       return Response.json({ok:true}, {headers});
     }
+    if (path === '/native/exchange' && req.method === 'POST'){
+      await quota(db, 'exchange:' + ip, 30, 3600000); await ensureSchema(db);
+      if (!isTok(body.ticket) || typeof body.verifier !== 'string' || !/^[a-f0-9]{64}$/.test(body.verifier)) fail('LOGIN_EXPIRED', 401);
+      const t = await one(db, 'DELETE FROM em_tickets WHERE id=? AND expires>? RETURNING player,challenge', await hash(body.ticket), Date.now());
+      if (!t || t.challenge !== await hash(body.verifier)) fail('LOGIN_EXPIRED', 401);
+      const token = random();
+      await run(db, 'INSERT INTO em_sessions(id,player,expires) VALUES(?,?,?)', await hash(token), t.player, Date.now() + 180 * 86400000);
+      return reply({token});
+    }
     if (path === '/me'){ const p = await current(req, db); return reply({player: p ? publicMe(p) : null}); }
 
     const me = await current(req, db); if (!me) fail('LOGIN_REQUIRED', 401);
@@ -209,6 +220,13 @@ export async function emAPI(req, env, deps = {}){
     if (!(req.method === 'GET' && (path === '/chat' || path === '/badges'))) await quota(db, 'user:' + me.id, 180, 60000);
     await ensureSchema(db);
 
+    if (path === '/native/ticket' && req.method === 'POST'){
+      if (typeof body.challenge !== 'string' || !/^[a-f0-9]{64}$/.test(body.challenge)) fail('INVALID_CHALLENGE');
+      const ticket = random();
+      await db.batch([db.prepare('DELETE FROM em_tickets WHERE expires<?').bind(Date.now()),
+        db.prepare('INSERT INTO em_tickets(id,player,challenge,expires) VALUES(?,?,?,?)').bind(await hash(ticket), me.id, body.challenge, Date.now() + 120000)]);
+      return reply({ticket});
+    }
     if (path === '/badges' && req.method === 'GET'){
       const r = await one(db, "SELECT (SELECT COUNT(*) FROM em_friends WHERE b=? AND status='pending') AS requests, (SELECT COUNT(*) FROM em_messages WHERE recipient=? AND read=0) AS unread", me.id, me.id);
       return reply({requests: r.requests, unread: r.unread});
@@ -292,16 +310,17 @@ export async function emAPI(req, env, deps = {}){
     }
     if (path === '/league' && req.method === 'GET'){
       const w = week();
-      const list = await rows(db, 'SELECT p.code,p.name,SUM(c.points) AS points,COUNT(*) AS levels FROM em_clears c JOIN em_players p ON p.id=c.player WHERE c.week=? GROUP BY c.player ORDER BY points DESC,levels DESC,p.code ASC LIMIT 100', w);
-      return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, rank:i + 1, me: p.code === me.code}))});
+      const list = await rows(db, "SELECT p.code,p.name,SUM(c.points) AS points,COUNT(*) AS levels,(SELECT json_extract(body,'$.avatar') FROM em_saves s WHERE s.player=p.id) AS avatar FROM em_clears c JOIN em_players p ON p.id=c.player WHERE c.week=? GROUP BY c.player ORDER BY points DESC,levels DESC,p.code ASC LIMIT 100", w);
+      return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, avatar: p.avatar || 'serhat', rank:i + 1, me: p.code === me.code}))});
     }
     if (path === '/friends' && req.method === 'GET'){
       const list = await rows(db, `SELECT f.status, f.a AS requester, p.code, p.name,
           (SELECT json_extract(body,'$.max') FROM em_saves s WHERE s.player=p.id) AS max,
+          (SELECT json_extract(body,'$.avatar') FROM em_saves s WHERE s.player=p.id) AS avatar,
           (SELECT COUNT(*) FROM em_messages m WHERE m.recipient=? AND m.sender=p.id AND m.read=0) AS unread
         FROM em_friends f JOIN em_players p ON p.id = CASE WHEN f.a=? THEN f.b ELSE f.a END
         WHERE (f.a=? OR f.b=?) LIMIT 200`, me.id, me.id, me.id, me.id);
-      return reply({me: publicMe(me), friends: list.map(f => ({code:f.code, name:f.name, max:f.max || 1, status: f.status, incoming: f.status === 'pending' && f.requester !== me.id, unread: f.status === 'accepted' ? f.unread : 0}))});
+      return reply({me: publicMe(me), friends: list.map(f => ({code:f.code, name:f.name, max:f.max || 1, avatar: f.avatar || 'serhat', status: f.status, incoming: f.status === 'pending' && f.requester !== me.id, unread: f.status === 'accepted' ? f.unread : 0}))});
     }
     if (path === '/friends' && req.method === 'POST'){
       const other = await one(db, 'SELECT * FROM em_players WHERE code=?', String(body.code || '').trim().toUpperCase());
@@ -324,7 +343,7 @@ export async function emAPI(req, env, deps = {}){
       if (typeof body.confirm !== 'string' || !DEL_WORDS.includes(body.confirm.trim().toUpperCase()) && !DEL_WORDS.includes(body.confirm.trim())) fail('CONFIRM_DELETE');
       await db.batch(['DELETE FROM em_identities WHERE player=?', 'DELETE FROM em_sessions WHERE player=?', 'DELETE FROM em_saves WHERE player=?', 'DELETE FROM em_clears WHERE player=?', 'DELETE FROM em_players WHERE id=?']
         .map(q => db.prepare(q).bind(me.id)).concat([db.prepare('DELETE FROM em_friends WHERE a=? OR b=?').bind(me.id, me.id), db.prepare('DELETE FROM em_blocks WHERE a=? OR b=?').bind(me.id, me.id),
-          db.prepare('DELETE FROM em_messages WHERE sender=? OR recipient=?').bind(me.id, me.id), db.prepare('DELETE FROM em_reports WHERE reporter=? OR target=?').bind(me.id, me.id),
+          db.prepare('DELETE FROM em_messages WHERE sender=? OR recipient=?').bind(me.id, me.id), db.prepare('DELETE FROM em_reports WHERE reporter=? OR target=?').bind(me.id, me.id), db.prepare('DELETE FROM em_tickets WHERE player=?').bind(me.id),
           db.prepare('DELETE FROM em_translations WHERE msg NOT IN (SELECT id FROM em_messages)')]));
       return reply({ok:true}, 200, {'Set-Cookie': ck(COOKIE, '', 0)});
     }
@@ -340,7 +359,7 @@ export default {
   async fetch(request, env){
     const url = new URL(request.url);
     if (url.pathname.startsWith(ROOT + '/')) return emAPI(request, env);
-    if (url.pathname === '/gizlilik' || url.pathname === '/kosullar' || url.pathname === '/hesap-silme') url.pathname += '.html';
+    if (['/gizlilik', '/kosullar', '/hesap-silme', '/app-login'].includes(url.pathname)) url.pathname += '.html';
     const res = await env.ASSETS.fetch(new Request(url, request));
     const h = new Headers(res.headers);
     h.set('X-Content-Type-Options', 'nosniff'); h.set('Referrer-Policy', 'strict-origin-when-cross-origin');

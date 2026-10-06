@@ -1,8 +1,23 @@
 {
   "_name": "English",
   "metaDesc": "Electric Man: rotate the cables and bring power from the transformer to every house. A 3D puzzle game with 300 levels. TusneldaX.",
-  "districts": ["Village", "Coast", "Forest", "Mountain Homes", "City Centre", "Industrial Zone", "Harbour", "Campus", "Bazaar", "The Strait", "Islands", "Valley", "Lakeside", "Castle", "Skyscrapers"],
-
+  "districts": [
+    "Village",
+    "Coast",
+    "Forest",
+    "Mountain Homes",
+    "City Centre",
+    "Industrial Zone",
+    "Harbour",
+    "Campus",
+    "Bazaar",
+    "The Strait",
+    "Islands",
+    "Valley",
+    "Lakeside",
+    "Castle",
+    "Skyscrapers"
+  ],
   "aLeague": "League, friends and messages",
   "aAccount": "Account and settings",
   "aMap": "Level map",
@@ -12,7 +27,6 @@
   "aBoard": "Game board: tap a cable to rotate it",
   "aHero": "Switch character",
   "aDir": "Change rotation direction",
-
   "litLbl": "Houses lit",
   "movesLbl": "Moves",
   "undo": "Undo",
@@ -21,12 +35,10 @@
   "hint": "Hint",
   "loading": "Loading 3D scene…",
   "noGL": "Couldn't open the 3D scene. Your browser may not support WebGL.",
-
   "mapTitle": "TusneldaX · Map",
   "mapStars": "{n} / 60 stars",
   "levelAria": "Level {n}",
   "starsAria": "{n} stars",
-
   "i1": "Hi! Tap a cable and I'll come connect it. Get power from the transformer to every house. Tap me to switch characters.",
   "i2": "Use the direction button below to choose which way the cables turn.",
   "i3": "From this level on, there's a move limit. Fewer moves, more stars!",
@@ -35,15 +47,29 @@
   "i40": "New: clouds! You'll only see the cable under a cloud once power reaches it.",
   "iLast": "Final level! Show off all your skills.",
   "iDistrict": "Welcome to {d}! Let's light it up.",
-  "iRand": ["Come on, let's turn on the lights!", "Start at the transformer and work out along the branches.", "Think backwards from the houses: each one has just one connection.", "Edge cables are the easiest, start there.", "Switching direction can sometimes save you a move."],
+  "iRand": [
+    "Come on, let's turn on the lights!",
+    "Start at the transformer and work out along the branches.",
+    "Think backwards from the houses: each one has just one connection.",
+    "Edge cables are the easiest, start there.",
+    "Switching direction can sometimes save you a move."
+  ],
   "greet": "Hi, I'm {name}! Let's turn on the lights.",
-
   "fixed": "This cable is bolted and won't turn. Plan around it.",
   "repaired": "Fixed! Now you can rotate it.",
-  "litSay": ["Another house lit up!", "The lights are on!", "Great connection!", "Power's here, awesome!"],
+  "litSay": [
+    "Another house lit up!",
+    "The lights are on!",
+    "Great connection!",
+    "Power's here, awesome!"
+  ],
   "lastMove": "Last move! Choose carefully.",
   "movesLeft": "Only {n} moves left!",
-  "winSay": ["The whole block is shining!", "That's it! Every house is lit.", "Electric Man on the job!"],
+  "winSay": [
+    "The whole block is shining!",
+    "That's it! Every house is lit.",
+    "Electric Man on the job!"
+  ],
   "winTitle": "Neighbourhood lit up",
   "winAllTitle": "The whole city is lit!",
   "winText": "You powered {h} houses in {m} moves. The shortest solution was {o} moves. +{r} coins.",
@@ -61,7 +87,6 @@
   "hintOk": "The cables are right, check the path to the houses.",
   "hintNoCoins": "Not enough coins: a hint costs {p} coins.",
   "hintDone": "I fixed that cable, the rest is up to you!",
-
   "eLOGIN_EXPIRED": "Time's up, please try again.",
   "eINVALID_CODE": "The code is wrong or has expired.",
   "eINVALID_EMAIL": "Check your email address.",
@@ -75,7 +100,6 @@
   "eINVALID_MESSAGE": "Messages can't be empty and can be up to 300 characters.",
   "eTRANSLATE_UNAVAILABLE": "Translation isn't available right now.",
   "eNET": "Couldn't connect, try again.",
-
   "accTitle": "Account",
   "accPreview": "Accounts, cloud saves, the league and messages are available at electricman.tusneldax.com. In this preview, your progress is only saved on this device.",
   "loginTitle": "Sign in",
@@ -108,7 +132,6 @@
   "deleted": "Your account has been deleted.",
   "confirmDel": "Type {w} to confirm.",
   "language": "Language",
-
   "leagueTitle": "League and friends",
   "leaguePreview": "The weekly league, friends and messages are available at electricman.tusneldax.com.",
   "leagueLogin": "Sign in to join the weekly league, add friends and chat.",
@@ -131,7 +154,6 @@
   "message": "Message",
   "requestsHead": "Friend requests",
   "friendsHead": "Your friends",
-
   "chatPh": "Type a message…",
   "send": "Send",
   "showOrig": "Show original",
@@ -151,7 +173,29 @@
   "newMsg": "{n} sent you a message.",
   "newReq": "You have a new friend request!",
   "back": "Back",
-
   "mailSubject": "Your Electric Man sign-in code: {code}",
-  "mailBody": "Electric Man\n\nYour sign-in code: {code}\n\nThe code is valid for 5 minutes. Don't share it with anyone. If you didn't request this, you can ignore this email.\n\nTusneldaX"
+  "mailBody": "Electric Man\n\nYour sign-in code: {code}\n\nThe code is valid for 5 minutes. Don't share it with anyone. If you didn't request this, you can ignore this email.\n\nTusneldaX",
+  "aMsg": "Messages and friends",
+  "aShop": "Coin shop",
+  "genderTitle": "Choose your character",
+  "genderText": "Your profile picture is based on this. You can change it later in settings.",
+  "female": "Female",
+  "male": "Male",
+  "profilePic": "Profile picture",
+  "sound": "Sound",
+  "on": "On",
+  "off": "Off",
+  "shopTitle": "Coin shop",
+  "coins500": "500 coins",
+  "watchAd": "Watch an ad",
+  "adReward": "+{n} coins",
+  "adsLeft": "Left today: {n}",
+  "adsDone": "You've used all of today's ads. Come back tomorrow!",
+  "inAppOnly": "Buying coins and watching ads are available in the mobile app.",
+  "buyOk": "+{n} coins added. Thank you!",
+  "buyFail": "The purchase wasn't completed.",
+  "adFail": "No ad right now, try again in a bit.",
+  "noCoins": "Not enough coins. You can get more in the shop.",
+  "undoNoCoins": "Undo costs {p} coins. You don't have enough.",
+  "loginApp": "Sign in in the browser"
 }

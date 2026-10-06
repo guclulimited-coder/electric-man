@@ -126,6 +126,19 @@ assert.equal((await c.call('/report', {code: meA.code, reason:'test'})).status, 
 assert.equal((await a.call('/badges')).body.requests, 0); ok('report blocks and drops request');
 assert.equal((await c.call('/friends', {action:'request', code: meA.code})).status, 404); ok('blocked cannot re-request');
 
+// native app sign-in: ticket bound to a PKCE challenge, exchanged once for an app session
+{ const verifier = 'ab'.repeat(32), challenge = (await import('node:crypto')).createHash('sha256').update(verifier).digest('hex');
+  const t = await b.call('/native/ticket', {challenge}); assert.equal(t.status, 200);
+  const app = new Client('5.5.5.5');
+  assert.equal((await app.call('/native/exchange', {ticket: t.body.ticket, verifier: 'cd'.repeat(32)})).status, 401);
+  const t2 = await b.call('/native/ticket', {challenge});
+  const ex = await app.call('/native/exchange', {ticket: t2.body.ticket, verifier}); assert.equal(ex.status, 200); assert.match(ex.body.token, /^[a-f0-9]{64}$/);
+  app.jar['__Host-em-session'] = ex.body.token;
+  assert.equal((await app.call('/me')).body.player.code, meB.code);
+  assert.equal((await app.call('/native/exchange', {ticket: t2.body.ticket, verifier})).status, 401); ok('native ticket exchange (one-time, PKCE)'); }
+await b.call('/progress', {save:{max:3, coins:10, stars:{}, avatar:'zeynep'}, revision:0});
+assert.equal((await a.call('/friends')).body.friends.find(f => f.code === meB.code).avatar, 'zeynep'); ok('avatar in friend list');
+
 // profile, logout, delete
 assert.equal((await a.call('/profile', {name:'Ömer <script>'})).body.name, 'Ömer script'); ok('name cleaned');
 assert.equal((await a.call('/delete-account', {confirm:'no'})).status, 400);

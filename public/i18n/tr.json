@@ -1,8 +1,23 @@
 {
   "_name": "Türkçe",
   "metaDesc": "Electric Man: kabloları döndür, trafodan evlere akım ulaştır. 300 bölümlük 3D bulmaca oyunu. TusneldaX.",
-  "districts": ["Köy", "Sahil", "Orman", "Dağ Evleri", "Şehir Merkezi", "Sanayi", "Liman", "Kampüs", "Çarşı", "Boğaz", "Adalar", "Vadi", "Göl Kenarı", "Kale", "Gökdelenler"],
-
+  "districts": [
+    "Köy",
+    "Sahil",
+    "Orman",
+    "Dağ Evleri",
+    "Şehir Merkezi",
+    "Sanayi",
+    "Liman",
+    "Kampüs",
+    "Çarşı",
+    "Boğaz",
+    "Adalar",
+    "Vadi",
+    "Göl Kenarı",
+    "Kale",
+    "Gökdelenler"
+  ],
   "aLeague": "Lig, arkadaşlar ve mesajlar",
   "aAccount": "Hesap ve ayarlar",
   "aMap": "Bölüm haritası",
@@ -12,7 +27,6 @@
   "aBoard": "Oyun tahtası: kabloya dokunarak döndür",
   "aHero": "Karakteri değiştir",
   "aDir": "Dönüş yönünü değiştir",
-
   "litLbl": "Aydınlanan ev",
   "movesLbl": "Hamle",
   "undo": "Geri al",
@@ -21,12 +35,10 @@
   "hint": "İpucu",
   "loading": "3D sahne yükleniyor…",
   "noGL": "3D sahne açılamadı. Tarayıcın WebGL desteklemiyor olabilir.",
-
   "mapTitle": "TusneldaX · Harita",
   "mapStars": "{n} / 60 yıldız",
   "levelAria": "Bölüm {n}",
   "starsAria": "{n} yıldız",
-
   "i1": "Merhaba! Bir kabloya dokun, gelip bağlayayım. Trafodan her eve akım ulaştır. Karakteri değiştirmek için bana dokun.",
   "i2": "Alttaki yön tuşuyla kabloların dönüş yönünü sen seçebilirsin.",
   "i3": "Bu bölümden itibaren hamle sınırı var. Az hamle, çok yıldız!",
@@ -35,15 +47,29 @@
   "i40": "Yeni: bulut! Bulutun altındaki kabloyu ancak akım yanına ulaşınca görürsün.",
   "iLast": "Son bölüm! Bütün ustalığını göster.",
   "iDistrict": "{d} semtine hoş geldin! Işıkları yakalım.",
-  "iRand": ["Hadi bakalım, ışıkları yakalım!", "Trafodan başla, dallara doğru ilerle.", "Evden geriye doğru düşün: her evin tek bağlantısı var.", "Kenardaki kablolar en kolayı, oradan başla.", "Yönü değiştirmek bazen hamle kazandırır."],
+  "iRand": [
+    "Hadi bakalım, ışıkları yakalım!",
+    "Trafodan başla, dallara doğru ilerle.",
+    "Evden geriye doğru düşün: her evin tek bağlantısı var.",
+    "Kenardaki kablolar en kolayı, oradan başla.",
+    "Yönü değiştirmek bazen hamle kazandırır."
+  ],
   "greet": "Merhaba, ben {name}! Hadi ışıkları yakalım.",
-
   "fixed": "Bu kablo cıvatalı, dönmez. Çözümü ona göre kur.",
   "repaired": "Tamir edildi! Şimdi döndürebilirsin.",
-  "litSay": ["Bir ev daha aydınlandı!", "Işıklar yandı!", "Süper bağlantı!", "Akım geldi, harika!"],
+  "litSay": [
+    "Bir ev daha aydınlandı!",
+    "Işıklar yandı!",
+    "Süper bağlantı!",
+    "Akım geldi, harika!"
+  ],
   "lastMove": "Son hamle! Dikkatli seç.",
   "movesLeft": "Sadece {n} hamle kaldı!",
-  "winSay": ["Mahalle ışıl ışıl!", "İşte bu! Bütün evler yandı.", "Electric Man iş başında!"],
+  "winSay": [
+    "Mahalle ışıl ışıl!",
+    "İşte bu! Bütün evler yandı.",
+    "Electric Man iş başında!"
+  ],
   "winTitle": "Mahalle aydınlandı",
   "winAllTitle": "Bütün şehir aydınlandı!",
   "winText": "{h} eve {m} hamlede elektrik verdin. En kısa çözüm {o} hamleydi. +{r} jeton.",
@@ -61,7 +87,6 @@
   "hintOk": "Kablolar doğru, evlere giden yolu kontrol et.",
   "hintNoCoins": "Jetonun yetmiyor: ipucu {p} jeton.",
   "hintDone": "Şu kabloyu düzelttim, gerisi sende!",
-
   "eLOGIN_EXPIRED": "Süre doldu, yeniden dene.",
   "eINVALID_CODE": "Kod hatalı ya da süresi dolmuş.",
   "eINVALID_EMAIL": "E-posta adresini kontrol et.",
@@ -75,7 +100,6 @@
   "eINVALID_MESSAGE": "Mesaj boş olamaz ve en fazla 300 karakter olabilir.",
   "eTRANSLATE_UNAVAILABLE": "Çeviri şu an kullanılamıyor.",
   "eNET": "Bağlantı kurulamadı, tekrar dene.",
-
   "accTitle": "Hesap",
   "accPreview": "Hesap, bulutta kayıt, lig ve mesajlar electricman.tusneldax.com adresinde açık. Bu önizlemede ilerlemen yalnızca bu cihazda saklanıyor.",
   "loginTitle": "Giriş yap",
@@ -108,7 +132,6 @@
   "deleted": "Hesabın silindi.",
   "confirmDel": "Onay için {w} yaz.",
   "language": "Dil",
-
   "leagueTitle": "Lig ve arkadaşlar",
   "leaguePreview": "Haftalık lig, arkadaşlar ve mesajlar electricman.tusneldax.com adresinde açık.",
   "leagueLogin": "Haftalık lige katılmak, arkadaş eklemek ve mesajlaşmak için giriş yap.",
@@ -131,7 +154,6 @@
   "message": "Mesaj",
   "requestsHead": "Arkadaşlık istekleri",
   "friendsHead": "Arkadaşların",
-
   "chatPh": "Mesaj yaz…",
   "send": "Gönder",
   "showOrig": "Orijinali göster",
@@ -151,7 +173,29 @@
   "newMsg": "{n} sana mesaj gönderdi.",
   "newReq": "Yeni arkadaşlık isteğin var!",
   "back": "Geri",
-
   "mailSubject": "Electric Man giriş kodun: {code}",
-  "mailBody": "Electric Man\n\nGiriş kodun: {code}\n\nKod 5 dakika geçerlidir. Kimseyle paylaşma. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.\n\nTusneldaX"
+  "mailBody": "Electric Man\n\nGiriş kodun: {code}\n\nKod 5 dakika geçerlidir. Kimseyle paylaşma. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.\n\nTusneldaX",
+  "aMsg": "Mesajlar ve arkadaşlar",
+  "aShop": "Jeton mağazası",
+  "genderTitle": "Karakterini seç",
+  "genderText": "Profil resmin buna göre olur. Sonra ayarlardan değiştirebilirsin.",
+  "female": "Kadın",
+  "male": "Erkek",
+  "profilePic": "Profil resmi",
+  "sound": "Ses",
+  "on": "Açık",
+  "off": "Kapalı",
+  "shopTitle": "Jeton mağazası",
+  "coins500": "500 jeton",
+  "watchAd": "Reklam izle",
+  "adReward": "+{n} jeton",
+  "adsLeft": "Bugün kalan: {n}",
+  "adsDone": "Bugünlük reklam hakkın bitti. Yarın yine gel!",
+  "inAppOnly": "Jeton satın alma ve reklam izleme mobil uygulamada.",
+  "buyOk": "+{n} jeton eklendi. Teşekkürler!",
+  "buyFail": "Satın alma tamamlanmadı.",
+  "adFail": "Şu an reklam yok, biraz sonra dene.",
+  "noCoins": "Jetonun yetmiyor. Mağazadan jeton alabilirsin.",
+  "undoNoCoins": "Geri almak {p} jeton. Jetonun yetmiyor.",
+  "loginApp": "Tarayıcıda giriş yap"
 }

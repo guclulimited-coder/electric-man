@@ -1,8 +1,23 @@
 {
   "_name": "Español",
   "metaDesc": "Electric Man: gira los cables y lleva la corriente del transformador a todas las casas. Juego de puzles 3D con 300 niveles. TusneldaX.",
-  "districts": ["Aldea", "Costa", "Bosque", "Casas de Montaña", "Centro", "Zona Industrial", "Puerto", "Campus", "Bazar", "El Estrecho", "Islas", "Valle", "Orilla del Lago", "Castillo", "Rascacielos"],
-
+  "districts": [
+    "Aldea",
+    "Costa",
+    "Bosque",
+    "Casas de Montaña",
+    "Centro",
+    "Zona Industrial",
+    "Puerto",
+    "Campus",
+    "Bazar",
+    "El Estrecho",
+    "Islas",
+    "Valle",
+    "Orilla del Lago",
+    "Castillo",
+    "Rascacielos"
+  ],
   "aLeague": "Liga, amigos y mensajes",
   "aAccount": "Cuenta y ajustes",
   "aMap": "Mapa de niveles",
@@ -12,7 +27,6 @@
   "aBoard": "Tablero: toca un cable para girarlo",
   "aHero": "Cambiar personaje",
   "aDir": "Cambiar sentido de giro",
-
   "litLbl": "Casas iluminadas",
   "movesLbl": "Movimientos",
   "undo": "Deshacer",
@@ -21,12 +35,10 @@
   "hint": "Pista",
   "loading": "Cargando escena 3D…",
   "noGL": "No se pudo abrir la escena 3D. Puede que tu navegador no admita WebGL.",
-
   "mapTitle": "TusneldaX · Mapa",
   "mapStars": "{n} / 60 estrellas",
   "levelAria": "Nivel {n}",
   "starsAria": "{n} estrellas",
-
   "i1": "¡Hola! Toca un cable y voy a conectarlo. Lleva la corriente del transformador a todas las casas. Tócame para cambiar de personaje.",
   "i2": "Con el botón de dirección de abajo eliges hacia dónde giran los cables.",
   "i3": "Desde este nivel hay un límite de movimientos. ¡Menos movimientos, más estrellas!",
@@ -35,15 +47,29 @@
   "i40": "Nuevo: ¡nubes! Solo verás el cable bajo una nube cuando la corriente llegue a su lado.",
   "iLast": "¡Último nivel! Demuestra todo lo que sabes.",
   "iDistrict": "¡Bienvenido a {d}! Vamos a encender las luces.",
-  "iRand": ["¡Vamos, a encender las luces!", "Empieza en el transformador y avanza por las ramas.", "Piensa al revés desde las casas: cada una tiene una sola conexión.", "Los cables del borde son los más fáciles, empieza por ahí.", "Cambiar de sentido a veces te ahorra movimientos."],
+  "iRand": [
+    "¡Vamos, a encender las luces!",
+    "Empieza en el transformador y avanza por las ramas.",
+    "Piensa al revés desde las casas: cada una tiene una sola conexión.",
+    "Los cables del borde son los más fáciles, empieza por ahí.",
+    "Cambiar de sentido a veces te ahorra movimientos."
+  ],
   "greet": "¡Hola, soy {name}! Vamos a encender las luces.",
-
   "fixed": "Este cable está atornillado y no gira. Planea la solución con él.",
   "repaired": "¡Reparado! Ahora puedes girarlo.",
-  "litSay": ["¡Otra casa iluminada!", "¡Se encendieron las luces!", "¡Gran conexión!", "¡Llegó la corriente, genial!"],
+  "litSay": [
+    "¡Otra casa iluminada!",
+    "¡Se encendieron las luces!",
+    "¡Gran conexión!",
+    "¡Llegó la corriente, genial!"
+  ],
   "lastMove": "¡Último movimiento! Elige bien.",
   "movesLeft": "¡Solo quedan {n} movimientos!",
-  "winSay": ["¡El barrio brilla!", "¡Eso es! Todas las casas tienen luz.", "¡Electric Man en acción!"],
+  "winSay": [
+    "¡El barrio brilla!",
+    "¡Eso es! Todas las casas tienen luz.",
+    "¡Electric Man en acción!"
+  ],
   "winTitle": "Barrio iluminado",
   "winAllTitle": "¡Toda la ciudad iluminada!",
   "winText": "Llevaste luz a {h} casas en {m} movimientos. La solución más corta era de {o}. +{r} monedas.",
@@ -61,7 +87,6 @@
   "hintOk": "Los cables están bien, revisa el camino hacia las casas.",
   "hintNoCoins": "No tienes suficientes monedas: una pista cuesta {p}.",
   "hintDone": "Arreglé ese cable, ¡el resto es cosa tuya!",
-
   "eLOGIN_EXPIRED": "Se acabó el tiempo, inténtalo de nuevo.",
   "eINVALID_CODE": "El código es incorrecto o ha caducado.",
   "eINVALID_EMAIL": "Revisa tu correo electrónico.",
@@ -75,7 +100,6 @@
   "eINVALID_MESSAGE": "El mensaje no puede estar vacío y admite hasta 300 caracteres.",
   "eTRANSLATE_UNAVAILABLE": "La traducción no está disponible ahora.",
   "eNET": "No se pudo conectar, inténtalo de nuevo.",
-
   "accTitle": "Cuenta",
   "accPreview": "La cuenta, el guardado en la nube, la liga y los mensajes están disponibles en electricman.tusneldax.com. En esta vista previa, tu progreso solo se guarda en este dispositivo.",
   "loginTitle": "Iniciar sesión",
@@ -108,7 +132,6 @@
   "deleted": "Tu cuenta se eliminó.",
   "confirmDel": "Escribe {w} para confirmar.",
   "language": "Idioma",
-
   "leagueTitle": "Liga y amigos",
   "leaguePreview": "La liga semanal, los amigos y los mensajes están disponibles en electricman.tusneldax.com.",
   "leagueLogin": "Inicia sesión para unirte a la liga semanal, agregar amigos y chatear.",
@@ -131,7 +154,6 @@
   "message": "Mensaje",
   "requestsHead": "Solicitudes de amistad",
   "friendsHead": "Tus amigos",
-
   "chatPh": "Escribe un mensaje…",
   "send": "Enviar",
   "showOrig": "Ver original",
@@ -151,7 +173,29 @@
   "newMsg": "{n} te envió un mensaje.",
   "newReq": "¡Tienes una nueva solicitud de amistad!",
   "back": "Atrás",
-
   "mailSubject": "Tu código de acceso a Electric Man: {code}",
-  "mailBody": "Electric Man\n\nTu código de acceso: {code}\n\nEl código es válido durante 5 minutos. No lo compartas con nadie. Si no lo solicitaste, puedes ignorar este correo.\n\nTusneldaX"
+  "mailBody": "Electric Man\n\nTu código de acceso: {code}\n\nEl código es válido durante 5 minutos. No lo compartas con nadie. Si no lo solicitaste, puedes ignorar este correo.\n\nTusneldaX",
+  "aMsg": "Mensajes y amigos",
+  "aShop": "Tienda de monedas",
+  "genderTitle": "Elige tu personaje",
+  "genderText": "Tu foto de perfil se basa en esto. Puedes cambiarlo luego en ajustes.",
+  "female": "Mujer",
+  "male": "Hombre",
+  "profilePic": "Foto de perfil",
+  "sound": "Sonido",
+  "on": "Sí",
+  "off": "No",
+  "shopTitle": "Tienda de monedas",
+  "coins500": "500 monedas",
+  "watchAd": "Ver un anuncio",
+  "adReward": "+{n} monedas",
+  "adsLeft": "Quedan hoy: {n}",
+  "adsDone": "Ya usaste todos los anuncios de hoy. ¡Vuelve mañana!",
+  "inAppOnly": "Comprar monedas y ver anuncios está disponible en la app móvil.",
+  "buyOk": "+{n} monedas añadidas. ¡Gracias!",
+  "buyFail": "La compra no se completó.",
+  "adFail": "No hay anuncios ahora, inténtalo en un rato.",
+  "noCoins": "No tienes suficientes monedas. Puedes conseguir más en la tienda.",
+  "undoNoCoins": "Deshacer cuesta {p} monedas. No tienes suficientes.",
+  "loginApp": "Inicia sesión en el navegador"
 }

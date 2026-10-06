@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#6ec6ff">
 <meta name="description" content="Electric Man: kabloları döndür, trafodan evlere akım ulaştır. 300 bölümlük 3D bulmaca oyunu. TusneldaX.">
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Electric Man</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@400;600;800&display=swap">
@@ -127,7 +128,7 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 .divider{display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:12px;font-weight:700}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:#dde6f3}
 /* notification badges */
-#leagueBtn{position:relative}
+#leagueBtn,#msgBtn{position:relative}
 .nbadge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#e5484d;color:#fff;font:800 10.5px/17px var(--f-body);text-align:center;border:2px solid #fff;box-sizing:content-box}
 .ibadge{display:inline-block;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#e5484d;color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center;margin-inline-start:6px;vertical-align:middle}
 .item.req{background:#fff6d6;box-shadow:inset 0 0 0 1.5px var(--volt)}
@@ -148,6 +149,20 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
 .chat-tools{display:flex;gap:8px;justify-content:flex-end}
 .toast{position:absolute;left:50%;top:58px;transform:translateX(-50%);z-index:40;background:#16304f;color:#fff;padding:9px 14px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 8px 20px rgba(22,48,79,.3);max-width:88%;cursor:pointer}
 .hero{padding-top:6px}
+.chip{border:0;font-family:inherit;color:var(--ink);cursor:pointer}
+.chip .plus{width:16px;height:16px;border-radius:50%;background:#2fb36d;color:#fff;font-size:13px;line-height:16px;text-align:center;font-weight:800;margin-inline-start:2px}
+.avatarbtn{padding:0;overflow:visible}
+.avatarbtn img{width:32px;height:32px;border-radius:50%;object-fit:cover;background:linear-gradient(#bfe6ff,#8fd0ff);display:block}
+.av{width:36px;height:36px;border-radius:50%;object-fit:cover;background:linear-gradient(#bfe6ff,#8fd0ff);flex:0 0 auto}
+.gender{display:flex;gap:12px;justify-content:center;margin:6px 0 14px}
+.gender button{appearance:none;border:2px solid #dbe6f5;background:#f6f9fe;border-radius:16px;padding:10px 12px 8px;cursor:pointer;font:inherit;font-weight:800;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:6px;width:120px}
+.gender button[aria-pressed="true"]{border-color:var(--btn);background:#eaf2ff}
+.gender img{width:84px;height:84px;border-radius:50%;object-fit:cover;background:linear-gradient(#bfe6ff,#8fd0ff)}
+.shop-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:#f6f9fe}
+.shop-item .big{font-size:18px;font-weight:800;flex:1}
+.shop-item .big small{display:block;font-size:12px;font-weight:600;color:var(--ink-soft)}
+.shop-item .coin{width:30px;height:30px}.shop-item .coin svg{width:18px;height:18px}
+.adcover{position:absolute;inset:0;z-index:60;background:rgba(10,20,40,.55)}
 [dir=rtl] .bubble::before{left:auto;right:-7px;border-right-color:transparent;border-left:7px solid #fff;border-right:0}
 </style>
 
@@ -155,11 +170,11 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
   <div class="top">
     <div class="brand">ELECTRIC<br>MAN<small id="lvl">KÖY · 1/300</small></div>
     <div class="chips">
-      <div class="chip"><span class="coin"><svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6l-1.5 8.5L19 10h-6.2z"/></svg></span><span id="coins">0</span></div>
-      <button class="iconbtn" id="leagueBtn" data-ta="aLeague" aria-label="Lig ve arkadaşlar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><b id="leagueBadge" class="nbadge" hidden>1</b></button>
-      <button class="iconbtn" id="accountBtn" data-ta="aAccount" aria-label="Hesap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><i id="accountDot" hidden></i></button>
+      <button class="chip" id="coinChip" data-ta="aShop" aria-label="Jeton mağazası"><span class="coin"><svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6l-1.5 8.5L19 10h-6.2z"/></svg></span><span id="coins">0</span><span class="plus" aria-hidden="true">+</span></button>
+      <button class="iconbtn" id="leagueBtn" data-ta="tabLeague" aria-label="Haftalık lig"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></button>
+      <button class="iconbtn" id="msgBtn" data-ta="aMsg" aria-label="Mesajlar ve arkadaşlar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><b id="msgBadge" class="nbadge" hidden>1</b></button>
+      <button class="iconbtn avatarbtn" id="accountBtn" data-ta="aAccount" aria-label="Hesap"><img id="avatarImg" src="avatars/serhat.png" alt=""><i id="accountDot" hidden></i></button>
       <button class="iconbtn" id="mapBtn" data-ta="aMap" aria-label="Bölüm haritası"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
-      <button class="iconbtn" id="soundBtn" data-ta="aSound" aria-label="Sesi aç veya kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="sndOff" d="M17 9l5 6M22 9l-5 6" hidden/></svg></button>
       <button class="iconbtn" id="restart" data-ta="aRestart" aria-label="Bölümü yeniden başlat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
     </div>
   </div>
@@ -176,7 +191,7 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
     <div class="loading" id="loading" data-t="loading">3D sahne yükleniyor…</div>
   </div>
   <div class="tools">
-    <button class="tool" id="undo"><span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 9 5 15l6 6"/><path d="M5.5 15H19a7 7 0 0 1 0 14h-4"/></svg></span><span data-t="undo">Geri al</span></button>
+    <button class="tool" id="undo"><span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 9 5 15l6 6"/><path d="M5.5 15H19a7 7 0 0 1 0 14h-4"/></svg></span><span data-t="undo">Geri al</span><span class="badge" id="undoBadge"></span></button>
     <button class="tool" id="dirBtn" data-ta="aDir" aria-label="Dönüş yönünü değiştir"><span class="ico"><svg id="dirIco" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M25 16a9 9 0 1 1-3-6.7"/><path d="M23 4v6h-6"/></svg></span><span id="dirLbl">Saat yönü</span></button>
     <button class="tool" id="hintBtn"><span class="ico"><svg viewBox="0 0 32 32"><g stroke="#ffe680" stroke-width="1.8" stroke-linecap="round"><path d="M16 1.5v2.5M5.5 6l1.8 1.8M26.5 6l-1.8 1.8M2.5 15h2.5M27 15h2.5"/></g><path d="M16 6.5a8.3 8.3 0 0 0-4.9 15c.8.6 1.2 1.4 1.2 2.3h7.4c0-.9.4-1.7 1.2-2.3A8.3 8.3 0 0 0 16 6.5z" fill="#fff0a0" stroke="#fff" stroke-width="1.2"/><path d="M13.5 17.5l1.3-3 1.2 2 1.2-2 1.3 3v5" fill="none" stroke="#d29a0c" stroke-width="1.2" stroke-linejoin="round"/><rect x="12" y="23.5" width="8" height="5" rx="1.4" fill="#e3e8ef"/><path d="M12 25.3h8M12 27h8" stroke="#8a95a3" stroke-width=".9"/></svg></span><span data-t="hint">İpucu</span><span class="badge" id="hintBadge">1</span></button>
   </div>
@@ -194,9 +209,16 @@ import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/exam
 import {MAX_LEVEL, HOUSE_COLORS, DIRS, OPP, rotN, BASE, diff, stepsCW, stepsBest, generate, starsFor} from './engine.js';
 
 const $ = id => document.getElementById(id);
+/* native shell bridge (Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise}) */
+const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (window.EMNative && window.EMNative.platform) || 'web',
+  call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
+// apps keep a copy of the save outside the web view (restored before the game starts)
+try { if (Native.app && window.__EM_RESTORE && !localStorage.getItem('em_max')) for (const [k, v] of Object.entries(window.__EM_RESTORE)) if (k.startsWith('em_')) localStorage.setItem(k, v); } catch (e){}
+let persistTimer = null;
 const store = {
   get(k, d){ try { const v = localStorage.getItem('em_'+k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
-  set(k, v){ try { localStorage.setItem('em_'+k, JSON.stringify(v)); } catch(e){} }
+  set(k, v){ try { localStorage.setItem('em_'+k, JSON.stringify(v)); } catch(e){}
+    if (Native.app){ clearTimeout(persistTimer); persistTimer = setTimeout(() => { try { const all = {}; for (let i = 0; i < localStorage.length; i++){ const key = localStorage.key(i); if (key.startsWith('em_')) all[key] = localStorage.getItem(key); } Native.call({action:'persist', data: JSON.stringify(all)}).catch(() => {}); } catch (e){} }, 300); } }
 };
 
 /* ================= languages: Turkish + 12 most spoken, chosen from the device locale ================= */
@@ -220,7 +242,7 @@ function applyStatic(){
   const md = document.querySelector('meta[name=description]'); if (md && L.metaDesc) md.content = L.metaDesc;
 }
 applyStatic();
-const HINT_PRICE = 20, MOVES_PRICE = 25;
+const HINT_PRICE = 20, MOVES_PRICE = 25, UNDO_PRICE = 10, AD_REWARD = 20, ADS_PER_DAY = 15, COIN_PACK = {id:'em_coins_500', coins:500};
 const BOLT = '<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6l-1.5 8.5L19 10h-6.2z"/></svg>';
 
 /* ================= three.js helpers ================= */
@@ -694,6 +716,7 @@ function renderStats(){
 function renderTools(){
   $('hintBadge').innerHTML = S.freeHints > 0 ? S.freeHints : '<span class="coin">' + BOLT + '</span>' + HINT_PRICE;
   $('undo').disabled = !S.history.length;
+  $('undoBadge').innerHTML = '<span class="coin">' + BOLT + '</span>' + UNDO_PRICE;
   $('dirLbl').textContent = dirCW ? T('cw') : T('ccw');
   $('dirIco').style.transform = dirCW ? '' : 'scaleX(-1)';
 }
@@ -797,14 +820,15 @@ function win(){
   const prev = store.get('stars', {}); prev[level] = Math.max(prev[level] || 0, stars); store.set('stars', prev);
   const last = level >= MAX_LEVEL;
   if (!last){ maxLevel = Math.max(maxLevel, level + 1); store.set('max', maxLevel); }
-  Online.cleared(level, S.actions.slice(), S.extra); Online.saveSoon();
+  Online.cleared(level, S.actions.slice(), S.extra); Online.saveSoon(); Ads.won();
   setTimeout(() => modal(last ? T('winAllTitle') : T('winTitle'), `<div class="stars">${[1,2,3].map(i => starSVG(i <= stars)).join('')}</div><p>${T('winText', {h:S.houses, m:S.moves, o:S.opt, r:reward})}${last ? ' ' + T('winAllText') : ''}</p>`,
-    last ? [{t:T('mapBtn'), alt:true, f:openMap}] : [{t:T('next'), alt:true, f:() => start(level + 1)}, {t:T('retryFewer'), f:() => start(level)}]), 900);
+    last ? [{t:T('mapBtn'), alt:true, f:openMap}] : [{t:T('next'), alt:true, f:() => Ads.afterWin(() => start(level + 1))}, {t:T('retryFewer'), f:() => start(level)}]), 900);
 }
 function lose(){
   S.over = true; setMood(mixer ? 'sit' : 'worried'); snd('fail'); say(T('loseSay'));
   modal(T('loseTitle'), `<p>${T('loseText', {n:S.houses - S.lit.size, p:MOVES_PRICE})}</p>`, [
     {t:T('buyMoves', {p:MOVES_PRICE}), alt:true, dis: coins < MOVES_PRICE, f:() => { coins -= MOVES_PRICE; renderCoins(); S.limit += 5; S.extra += 5; S.over = false; $('modal').hidden = true; setMood(''); renderStats(); }},
+    ...(coins < MOVES_PRICE ? [{t:T('shopTitle'), f:() => Shop.open()}] : []),
     {t:T('restartLvl'), f:() => start(level)},
   ]);
 }
@@ -820,6 +844,8 @@ function modal(title, html, btns){
 
 $('undo').onclick = () => {
   if (!S || S.over || !S.history.length) return;
+  if (coins < UNDO_PRICE){ say(T('undoNoCoins', {p: UNDO_PRICE})); Shop.open(); return; }
+  coins -= UNDO_PRICE; renderCoins();
   Worker.clear();
   const h = S.history.pop(); { const i = S.actions.lastIndexOf(h.a); if (i >= 0) S.actions.splice(i, 1); }
   if (h.k === 'fix'){ h.t.broken = true; (h.t.sparks || []).forEach(s => s.visible = true); } else turn(h.t, -h.dir);
@@ -833,7 +859,7 @@ $('hintBtn').onclick = () => {
   if (!wrong.length){ say(T('hintOk')); return; }
   if (S.freeHints > 0) S.freeHints--;
   else if (coins >= HINT_PRICE){ coins -= HINT_PRICE; renderCoins(); }
-  else { say(T('hintNoCoins', {p:HINT_PRICE})); return; }
+  else { say(T('hintNoCoins', {p:HINT_PRICE})); Shop.open(); return; }
   const near = wrong.find(t => DIRS.some(([dr, dc]) => { const n = at(t.r+dr, t.c+dc); return n && S.on.has(n); })) || wrong[0];
   revealFog(near); Worker.goTo(near);
   if (near.broken){ near.broken = false; (near.sparks || []).forEach(s => s.visible = false); }
@@ -866,8 +892,8 @@ function snd(k){
     else if (k === 'deny') tone(160, 120, .12, 'square', .04);
   } catch(e){}
 }
-function renderSound(){ $('sndWave').hidden = muted; $('sndOff').hidden = !muted; }
-$('soundBtn').onclick = () => { muted = !muted; store.set('muted', muted); renderSound(); if (!muted) snd('tap'); };
+function renderSound(){ const b = $('soundToggle'); if (b){ b.textContent = muted ? T('off') : T('on'); b.setAttribute('aria-pressed', String(!muted)); } }
+function toggleSound(){ muted = !muted; store.set('muted', muted); renderSound(); if (!muted) snd('tap'); }
 
 /* ---------- level map (300 levels, 15 districts) ---------- */
 function openMap(){
@@ -897,6 +923,83 @@ $('mapBtn').onclick = openMap;
 $('mapClose').onclick = () => { $('map').hidden = true; };
 
 
+/* ================= profile picture (chosen by gender), coin shop, ads ================= */
+const Profile = {
+  get gender(){ return store.get('gender', null); },
+  get avatar(){ return this.gender === 'f' ? 'zeynep' : 'serhat'; },
+  render(){ $('avatarImg').src = 'avatars/' + this.avatar + '.png'; },
+  set(g){
+    store.set('gender', g); this.render();
+    const want = g === 'f' ? 'zeynep' : 'serhat', i = CHARS.findIndex(c => c.id === want);
+    if (i >= 0 && i !== charIdx){ charIdx = i; store.set('char', want); loadChar(charIdx, true); }
+    Online.saveSoon();
+  },
+  picker(){
+    const g = this.gender;
+    return `<div class="gender" role="group">${[['f', 'zeynep', 'female'], ['m', 'serhat', 'male']].map(([v, a, k]) => `<button type="button" data-g="${v}" aria-pressed="${g === v}"><img src="avatars/${a}.png" alt="">${T(k)}</button>`).join('')}</div>`;
+  },
+  bind(root, after){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { this.set(b.dataset.g); root.querySelectorAll('[data-g]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); after && after(); }); },
+  ask(){
+    modal(T('genderTitle'), `<p>${T('genderText')}</p>${this.picker()}`, []);
+    this.bind($('card'), () => setTimeout(() => { $('modal').hidden = true; }, 250));
+  }
+};
+const Ads = {
+  async show(kind){ if (!Native.app) return {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
+  launch(){ if (Native.app) setTimeout(() => this.show('appopen'), 400); },
+  won(){ if (Native.app) store.set('adWins', store.get('adWins', 0) + 1); },
+  afterWin(next){
+    if (Native.app && store.get('adWins', 0) >= 5){ store.set('adWins', 0); this.show('interstitial').finally(next); }
+    else next();
+  },
+  today(){ const d = new Date().toISOString().slice(0, 10), x = store.get('adDay', null); return x && x.d === d ? x : {d, n:0}; },
+  left(){ return Math.max(0, ADS_PER_DAY - this.today().n); },
+  async rewarded(){
+    if (!this.left()){ say(T('adsDone')); return false; }
+    const r = await this.show('rewarded');
+    if (r && r.earned){ const t = this.today(); t.n++; store.set('adDay', t); coins += AD_REWARD; renderCoins(); snd('lit'); say(T('buyOk', {n: AD_REWARD})); return true; }
+    if (!r || !r.dismissed) say(T('adFail'));
+    return false;
+  }
+};
+const Shop = {
+  price: null,
+  async loadPrice(){
+    if (!Native.app || this.price) return;
+    try { const list = await Native.call({action:'products', ids:[COIN_PACK.id]}); const p = (list || []).find(x => x.id === COIN_PACK.id); if (p) this.price = p.price; } catch (e){}
+  },
+  grant(tx){
+    const done = store.get('grantedTx', []);
+    if (tx.txn && done.includes(tx.txn)) return Native.call({action:'finish', txn: tx.txn}).catch(() => {});
+    coins += COIN_PACK.coins; renderCoins(); snd('win'); say(T('buyOk', {n: COIN_PACK.coins}));
+    if (tx.txn){ done.push(tx.txn); store.set('grantedTx', done.slice(-50)); }
+    Online.saveSoon();
+    return Native.call({action:'finish', txn: tx.txn}).catch(() => {});
+  },
+  async restorePending(){
+    if (!Native.app) return;
+    try { const list = await Native.call({action:'pending'}); for (const tx of list || []) if (tx.id === COIN_PACK.id) await this.grant(tx); } catch (e){}
+  },
+  async open(){
+    await this.loadPrice();
+    const app = Native.app, left = Ads.left();
+    const body = Online.sheet(T('shopTitle'), `
+      <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coins500')}</span><button class="btn small alt" id="buyPack" ${app ? '' : 'disabled'}>${this.price || '₺99,99'}</button></div>
+      <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('watchAd')}<small>${T('adReward', {n: AD_REWARD})} · ${T('adsLeft', {n: left})}</small></span><button class="btn small" id="watchAd" ${app && left ? '' : 'disabled'}>▶</button></div>
+      ${app ? '' : `<p class="note">${T('inAppOnly')}</p>`}
+      <div class="err" id="shopErr"></div>`);
+    if (!app) return;
+    body.querySelector('#buyPack').onclick = async ev => {
+      const b = ev.currentTarget; b.disabled = true;
+      try { const r = await Native.call({action:'buy', id: COIN_PACK.id}); if (r && r.ok) { await this.grant(r); $('sheet').hidden = true; } }
+      catch (e){ if (e.message !== 'CANCELLED') $('shopErr').textContent = T('buyFail'); }
+      b.disabled = false;
+    };
+    body.querySelector('#watchAd').onclick = async ev => { ev.currentTarget.disabled = true; await Ads.rewarded(); this.open(); };
+  }
+};
+$('coinChip').onclick = () => Shop.open();
+
 /* ================= online: account, cloud save, league, friends, chat ================= */
 const API = '/api/em';
 const Online = (() => {
@@ -904,14 +1007,20 @@ const Online = (() => {
   let badges = {requests:0, unread:0}, badgeTimer = null, chat = null;
   const msg = e => { const k = 'e' + e; return L[k] ? T(k) : T('eNET'); };
   async function call(path, body){
+    if (Native.app){
+      const r = await Native.call({action:'api', path, method: body === undefined ? 'GET' : 'POST', body});
+      if (!r || r.status >= 400) throw Object.assign(new Error((r && r.body && r.body.error) || 'NET'), {status: r && r.status});
+      return r.body;
+    }
     const r = await fetch(API + path, body === undefined ? {credentials:'same-origin'} : {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw Object.assign(new Error(j.error || 'NET'), {status: r.status});
     return j;
   }
-  const localSave = () => ({max: maxLevel, coins, stars: store.get('stars', {}), char: (CHARS[charIdx] || {}).id});
+  const localSave = () => ({max: maxLevel, coins, stars: store.get('stars', {}), char: (CHARS[charIdx] || {}).id, avatar: Profile.avatar});
   function applySave(sv){
     if (!sv) return;
+    if (!Profile.gender && (sv.avatar === 'zeynep' || sv.avatar === 'serhat')){ store.set('gender', sv.avatar === 'zeynep' ? 'f' : 'm'); Profile.render(); }
     const st = store.get('stars', {});
     for (const [k, v] of Object.entries(sv.stars || {})) st[k] = Math.max(st[k] || 0, v);
     store.set('stars', st);
@@ -947,7 +1056,7 @@ const Online = (() => {
     $('app').appendChild(t); setTimeout(() => t.remove(), 4500);
   }
   function renderBadge(b){
-    const n = (b.requests || 0) + (b.unread || 0), el = $('leagueBadge');
+    const n = (b.requests || 0) + (b.unread || 0), el = $('msgBadge');
     el.hidden = !n; el.textContent = n > 99 ? '99+' : n;
   }
   async function pollBadges(){
@@ -955,8 +1064,8 @@ const Online = (() => {
     if (!me) return;
     try {
       const b = await call('/badges');
-      if (b.requests > badges.requests){ snd('lit'); toast(T('newReq'), () => openLeague('friends')); }
-      else if (b.unread > badges.unread && !(chat && !$('sheet').hidden)){ snd('lit'); toast(T('newMsg', {n: '💬'}), () => openLeague('friends')); }
+      if (b.requests > badges.requests){ snd('lit'); toast(T('newReq'), () => openFriends()); }
+      else if (b.unread > badges.unread && !(chat && !$('sheet').hidden)){ snd('lit'); toast(T('newMsg', {n: '💬'}), () => openFriends()); }
       badges = b; renderBadge(b);
     } catch {}
     badgeTimer = setTimeout(pollBadges, document.hidden ? 60000 : 12000);
@@ -967,9 +1076,17 @@ const Online = (() => {
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const langPicker = () => `<div class="field"><label for="langSel">${esc(T('language'))} · Language</label><select id="langSel" class="lang">${Object.entries(LANG_NAMES).map(([k, v]) => `<option value="${k}"${k === LANG ? ' selected' : ''}>${v}</option>`).join('')}</select></div>`;
   function bindLang(body){ const s = body.querySelector('#langSel'); if (s) s.onchange = () => { store.set('lang', s.value); location.reload(); }; }
+  const settingsRow = () => `<div class="field"><label>${esc(T('sound'))}</label><button class="btn small ghost" id="soundToggle" aria-pressed="${!muted}" style="align-self:flex-start">${esc(muted ? T('off') : T('on'))}</button></div>`;
+  function bindSettings(body){ Profile.bind(body); const s = body.querySelector('#soundToggle'); if (s) s.onclick = toggleSound; }
   const legal = () => T('consent', {terms:`<a href="/kosullar" target="_blank" rel="noopener">${esc(T('terms'))}</a>`, privacy:`<a href="/gizlilik" target="_blank" rel="noopener">${esc(T('privacy'))}</a>`});
   async function openAccount(){
-    if (!cfg){ bindLang(sheet(T('accTitle'), `<p>${esc(T('accPreview'))}</p>${langPicker()}`)); return; }
+    if (!cfg){ const b = sheet(T('accTitle'), `<p>${esc(T('accPreview'))}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`); bindLang(b); bindSettings(b); return; }
+    if (!me && Native.app){
+      const b = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p><button class="btn" id="appLogin">${esc(T('loginApp'))}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
+      bindLang(b); bindSettings(b);
+      b.querySelector('#appLogin').onclick = async ev => { ev.currentTarget.disabled = true; try { await Native.call({action:'login', lang: LANG}); setMe((await call('/me')).player); if (me){ await sync(); accountView(); say(T('welcome', {name: me.name})); } } catch (e){ if (e.message !== 'LOGIN_CANCELLED') $('loginErr').textContent = msg(e.message); } ev.currentTarget.disabled = false; };
+      return;
+    }
     if (me) return accountView();
     const body = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p>
       ${cfg.googleClientId ? '<div id="gbtn"></div>' : ''}
@@ -979,8 +1096,8 @@ const Online = (() => {
         <button class="btn" id="emailGo">${esc(T('sendCode'))}</button>` : ''}
       ${!cfg.googleClientId && !cfg.email ? `<p>${esc(T('noMethods'))}</p>` : ''}
       <div class="err" id="loginErr"></div>
-      <p class="note">${legal()}</p>${langPicker()}`);
-    bindLang(body);
+      <p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
+    bindLang(body); bindSettings(body);
     const err = t => { $('loginErr').textContent = t || ''; };
     const done = async () => { setMe((await call('/me')).player); await sync(); accountView(); say(T('welcome', {name: me.name})); };
     if (cfg.googleClientId) googleButton(async token => { try { await call('/auth/google', {token}); await done(); } catch (e){ err(msg(e.message)); } });
@@ -1002,11 +1119,13 @@ const Online = (() => {
     const body = sheet(T('myAccount'), `<div class="field"><label for="em_name">${esc(T('nameLbl'))}</label><div class="row"><input id="em_name" maxlength="24" value="${esc(me.name)}" style="flex:1"><button class="btn small" id="nameSave">${esc(T('save'))}</button></div></div>
       <div class="field"><label>${esc(T('friendCodeLbl'))}</label><div class="row"><div class="codebox" id="myCode" dir="ltr">${esc(me.code)}</div><button class="btn small ghost" id="copyCode">${esc(T('copy'))}</button></div></div>
       <p>${esc(T('progressTxt', {m: maxLevel, s: stars}))}</p>
+      <div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>
+      ${settingsRow()}
       ${langPicker()}
       <div class="err" id="accErr"></div>
       <button class="btn ghost" id="logout">${esc(T('logout'))}</button>
       <details><summary class="note" style="cursor:pointer">${esc(T('delAcc'))}</summary><div class="field" style="margin-top:10px"><p>${esc(T('delText', {w}))}</p><div class="row"><input id="delConfirm" placeholder="${esc(w)}" style="flex:1"><button class="btn small danger" id="delGo">${esc(T('del'))}</button></div></div></details>`);
-    bindLang(body);
+    bindLang(body); bindSettings(body);
     const err = t => { $('accErr').textContent = t || ''; };
     body.querySelector('#nameSave').onclick = async () => { try { const r = await call('/profile', {name: $('em_name').value}); me.name = r.name; $('em_name').value = r.name; err(''); say(T('nameSaved', {n: r.name})); } catch (e){ err(msg(e.message)); } };
     body.querySelector('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(me.code); say(T('copied', {c: me.code})); } catch { const r = document.createRange(); r.selectNodeContents($('myCode')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
@@ -1024,42 +1143,48 @@ const Online = (() => {
     if (window.google?.accounts?.id) return render();
     const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = render; document.head.appendChild(sc);
   }
-  async function openLeague(tab = 'league'){
-    if (!cfg){ sheet(T('leagueTitle'), `<p>${esc(T('leaguePreview'))}</p>`); return; }
-    if (!me){ sheet(T('leagueTitle'), `<p>${esc(T('leagueLogin'))}</p><button class="btn" id="goLogin">${esc(T('loginBtn'))}</button>`).querySelector('#goLogin').onclick = openAccount; return; }
-    const fb = badges.requests + badges.unread;
-    const body = sheet(T('leagueTitle'), `<div class="tabs" role="tablist"><button role="tab" data-t="league" aria-selected="${tab === 'league'}">${esc(T('tabLeague'))}</button><button role="tab" data-t="friends" aria-selected="${tab === 'friends'}">${esc(T('tabFriends'))}${fb ? `<span class="ibadge">${fb}</span>` : ''}</button></div><div id="tabBody"><p class="note">${esc(T('loadingTxt'))}</p></div>`);
-    body.querySelectorAll('.tabs button').forEach(b => b.onclick = () => openLeague(b.dataset.t));
-    const tb = $('tabBody');
+  const av = a => `<img class="av" src="avatars/${a === 'zeynep' ? 'zeynep' : 'serhat'}.png" alt="">`;
+  function needLogin(title, text){
+    if (!cfg){ sheet(title, `<p>${esc(T(text === 'leagueLogin' ? 'leaguePreview' : 'leaguePreview'))}</p>`); return true; }
+    if (!me){ sheet(title, `<p>${esc(T(text))}</p><button class="btn" id="goLogin">${esc(T('loginBtn'))}</button>`).querySelector('#goLogin').onclick = openAccount; return true; }
+    return false;
+  }
+  async function openLeague(){
+    if (needLogin(T('tabLeague'), 'leagueLogin')) return;
+    const tb = sheet(T('tabLeague'), `<p class="note">${esc(T('loadingTxt'))}</p>`);
     try {
-      if (tab === 'league'){
-        const lg = await call('/league');
-        const ends = new Date(lg.ends).toLocaleDateString(LANG, {day:'numeric', month:'long'});
-        tb.innerHTML = `<p>${esc(T('leagueInfo', {d: ends}))}</p><div class="list" style="margin-top:10px">${lg.rows.length ? lg.rows.map(r => `<div class="item${r.me ? ' me' : ''}"><span class="rk">${r.rank}</span><span class="nm">${esc(r.name)}<small>${esc(T('levelsN', {n: r.levels}))}</small></span><span class="pt">${r.points}</span></div>`).join('') : `<p class="note">${esc(T('leagueEmpty'))}</p>`}</div>`;
-      } else {
-        const F = await call('/friends');
-        const reqs = F.friends.filter(f => f.incoming), rest = F.friends.filter(f => !f.incoming);
-        const row = f => `<div class="item${f.incoming ? ' req' : ''}"><span class="nm">${esc(f.name)}<small>${esc(f.status === 'accepted' ? T('atLevel', {n: f.max}) : f.incoming ? T('wantsAdd') : T('reqSent'))}</small></span>${
-          f.incoming ? `<button class="btn small" data-acc="${esc(f.code)}">${esc(T('accept'))}</button>` :
-          f.status === 'accepted' ? `<button class="btn small" data-chat="${esc(f.code)}" data-name="${esc(f.name)}">${esc(T('message'))}${f.unread ? `<span class="ibadge">${f.unread}</span>` : ''}</button><button class="btn small ghost" data-rm="${esc(f.code)}">${esc(T('removeF'))}</button>` :
-          `<button class="btn small ghost" data-rm="${esc(f.code)}">${esc(T('cancelReq'))}</button>`}</div>`;
-        tb.innerHTML = `<div class="field" style="margin-top:4px"><label for="fcode">${esc(T('addByCode'))}</label><div class="row"><input id="fcode" placeholder="EM1A2B3C" maxlength="8" dir="ltr" style="flex:1;text-transform:uppercase"><button class="btn small" id="fadd">${esc(T('add'))}</button></div><div class="err" id="fErr"></div></div>
-          <p class="note">${T('yourCode', {c: `<b dir="ltr">${esc(F.me.code)}</b>`})}</p>
-          ${reqs.length ? `<p class="sub">${esc(T('requestsHead'))}</p><div class="list">${reqs.map(row).join('')}</div>` : ''}
-          ${rest.length ? `<p class="sub">${esc(T('friendsHead'))}</p><div class="list">${rest.map(row).join('')}</div>` : (reqs.length ? '' : `<p class="note">${esc(T('noFriends'))}</p>`)}`;
-        const act = async (action, code) => { try { await call('/friends', {action, code}); await pollBadges(); openLeague('friends'); } catch (e){ $('fErr').textContent = msg(e.message); } };
-        tb.querySelector('#fadd').onclick = () => act('request', $('fcode').value.trim().toUpperCase());
-        tb.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => act('accept', b.dataset.acc));
-        tb.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => act('remove', b.dataset.rm));
-        tb.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => openChat(b.dataset.chat, b.dataset.name));
-      }
+      const lg = await call('/league');
+      const ends = new Date(lg.ends).toLocaleDateString(LANG, {day:'numeric', month:'long'});
+      tb.innerHTML = `<p>${esc(T('leagueInfo', {d: ends}))}</p><div class="list" style="margin-top:10px">${lg.rows.length ? lg.rows.map(r => `<div class="item${r.me ? ' me' : ''}"><span class="rk">${r.rank}</span>${av(r.avatar)}<span class="nm">${esc(r.name)}<small>${esc(T('levelsN', {n: r.levels}))}</small></span><span class="pt">${r.points}</span></div>`).join('') : `<p class="note">${esc(T('leagueEmpty'))}</p>`}</div>`;
+    } catch (e){ tb.innerHTML = `<p class="err">${esc(msg(e.message))}</p>`; }
+  }
+  async function openFriends(){
+    if (needLogin(T('aMsg'), 'leagueLogin')) return;
+    const tb = sheet(T('aMsg'), `<p class="note">${esc(T('loadingTxt'))}</p>`);
+    try {
+      const F = await call('/friends');
+      const reqs = F.friends.filter(f => f.incoming), rest = F.friends.filter(f => !f.incoming);
+      rest.sort((x, y) => (y.unread || 0) - (x.unread || 0));
+      const row = f => `<div class="item${f.incoming ? ' req' : ''}">${av(f.avatar)}<span class="nm">${esc(f.name)}<small>${esc(f.status === 'accepted' ? T('atLevel', {n: f.max}) : f.incoming ? T('wantsAdd') : T('reqSent'))}</small></span>${
+        f.incoming ? `<button class="btn small" data-acc="${esc(f.code)}">${esc(T('accept'))}</button>` :
+        f.status === 'accepted' ? `<button class="btn small" data-chat="${esc(f.code)}" data-name="${esc(f.name)}" data-av="${esc(f.avatar || '')}">${esc(T('message'))}${f.unread ? `<span class="ibadge">${f.unread}</span>` : ''}</button><button class="btn small ghost" data-rm="${esc(f.code)}">${esc(T('removeF'))}</button>` :
+        `<button class="btn small ghost" data-rm="${esc(f.code)}">${esc(T('cancelReq'))}</button>`}</div>`;
+      tb.innerHTML = `${reqs.length ? `<p class="sub">${esc(T('requestsHead'))}</p><div class="list">${reqs.map(row).join('')}</div>` : ''}
+        ${rest.length ? `<p class="sub">${esc(T('friendsHead'))}</p><div class="list">${rest.map(row).join('')}</div>` : (reqs.length ? '' : `<p class="note">${esc(T('noFriends'))}</p>`)}
+        <div class="field" style="margin-top:6px"><label for="fcode">${esc(T('addByCode'))}</label><div class="row"><input id="fcode" placeholder="EM1A2B3C" maxlength="8" dir="ltr" style="flex:1;text-transform:uppercase"><button class="btn small" id="fadd">${esc(T('add'))}</button></div><div class="err" id="fErr"></div></div>
+        <p class="note">${T('yourCode', {c: `<b dir="ltr">${esc(F.me.code)}</b>`})}</p>`;
+      const act = async (action, code) => { try { await call('/friends', {action, code}); await pollBadges(); openFriends(); } catch (e){ $('fErr').textContent = msg(e.message); } };
+      tb.querySelector('#fadd').onclick = () => act('request', $('fcode').value.trim().toUpperCase());
+      tb.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => act('accept', b.dataset.acc));
+      tb.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => act('remove', b.dataset.rm));
+      tb.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => openChat(b.dataset.chat, b.dataset.name, b.dataset.av));
     } catch (e){ tb.innerHTML = `<p class="err">${esc(msg(e.message))}</p>`; }
   }
 
   /* ---------- chat: friends only, polled every 1.5 s while open, auto-translated into the reader's language ---------- */
   function stopChat(){ if (chat){ clearTimeout(chat.timer); chat = null; } }
-  function openChat(code, name){
-    const body = sheet(name, `<div class="chat-top"><button class="btn small ghost" id="chatBack">${LANG === 'ar' ? '→' : '←'} ${esc(T('back'))}</button><span class="nm"></span><button class="btn small ghost" id="chatBlock">${esc(T('block'))}</button><button class="btn small danger" id="chatReport">${esc(T('report'))}</button></div>
+  function openChat(code, name, avatar){
+    const body = sheet(name, `<div class="chat-top"><button class="btn small ghost" id="chatBack">${LANG === 'ar' ? '→' : '←'} ${esc(T('back'))}</button>${av(avatar)}<span class="nm">${esc(name)}</span><button class="btn small ghost" id="chatBlock">${esc(T('block'))}</button><button class="btn small danger" id="chatReport">${esc(T('report'))}</button></div>
       <p class="note">${esc(T('chatSafety'))}</p>
       <div class="msgs" id="msgs" aria-live="polite"><p class="note">${esc(T('loadingTxt'))}</p></div>
       <div class="err" id="chatErr"></div>
@@ -1067,9 +1192,9 @@ const Online = (() => {
     chat = {code, name, last:0, seen:new Set(), timer:null, tr:{}, showOrig:new Set()};
     const me_ = chat, box = $('msgs'), input = $('chatIn'), err = t => { $('chatErr').textContent = t || ''; };
     const confirmThen = (q, f) => modal(T(q === 'blockQ' ? 'block' : 'report'), `<p>${esc(T(q, {n: name}))}</p>`, [{t: T('yes'), alt:true, f: async () => { $('modal').hidden = true; await f(); }}, {t: T('no'), f: () => { $('modal').hidden = true; }}]);
-    $('chatBack').onclick = () => openLeague('friends');
-    $('chatBlock').onclick = () => confirmThen('blockQ', async () => { try { await call('/friends', {action:'block', code}); say(T('blocked', {n: name})); pollBadges(); openLeague('friends'); } catch (e){ err(msg(e.message)); } });
-    $('chatReport').onclick = () => confirmThen('reportQ', async () => { try { await call('/report', {code, reason:'chat'}); say(T('reported', {n: name})); pollBadges(); openLeague('friends'); } catch (e){ err(msg(e.message)); } });
+    $('chatBack').onclick = () => openFriends();
+    $('chatBlock').onclick = () => confirmThen('blockQ', async () => { try { await call('/friends', {action:'block', code}); say(T('blocked', {n: name})); pollBadges(); openFriends(); } catch (e){ err(msg(e.message)); } });
+    $('chatReport').onclick = () => confirmThen('reportQ', async () => { try { await call('/report', {code, reason:'chat'}); say(T('reported', {n: name})); pollBadges(); openFriends(); } catch (e){ err(msg(e.message)); } });
     const bubble = m => {
       const d = document.createElement('div'); d.className = 'msg ' + (m.mine ? 'out' : 'in'); d.dataset.id = m.id;
       const needTr = !m.mine && m.lang !== LANG;
@@ -1128,10 +1253,11 @@ const Online = (() => {
     input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); } });
     poll(); setTimeout(() => pollBadges(), 2500);
   }
-  return {init, saveSoon, cleared, openAccount, openLeague, stopChat};
+  return {init, saveSoon, cleared, openAccount, openLeague, openFriends, stopChat, sheet};
 })();
 $('accountBtn').onclick = () => Online.openAccount();
 $('leagueBtn').onclick = () => Online.openLeague();
+$('msgBtn').onclick = () => Online.openFriends();
 $('sheetClose').onclick = () => { $('sheet').hidden = true; Online.stopChat(); };
 $('sheet').addEventListener('click', e => { if (e.target.id === 'sheet'){ $('sheet').hidden = true; Online.stopChat(); } });
 
@@ -1159,8 +1285,10 @@ function loop(now){
 try {
   initBoard(); initHero();
   $('loading').hidden = true;
-  renderSound();
+  renderSound(); Profile.render();
   start(level);
+  if (!Profile.gender) setTimeout(() => Profile.ask(), 600);
+  Ads.launch(); Shop.restorePending();
   requestAnimationFrame(loop);
   Online.init();
 } catch (e){

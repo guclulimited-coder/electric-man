@@ -1,8 +1,23 @@
 {
   "_name": "Français",
   "metaDesc": "Electric Man : tourne les câbles et amène le courant du transformateur à chaque maison. Un jeu de réflexion 3D de 300 niveaux. TusneldaX.",
-  "districts": ["Village", "Côte", "Forêt", "Chalets", "Centre-ville", "Zone industrielle", "Port", "Campus", "Bazar", "Le Détroit", "Îles", "Vallée", "Bord du lac", "Château", "Gratte-ciel"],
-
+  "districts": [
+    "Village",
+    "Côte",
+    "Forêt",
+    "Chalets",
+    "Centre-ville",
+    "Zone industrielle",
+    "Port",
+    "Campus",
+    "Bazar",
+    "Le Détroit",
+    "Îles",
+    "Vallée",
+    "Bord du lac",
+    "Château",
+    "Gratte-ciel"
+  ],
   "aLeague": "Ligue, amis et messages",
   "aAccount": "Compte et paramètres",
   "aMap": "Carte des niveaux",
@@ -12,7 +27,6 @@
   "aBoard": "Plateau de jeu : touche un câble pour le tourner",
   "aHero": "Changer de personnage",
   "aDir": "Changer le sens de rotation",
-
   "litLbl": "Maisons éclairées",
   "movesLbl": "Coups",
   "undo": "Annuler",
@@ -21,12 +35,10 @@
   "hint": "Indice",
   "loading": "Chargement de la scène 3D…",
   "noGL": "Impossible d'ouvrir la scène 3D. Ton navigateur ne prend peut-être pas en charge WebGL.",
-
   "mapTitle": "TusneldaX · Carte",
   "mapStars": "{n} / 60 étoiles",
   "levelAria": "Niveau {n}",
   "starsAria": "{n} étoiles",
-
   "i1": "Salut ! Touche un câble et je viens le brancher. Amène le courant du transformateur à chaque maison. Touche-moi pour changer de personnage.",
   "i2": "Avec le bouton de direction en bas, tu choisis dans quel sens tournent les câbles.",
   "i3": "À partir de ce niveau, les coups sont limités. Moins de coups, plus d'étoiles !",
@@ -35,15 +47,29 @@
   "i40": "Nouveau : les nuages ! Tu ne verras le câble sous un nuage que quand le courant arrivera à côté.",
   "iLast": "Dernier niveau ! Montre tout ton talent.",
   "iDistrict": "Bienvenue à {d} ! Allumons les lumières.",
-  "iRand": ["Allez, on allume les lumières !", "Pars du transformateur et avance le long des branches.", "Pense à l'envers depuis les maisons : chacune n'a qu'une seule connexion.", "Les câbles du bord sont les plus faciles, commence par là.", "Changer de sens fait parfois gagner des coups."],
+  "iRand": [
+    "Allez, on allume les lumières !",
+    "Pars du transformateur et avance le long des branches.",
+    "Pense à l'envers depuis les maisons : chacune n'a qu'une seule connexion.",
+    "Les câbles du bord sont les plus faciles, commence par là.",
+    "Changer de sens fait parfois gagner des coups."
+  ],
   "greet": "Salut, moi c'est {name} ! Allumons les lumières.",
-
   "fixed": "Ce câble est boulonné, il ne tourne pas. Construis ta solution autour.",
   "repaired": "Réparé ! Tu peux le tourner maintenant.",
-  "litSay": ["Encore une maison éclairée !", "Les lumières s'allument !", "Super connexion !", "Le courant passe, génial !"],
+  "litSay": [
+    "Encore une maison éclairée !",
+    "Les lumières s'allument !",
+    "Super connexion !",
+    "Le courant passe, génial !"
+  ],
   "lastMove": "Dernier coup ! Choisis bien.",
   "movesLeft": "Plus que {n} coups !",
-  "winSay": ["Le quartier brille de mille feux !", "Bravo ! Toutes les maisons sont allumées.", "Electric Man au travail !"],
+  "winSay": [
+    "Le quartier brille de mille feux !",
+    "Bravo ! Toutes les maisons sont allumées.",
+    "Electric Man au travail !"
+  ],
   "winTitle": "Quartier éclairé",
   "winAllTitle": "Toute la ville est éclairée !",
   "winText": "Tu as alimenté {h} maisons en {m} coups. La solution la plus courte était de {o} coups. +{r} pièces.",
@@ -61,7 +87,6 @@
   "hintOk": "Les câbles sont bons, vérifie le chemin vers les maisons.",
   "hintNoCoins": "Pas assez de pièces : un indice coûte {p} pièces.",
   "hintDone": "J'ai réparé ce câble, à toi pour la suite !",
-
   "eLOGIN_EXPIRED": "Temps écoulé, réessaie.",
   "eINVALID_CODE": "Le code est faux ou a expiré.",
   "eINVALID_EMAIL": "Vérifie ton adresse e-mail.",
@@ -75,7 +100,6 @@
   "eINVALID_MESSAGE": "Le message ne peut pas être vide et peut faire jusqu'à 300 caractères.",
   "eTRANSLATE_UNAVAILABLE": "La traduction n'est pas disponible pour le moment.",
   "eNET": "Connexion impossible, réessaie.",
-
   "accTitle": "Compte",
   "accPreview": "Le compte, la sauvegarde dans le cloud, la ligue et les messages sont disponibles sur electricman.tusneldax.com. Dans cet aperçu, ta progression est enregistrée uniquement sur cet appareil.",
   "loginTitle": "Se connecter",
@@ -108,7 +132,6 @@
   "deleted": "Ton compte a été supprimé.",
   "confirmDel": "Tape {w} pour confirmer.",
   "language": "Langue",
-
   "leagueTitle": "Ligue et amis",
   "leaguePreview": "La ligue hebdomadaire, les amis et les messages sont disponibles sur electricman.tusneldax.com.",
   "leagueLogin": "Connecte-toi pour rejoindre la ligue hebdomadaire, ajouter des amis et discuter.",
@@ -131,7 +154,6 @@
   "message": "Message",
   "requestsHead": "Demandes d'ami",
   "friendsHead": "Tes amis",
-
   "chatPh": "Écris un message…",
   "send": "Envoyer",
   "showOrig": "Voir l'original",
@@ -151,7 +173,29 @@
   "newMsg": "{n} t'a envoyé un message.",
   "newReq": "Tu as une nouvelle demande d'ami !",
   "back": "Retour",
-
   "mailSubject": "Ton code de connexion Electric Man : {code}",
-  "mailBody": "Electric Man\n\nTon code de connexion : {code}\n\nLe code est valable 5 minutes. Ne le partage avec personne. Si tu n'as pas fait cette demande, tu peux ignorer cet e-mail.\n\nTusneldaX"
+  "mailBody": "Electric Man\n\nTon code de connexion : {code}\n\nLe code est valable 5 minutes. Ne le partage avec personne. Si tu n'as pas fait cette demande, tu peux ignorer cet e-mail.\n\nTusneldaX",
+  "aMsg": "Messages et amis",
+  "aShop": "Boutique de pièces",
+  "genderTitle": "Choisis ton personnage",
+  "genderText": "Ta photo de profil en dépend. Tu pourras la changer plus tard dans les réglages.",
+  "female": "Femme",
+  "male": "Homme",
+  "profilePic": "Photo de profil",
+  "sound": "Son",
+  "on": "Activé",
+  "off": "Coupé",
+  "shopTitle": "Boutique de pièces",
+  "coins500": "500 pièces",
+  "watchAd": "Regarder une pub",
+  "adReward": "+{n} pièces",
+  "adsLeft": "Restant aujourd'hui : {n}",
+  "adsDone": "Tu as utilisé toutes les pubs du jour. Reviens demain !",
+  "inAppOnly": "L'achat de pièces et les pubs sont disponibles dans l'appli mobile.",
+  "buyOk": "+{n} pièces ajoutées. Merci !",
+  "buyFail": "L'achat n'a pas abouti.",
+  "adFail": "Pas de pub pour l'instant, réessaie dans un moment.",
+  "noCoins": "Pas assez de pièces. Tu peux en obtenir dans la boutique.",
+  "undoNoCoins": "Annuler coûte {p} pièces. Tu n'en as pas assez.",
+  "loginApp": "Se connecter dans le navigateur"
 }

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Electric Man</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:light;--ink:#16304f;--soft:#4f6a8a;--btn:#2f6fe8;--btn-d:#1f4fb0}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;background:linear-gradient(#6ec6ff,#d9f3ff);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center}
+main{background:#fff;border-radius:20px;padding:24px 20px;width:min(380px,calc(100% - 32px));box-shadow:0 14px 34px rgba(22,48,79,.25);display:flex;flex-direction:column;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:52px;height:52px;border-radius:12px}
+h1{font-size:20px;margin:0}
+p{margin:0;color:var(--soft);font-size:14.5px}
+label{font-size:12px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+input{font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1.5px solid #cfdcef;background:#f6f9fe;color:var(--ink);width:100%;box-sizing:border-box}
+.btn{appearance:none;border:0;cursor:pointer;font:inherit;font-weight:800;font-size:15px;padding:12px;border-radius:12px;background:var(--btn);color:#fff;box-shadow:inset 0 -4px 0 var(--btn-d)}
+.btn.ghost{background:#eef3fb;color:var(--ink);box-shadow:inset 0 -3px 0 #d6e1f1}
+.btn[disabled]{opacity:.5}
+.err{color:#c0392b;font-size:13px;font-weight:600;min-height:1em}
+.divider{display:flex;align-items:center;gap:10px;color:var(--soft);font-size:12px;font-weight:700}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:#dde6f3}
+#gbtn{min-height:44px;display:flex;justify-content:center}
+.note{font-size:12.5px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><img src="/icon-192.png" alt=""><h1 id="title">Electric Man</h1></div>
+  <p id="intro"></p>
+  <div id="signedIn" hidden>
+    <button class="btn" id="continue"></button>
+    <p class="note" style="margin-top:8px"><a href="#" id="other"></a></p>
+  </div>
+  <div id="login" hidden>
+    <div id="gbtn"></div>
+    <div class="divider" id="or"></div>
+    <div><label for="email" id="emailLbl"></label><input id="email" type="email" inputmode="email" autocomplete="email"></div>
+    <div id="codeField" hidden><label for="code" id="codeLbl"></label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+    <button class="btn" id="emailGo"></button>
+  </div>
+  <div class="err" id="err"></div>
+</main>
+<script type="module">
+// Sign-in for the Electric Man apps: Google blocks its login inside app web views, so the app opens this page in the
+// system browser. After a normal web login we mint a one-time ticket bound to the app's PKCE challenge and hand it back
+// to the app through its URL scheme; the app exchanges ticket + verifier for its own session.
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search);
+const challenge = q.get('challenge') || '', state = q.get('state') || '';
+const LANGS = ['tr','en','zh','hi','es','ar','fr','bn','pt','ru','id','de','ja'];
+const lang = LANGS.includes(q.get('lang')) ? q.get('lang') : 'tr';
+document.documentElement.lang = lang; if (lang === 'ar') document.documentElement.dir = 'rtl';
+let L = {}; try { L = await (await fetch('/i18n/' + lang + '.json')).json(); } catch {}
+const T = (k, v = {}) => String(L[k] ?? k).replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m);
+const err = t => { $('err').textContent = t || ''; };
+const msg = e => L['e' + e] ? T('e' + e) : T('eNET');
+async function call(path, body){
+  const r = await fetch('/api/em' + path, body === undefined ? {credentials:'same-origin'} : {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'NET');
+  return j;
+}
+$('title').textContent = 'Electric Man · ' + T('loginTitle');
+$('intro').textContent = T('loginIntro');
+if (!/^[a-f0-9]{64}$/.test(challenge) || !/^[a-f0-9]{32,64}$/.test(state)){ err(T('eLOGIN_EXPIRED')); throw new Error('bad request'); }
+
+async function handBack(){
+  err(''); $('continue').disabled = true;
+  try {
+    const {ticket} = await call('/native/ticket', {challenge});
+    location.href = 'electricman://signin?ticket=' + ticket + '&state=' + state;
+  } catch (e){ err(msg(e.message)); $('continue').disabled = false; }
+}
+async function showSignedIn(me){
+  $('login').hidden = true; $('signedIn').hidden = false;
+  $('continue').textContent = T('loginBtn') + ' · ' + me.name;
+  $('continue').onclick = handBack;
+  $('other').textContent = T('logout');
+  $('other').onclick = async e => { e.preventDefault(); try { await call('/logout', {}); } catch {} showLogin(); };
+}
+let cfg = {};
+async function showLogin(){
+  $('signedIn').hidden = true; $('login').hidden = false;
+  $('or').textContent = T('or'); $('emailLbl').textContent = T('emailLbl'); $('codeLbl').textContent = T('codeLbl');
+  $('email').placeholder = T('emailPh'); $('emailGo').textContent = T('sendCode');
+  $('gbtn').hidden = $('or').hidden = !cfg.googleClientId;
+  const after = async () => { const me = (await call('/me')).player; if (me) handBack(); };
+  if (cfg.googleClientId){
+    const render = async () => {
+      try {
+        const {nonce} = await call('/auth/nonce', {});
+        google.accounts.id.initialize({client_id: cfg.googleClientId, nonce, ux_mode:'popup', callback: async r => { try { await call('/auth/google', {token: r.credential}); await after(); } catch (e){ err(msg(e.message)); } }});
+        google.accounts.id.renderButton($('gbtn'), {theme:'outline', size:'large', shape:'pill', text:'continue_with', locale: lang, width: 320});
+      } catch (e){ err(msg(e.message)); }
+    };
+    if (window.google?.accounts?.id) render(); else { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = render; document.head.appendChild(s); }
+  }
+  let ch = null;
+  $('emailGo').onclick = async () => {
+    err(''); $('emailGo').disabled = true;
+    try {
+      const email = $('email').value.trim();
+      if (!ch){ await call('/auth/nonce', {}); ch = (await call('/auth/email/request', {email, lang})).challenge; $('codeField').hidden = false; $('code').focus(); $('emailGo').textContent = T('loginBtn'); }
+      else { await call('/auth/email', {email, challenge: ch, code: $('code').value.trim()}); await after(); }
+    } catch (e){ err(msg(e.message)); if (e.message === 'LOGIN_EXPIRED'){ ch = null; $('codeField').hidden = true; $('emailGo').textContent = T('sendCode'); } }
+    $('emailGo').disabled = false;
+  };
+}
+try { cfg = await call('/config'); const me = (await call('/me')).player; me ? showSignedIn(me) : showLogin(); }
+catch (e){ err(msg(e.message)); }
+</script>
+</body>
+</html>

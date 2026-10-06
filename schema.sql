@@ -19,4 +19,5 @@ CREATE TABLE IF NOT EXISTS em_messages(id INTEGER PRIMARY KEY AUTOINCREMENT, pai
 CREATE INDEX IF NOT EXISTS em_messages_pair ON em_messages(pair, id);
 CREATE INDEX IF NOT EXISTS em_messages_unread ON em_messages(recipient, read);
 CREATE TABLE IF NOT EXISTS em_translations(msg INTEGER NOT NULL, lang TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(msg, lang));
+CREATE TABLE IF NOT EXISTS em_tickets(id TEXT PRIMARY KEY, player TEXT NOT NULL, challenge TEXT NOT NULL, expires INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS em_reports(id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, msg INTEGER, snapshot TEXT, reason TEXT, created INTEGER NOT NULL);
