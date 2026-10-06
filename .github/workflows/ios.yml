@@ -12,8 +12,6 @@ on:
 permissions:
   contents: read
 env:
-  ASC_KEY_ID: JBB5CD79HZ
-  ASC_ISSUER: cab75b07-a305-412b-a205-a91b4280d965
   TEAM_ID: YMAU5R6AA4
   BUNDLE_ID: com.tusneldax.electricman
   PROFILE_NAME: Electric Man App Store
@@ -50,80 +48,28 @@ jobs:
           grep -E "error:|BUILD (SUCCEEDED|FAILED)" build-sim.log | sort -u | head -40 | while read -r l; do echo "::warning::$l"; done
           echo "::notice::$(xcodebuild -version | head -1) · simulator build exit $code"
           exit $code
-      - name: Signing (App Store Connect API)
+      - name: Archive with Xcode cloud signing and upload to App Store Connect
         if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[ios-upload]')
         env:
-          SIGNING_BUNDLE: ${{ secrets.EM_APPLE_SIGNING_BUNDLE }}
           API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID }}
         run: |
           set -euo pipefail
-          if [ -z "$SIGNING_BUNDLE" ] || [ -z "$API_PRIVATE_KEY" ]; then echo "::error::EM_APPLE_SIGNING_BUNDLE / EM_ASC_PRIVATE_KEY secrets are missing"; exit 1; fi
-          python3 -m venv "$RUNNER_TEMP/asc" && "$RUNNER_TEMP/asc/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
-          "$RUNNER_TEMP/asc/bin/python" - <<'PY'
-          import base64, json, os, pathlib, plistlib, secrets, subprocess, time, urllib.request, urllib.error, urllib.parse, jwt
-          env = os.environ; temp = pathlib.Path(env['RUNNER_TEMP'])
-          def token(): return jwt.encode({'iss': env['ASC_ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 900, 'aud': 'appstoreconnect-v1'}, env['API_PRIVATE_KEY'], algorithm='ES256', headers={'kid': env['ASC_KEY_ID'], 'typ': 'JWT'})
-          def api(method, path, body=None):
-              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, method=method, data=json.dumps(body).encode() if body else None,
-                                           headers={'Authorization': 'Bearer ' + token(), 'Content-Type': 'application/json'})
-              try:
-                  with urllib.request.urlopen(req, timeout=60) as r: return json.load(r)
-              except urllib.error.HTTPError as e: raise RuntimeError(f'{method} {path} -> {e.code}: {e.read().decode()[:600]}')
-          bundle = json.loads(env['SIGNING_BUNDLE'])
-          p12 = temp / 'em.p12'; p12.write_bytes(base64.b64decode(bundle['p12']))
-          pem = subprocess.run(['openssl', 'pkcs12', '-in', str(p12), '-nokeys', '-passin', 'pass:' + bundle['password'], '-legacy'], capture_output=True)
-          if pem.returncode: pem = subprocess.run(['openssl', 'pkcs12', '-in', str(p12), '-nokeys', '-passin', 'pass:' + bundle['password']], capture_output=True, check=True)
-          serial = subprocess.run(['openssl', 'x509', '-noout', '-serial'], input=pem.stdout, capture_output=True, check=True).stdout.decode().strip().split('=')[1].upper().lstrip('0')
-          # 1) bundle id
-          ids = api('GET', '/v1/bundleIds?filter[identifier]=' + env['BUNDLE_ID'])['data']
-          bid = next((b for b in ids if b['attributes']['identifier'] == env['BUNDLE_ID']), None)
-          if not bid:
-              bid = api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': env['BUNDLE_ID'], 'name': 'Electric Man', 'platform': 'IOS'}}})['data']
-              print('registered bundle id', env['BUNDLE_ID'])
-          # 2) distribution certificate that matches our p12
-          certs = api('GET', '/v1/certificates?limit=200')['data']
-          cert = next((c for c in certs if c['attributes'].get('serialNumber', '').upper().lstrip('0') == serial and c['attributes']['certificateType'] in ('DISTRIBUTION', 'IOS_DISTRIBUTION')), None)
-          if not cert: raise RuntimeError('distribution certificate for the signing p12 not found in App Store Connect')
-          # 3) App Store profile (reuse when valid)
-          profs = [p for p in api('GET', '/v1/profiles?limit=200')['data'] if p['attributes']['name'].startswith(env['PROFILE_NAME']) and p['attributes']['profileType'] == 'IOS_APP_STORE']
-          prof = next((p for p in profs if p['attributes']['profileState'] == 'ACTIVE'), None)
-          if not prof:
-              prof = api('POST', '/v1/profiles', {'data': {'type': 'profiles', 'attributes': {'name': env['PROFILE_NAME'] + ' ' + time.strftime('%Y%m%d%H%M'), 'profileType': 'IOS_APP_STORE'},
-                  'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': bid['id']}}, 'certificates': {'data': [{'type': 'certificates', 'id': cert['id']}]}}}})['data']
-              print('created profile', prof['attributes']['name'])
-          profile = temp / 'em.mobileprovision'; profile.write_bytes(base64.b64decode(prof['attributes']['profileContent']))
-          details = plistlib.loads(subprocess.check_output(['security', 'cms', '-D', '-i', str(profile)]))
-          assert details['Entitlements']['application-identifier'] == env['TEAM_ID'] + '.' + env['BUNDLE_ID']
-          for folder in [pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles', pathlib.Path.home() / 'Library/Developer/Xcode/UserData/Provisioning Profiles']:
-              folder.mkdir(parents=True, exist_ok=True); (folder / (details['UUID'] + '.mobileprovision')).write_bytes(profile.read_bytes())
-          keychain = str(temp / 'em.keychain-db'); pw = secrets.token_urlsafe(32)
-          for args in [['create-keychain', '-p', pw, keychain], ['set-keychain-settings', '-lut', '21600', keychain], ['unlock-keychain', '-p', pw, keychain],
-                       ['import', str(p12), '-P', bundle['password'], '-A', '-t', 'cert', '-f', 'pkcs12', '-k', keychain],
-                       ['set-key-partition-list', '-S', 'apple-tool:,apple:', '-k', pw, keychain], ['list-keychain', '-d', 'user', '-s', keychain]]:
-              if subprocess.run(['security'] + args, capture_output=True).returncode: raise RuntimeError('keychain step failed: ' + args[0])
-          keys = pathlib.Path.home() / '.appstoreconnect/private_keys'; keys.mkdir(parents=True, exist_ok=True)
-          (keys / ('AuthKey_' + env['ASC_KEY_ID'] + '.p8')).write_text(env['API_PRIVATE_KEY'])
-          pathlib.Path('ExportOptions.plist').write_bytes(plistlib.dumps({'method': 'app-store-connect', 'destination': 'export', 'signingStyle': 'manual', 'teamID': env['TEAM_ID'],
-              'signingCertificate': 'Apple Distribution', 'provisioningProfiles': {env['BUNDLE_ID']: details['Name']}, 'manageAppVersionAndBuildNumber': False, 'uploadSymbols': True}))
-          with open(env['GITHUB_ENV'], 'a') as f: f.write('PROFILE_SPECIFIER=' + details['Name'] + '\n')
-          PY
-      - name: Archive, export and upload to App Store Connect
-        if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[ios-upload]')
-        run: |
-          set -euo pipefail
+          if [ -z "$API_PRIVATE_KEY" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER" ]; then echo "::error::EM_ASC_PRIVATE_KEY / EM_ASC_KEY_ID / EM_ASC_ISSUER_ID secrets are missing"; exit 1; fi
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"; printf '%s\n' "$API_PRIVATE_KEY" > "$KEY"; chmod 600 "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='Apple Distribution' \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_SPECIFIER" DEVELOPMENT_TEAM="$TEAM_ID" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" $AD_SETTINGS archive > archive.log 2>&1 \
+            -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="$TEAM_ID" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" $AD_SETTINGS "${AUTH[@]}" archive > archive.log 2>&1 \
             || { grep -E "error:" archive.log | sort -u | head -30 | while read -r l; do echo "::error::$l"; done; exit 1; }
-          xcodebuild -exportArchive -archivePath build/ElectricMan.xcarchive -exportPath release -exportOptionsPlist ExportOptions.plist > export.log 2>&1 \
-            || { grep -E "error" export.log | head -20 | while read -r l; do echo "::error::$l"; done; exit 1; }
-          xcrun altool --validate-app --file release/ElectricMan.ipa --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER" > validate.log 2>&1 \
-            || { tail -20 validate.log | while read -r l; do echo "::error::$l"; done; exit 1; }
-          xcrun altool --upload-app --file release/ElectricMan.ipa --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER" > upload.log 2>&1 \
-            || { tail -20 upload.log | while read -r l; do echo "::error::$l"; done; exit 1; }
+          /usr/libexec/PlistBuddy -c "Add :method string app-store-connect" -c "Add :destination string upload" -c "Add :signingStyle string automatic" \
+            -c "Add :teamID string $TEAM_ID" -c "Add :manageAppVersionAndBuildNumber bool false" -c "Add :uploadSymbols bool true" ExportOptions.plist
+          xcodebuild -exportArchive -archivePath build/ElectricMan.xcarchive -exportPath release -exportOptionsPlist ExportOptions.plist "${AUTH[@]}" > export.log 2>&1 \
+            || { grep -iE "error" export.log | sort -u | head -20 | while read -r l; do echo "::error::$l"; done; exit 1; }
           echo "::notice::Uploaded build $GITHUB_RUN_NUMBER to App Store Connect"
       - name: Clean up signing files
         if: always()
         run: |
-          security delete-keychain "$RUNNER_TEMP/em.keychain-db" 2>/dev/null || true
-          rm -f "$RUNNER_TEMP/em.p12" "$RUNNER_TEMP/em.mobileprovision" "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8
+          rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8
