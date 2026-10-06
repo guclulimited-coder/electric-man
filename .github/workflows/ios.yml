@@ -58,7 +58,18 @@ jobs:
           set -euo pipefail
           if [ -z "$API_PRIVATE_KEY" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER" ]; then echo "::error::EM_ASC_PRIVATE_KEY secret is missing"; exit 1; fi
           mkdir -p "$HOME/.appstoreconnect/private_keys"
-          KEY="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"; printf '%s\n' "$API_PRIVATE_KEY" > "$KEY"; chmod 600 "$KEY"
+          KEY="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"
+          # normalise the pasted key (lost line breaks, literal \n, spaces) back into a valid PEM
+          python3 - "$KEY" <<'PY'
+          import os, re, sys, textwrap
+          raw = os.environ['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw)
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', body)
+          if len(body) < 100: print('::error::EM_ASC_PRIVATE_KEY looks incomplete (' + str(len(body)) + ' base64 chars)'); sys.exit(1)
+          open(sys.argv[1], 'w').write('-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n')
+          print('::notice::API key normalised: ' + str(len(body)) + ' base64 chars, lines in secret: ' + str(raw.count(chr(10)) + 1))
+          PY
+          chmod 600 "$KEY"
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="$TEAM_ID" \
