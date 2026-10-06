@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths: ['android/**', 'public/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/android.yml']
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -59,3 +59,12 @@ jobs:
           path: android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: ignore
           retention-days: 30
+      - name: Keep the release bundle on the builds branch (artifact storage is not reachable from every tool)
+        if: hashFiles('android/app/build/outputs/bundle/release/*.aab') != ''
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/b" && cp android/app/build/outputs/bundle/release/*.aab "$RUNNER_TEMP/b/ElectricMan-$EM_VERSION_NAME-$EM_VERSION_CODE.aab"
+          cd "$RUNNER_TEMP/b"
+          git init -q -b builds && git config user.name "github-actions[bot]" && git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -qm "Android release bundle $EM_VERSION_NAME ($EM_VERSION_CODE)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" builds
