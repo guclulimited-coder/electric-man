@@ -509,7 +509,7 @@ function islandSurface(isl, th){
     g.add(b); }
   // planet specials
   if (th.lava){ for (let i = 0; i < 5; i++){ const a = Math.random() * 7, r = rand(10, R - 4); const pool = new THREE.Mesh(new THREE.CircleGeometry(rand(1.2, 2.4), 24), lavaMat); pool.rotation.x = -Math.PI / 2; pool.position.set(c.x + Math.cos(a) * r, .03, c.z + Math.sin(a) * r); pool.scale.set(1, rand(.6, 1), 1); g.add(pool);
-      const l = new THREE.PointLight(0xff6a00, 4, 7, 2); l.position.set(pool.position.x, 1, pool.position.z); g.add(l); } }
+      const h = new THREE.Sprite(haloMat(0xff6a00)); h.scale.setScalar(rand(4.5, 6)); h.position.set(pool.position.x, .6, pool.position.z); g.add(h); } }
   if (th.lakes){ for (let i = 0; i < 3; i++){ const a = Math.random() * 7, r = rand(12, R - 5); const lake = new THREE.Mesh(new THREE.CircleGeometry(rand(2, 3.5), 32), new THREE.MeshStandardMaterial({color: 0x120a04, roughness: .05, metalness: .6})); lake.rotation.x = -Math.PI / 2; lake.position.set(c.x + Math.cos(a) * r, .03, c.z + Math.sin(a) * r); lake.scale.set(1.4, 1, 1); g.add(lake); } }
   if (th.id === 'europa' || th.id === 'saturn' || th.id === 'neptun'){ const sp = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 3, 6), new THREE.MeshStandardMaterial({color: th.floraCol[0], roughness: .2, metalness: .1, transparent: true, opacity: .85, emissive: th.floraCol[0], emissiveIntensity: .15}), 30);
     for (let i = 0; i < 30; i++){ const a = Math.random() * 7, r = rand(R - 4, R - .5); dummy.position.set(c.x + Math.cos(a) * r, 1, c.z + Math.sin(a) * r); if (Math.abs(dummy.position.x - c.x) < 4) dummy.position.x += 6; dummy.rotation.set(rand(-.3, .3), 0, rand(-.3, .3)); const sc = rand(.5, 1.6); dummy.scale.set(sc, sc * rand(.8, 1.8), sc); dummy.updateMatrix(); sp.setMatrixAt(i, dummy.matrix); } g.add(sp); }
@@ -560,6 +560,10 @@ function cached(key, make){ return GEO_CACHE[key] || (GEO_CACHE[key] = make()); 
 function inked(geo, mat){ const g = new THREE.Group(); g.add(new THREE.Mesh(geo, mat)); g.add(new THREE.Mesh(geo, inkMat)); return g; }
 const glowMats = {};
 const glowMat = col => glowMats[col] || (glowMats[col] = new THREE.MeshBasicMaterial({color: col}));
+const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(.35, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const haloMats = {};
+const haloMat = col => haloMats[col] || (haloMats[col] = new THREE.SpriteMaterial({map: haloTex, color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .55}));
 const sph = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
 const tube = (pts, r, seg = 12) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new V3(...p))), seg, r, 7);
@@ -637,7 +641,8 @@ function buildSpecies(type){
     const abd = new THREE.Mesh(sph(.2, 14, 10), glowMat(glow)); abd.position.set(0, -.02, -.28); abd.scale.set(1, .85, 1.25); body.add(abd);
     const wm = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: .4, side: THREE.DoubleSide, depthWrite: false});
     for (const s of [-1, 1]){ const w = new THREE.Mesh(new THREE.CircleGeometry(.24, 12), wm); w.scale.set(.6, 1.2, 1); w.position.set(s * .16, .16, -.05); w.rotation.set(-Math.PI / 2 + .3, 0, s * .4); body.add(w); limbs.push(w); }
-    const light = new THREE.PointLight(glow, 2.5, 4, 2); light.position.set(0, 0, -.3); body.add(light);
+    // no per-bug PointLight: a glowing halo sprite keeps the look without adding a scene light
+    const halo = new THREE.Sprite(haloMat(glow)); halo.scale.setScalar(1.6); halo.position.set(0, 0, -.28); body.add(halo);
     anim = (t) => { limbs.forEach((w, i) => w.rotation.y = (i ? -1 : 1) * Math.sin(t * 40) * .6); abd.material.color.setHex(glow).multiplyScalar(.75 + Math.sin(t * 5) * .25); };
   }
   return {body, mat, anim};
@@ -646,6 +651,8 @@ function buildSpecies(type){
 // islands sit in a line toward -z; a bridge with an energy gate leads from each boss to the next island
 const ISL_R = 30, ISL_GAP = 86, BRIDGE_W = 2.3;
 const islands = [];
+// only the current island and the next one are drawn; older ones sit behind the fog and only cost frame time
+function islandVis(){ const back = player.pos.z > islandCenter(curIsl).z + ISL_R - 6; islands.forEach((isl, k) => { if (isl) isl.g.visible = k >= curIsl - (back ? 1 : 0) && k <= curIsl + 1; }); for (const e of enemies) if (e.camp) e.g.visible = e.camp.isl.g.visible; }
 function islandCenter(k){ return new THREE.Vector3(0, 0, -k * ISL_GAP); }
 function buildIsland(k){
   const c = islandCenter(k), g = new THREE.Group(); scene.add(g);
@@ -1201,6 +1208,7 @@ function spawn(type, at, opt = {}){
   e.r = spec.r * (elite ? 1.45 : 1);
   e.power = enemyPower(e); labelEnemy(e);
   e.g.position.copy(e.pos); e.g.scale.setScalar(.01); e.spawnT = .35;
+  if (e.camp && !e.camp.isl.g.visible) e.g.visible = false;
   scene.add(e.g); enemies.push(e); return e;
 }
 let hitColor = 0xffffff;
@@ -1355,6 +1363,7 @@ addEventListener('pointerup', endStick); addEventListener('pointercancel', endSt
 
 // ---------------------------------------------------------------- game flow
 let saveSoon = false, onTitle = true;
+let visTick = 0;
 let running = false, paused = false, boss = null, shakeT = 0, shakeA = 0, curIsl = 0;
 function shake(a){ shakeA = Math.max(shakeA, a); shakeT = .25; }
 function banner(main, sub = '', ms = 1800){ const b = $('banner'); b.innerHTML = main + (sub ? `<small>${sub}</small>` : ''); b.classList.add('on'); clearTimeout(banner.t); banner.t = setTimeout(() => b.classList.remove('on'), ms); }
@@ -1371,6 +1380,7 @@ function bossDown(isl){
   setTimeout(() => {
     isl.gateOpen = true; isl.gate.visible = false;
     if (!islands[isl.k + 1]) buildIsland(isl.k + 1);
+    islandVis();
     banner(T('gateOpen'), T('gateOpenSub'), 2200);
   }, 2400);
 }
@@ -1391,7 +1401,7 @@ function resetGame(){
   } else { applyUpgrades(); gear = [{id: 'pense', lv: 1, t: 0}]; }
   player.hp = player.maxHp; if (shield) shield.cur = shield.max;
   wearGear(); shieldMesh.material.opacity = 0;
-  buildIsland(curIsl); buildIsland(curIsl + 1); applyTheme(themeOf(curIsl));
+  buildIsland(curIsl); buildIsland(curIsl + 1); applyTheme(themeOf(curIsl)); islandVis();
   player.pos.copy(spawnPoint(curIsl)); syncFlails();
   portal.visible = true; portal.position.set(player.pos.x, 1.8, player.pos.z + 2.5);
   hook.state = 'idle'; cable.visible = hookHead.visible = false; $('bossBar').hidden = true;
@@ -2073,7 +2083,7 @@ function updatePlayer(dt, t){
   setBar(meBar, player.hp / player.maxHp); meBar.quaternion.copy(camera.quaternion); meShBar.visible = !!shield; if (shield){ setBar(meShBar, shield.cur / shield.max); meShBar.quaternion.copy(camera.quaternion); }
   updateProp(dt);
   if (shield){ if (shield.wait > 0) shield.wait -= dt; else shield.cur = Math.min(shield.max, shield.cur + shield.max * .2 * dt); shieldMesh.material.opacity = Math.max(shield.cur > 0 ? .08 + .06 * Math.sin(t * 4) : 0, shieldMesh.material.opacity - dt * 1.5); shieldMesh.rotation.y += dt; }
-  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ curIsl = k; saveGame(); applyTheme(themeOf(k)); banner(T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); if (!islands[k + 1]) buildIsland(k + 1); renderWave(); Online.score(); }  player.root.position.copy(player.pos);
+  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ curIsl = k; saveGame(); applyTheme(themeOf(k)); banner(T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); if (!islands[k + 1]) buildIsland(k + 1); islandVis(); renderWave(); Online.score(); }  if (++visTick % 20 === 0) islandVis(); player.root.position.copy(player.pos);
   // face toward heading, with a twist during a swing
   let target = player.face; if (player.swing > 0){ player.swing -= dt; target += Math.sin((player.swing / .22) * Math.PI) * .9; }
   const cur = player.model ? player.model.rotation.y : 0; let d = target - cur; d = Math.atan2(Math.sin(d), Math.cos(d));
