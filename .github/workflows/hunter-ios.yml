@@ -1,8 +1,8 @@
-name: iOS build
+name: Electric Hunter iOS build
 on:
   push:
     branches: [main]
-    paths: ['ios/**', 'public/**', '!public/hunter/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/ios.yml']
+    paths: ['hunter-app/ios/**', 'hunter-app/ads.env', 'public/hunter/**', 'scripts/bundle-native.mjs', '.github/workflows/hunter-ios.yml']
   workflow_dispatch:
     inputs:
       upload:
@@ -13,12 +13,12 @@ permissions:
   contents: read
 env:
   TEAM_ID: YMAU5R6AA4
-  BUNDLE_ID: com.tusneldax.electricman
-  PROFILE_NAME: Electric Man App Store
+  BUNDLE_ID: com.tusneldax.electrichunter
+  PROFILE_NAME: Electric Hunter App Store
 jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[eh-ios-upload]') || contains(github.event.head_commit.message, '[eh-ios-check]')
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '22'
       - name: Bundle the game into the app
-        run: node scripts/bundle-native.mjs ios/ElectricMan/www
+        run: node scripts/bundle-native.mjs hunter-app/ios/ElectricHunter/www hunter
       - name: Xcode 26 and project
         run: |
           set -euo pipefail
@@ -37,13 +37,13 @@ jobs:
           if [ -n "$latest" ]; then sudo xcode-select -s "$latest/Contents/Developer"; fi
           xcodebuild -version
           brew install xcodegen >/dev/null
-          cd ios && xcodegen generate
-          grep -E '^EM_.*_IOS=.+' ../native/ads.env | sed 's/^/ /' | tr -d '\n' > ../ads-settings.txt || true
-          echo "AD_SETTINGS=$(cat ../ads-settings.txt)" >> "$GITHUB_ENV"
+          cd hunter-app/ios && xcodegen generate
+          grep -E '^EM_.*_IOS=.+' ../ads.env | sed 's/^/ /' | tr -d '\n' > ../../ads-settings.txt || true
+          echo "AD_SETTINGS=$(cat ../../ads-settings.txt)" >> "$GITHUB_ENV"
       - name: Compile (simulator, official test ads)
         run: |
           set +e
-          xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Debug -sdk iphonesimulator \
+          xcodebuild -project hunter-app/ios/ElectricHunter.xcodeproj -scheme ElectricHunter -configuration Debug -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build > build-sim.log 2>&1
           code=$?
           # surface results as annotations (readable through the API)
@@ -51,7 +51,7 @@ jobs:
           echo "::notice::$(xcodebuild -version | head -1) · simulator build exit $code"
           exit $code
       - name: Archive with Xcode cloud signing and upload to App Store Connect
-        if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[ios-upload]')
+        if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[eh-ios-upload]')
         env:
           API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
           KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
@@ -91,7 +91,7 @@ jobs:
                   msg = e.read().decode()[:400]; print('::error::' + method + ' ' + path + ' -> ' + str(e.code) + ' ' + msg.replace(chr(10), ' ')); raise
           bid_name = env['BUNDLE_ID']
           found = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + bid_name)['data'] if b['attributes']['identifier'] == bid_name]
-          bid = found[0] if found else api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': bid_name, 'name': 'Electric Man', 'platform': 'IOS'}}})['data']
+          bid = found[0] if found else api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': bid_name, 'name': 'Electric Hunter', 'platform': 'IOS'}}})['data']
           # temporary certificate
           k = temp / 'em.key'; csr = temp / 'em.csr'
           subprocess.run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(k), '-out', str(csr), '-subj', '/CN=Electric Man CI/O=TusneldaX/C=TR'], check=True, capture_output=True)
@@ -128,12 +128,12 @@ jobs:
           PY
           PROFILE_NAME_CI=$(cat "$RUNNER_TEMP/em-profile-name")
           AUTH=(-authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
-          xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
+          xcodebuild -project hunter-app/ios/ElectricHunter.xcodeproj -scheme ElectricHunter -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/ElectricHunter.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME_CI" DEVELOPMENT_TEAM="$TEAM_ID" OTHER_CODE_SIGN_FLAGS="--keychain $RUNNER_TEMP/em.keychain-db" \
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" $AD_SETTINGS archive > archive.log 2>&1 \
             || { set +e; { grep -E "error:|Signing|signing" archive.log | sort -u | head -20; tail -15 archive.log; } | while read -r l; do echo "::error::$l"; done; exit 1; }
-          xcodebuild -exportArchive -archivePath build/ElectricMan.xcarchive -exportPath release -exportOptionsPlist ExportOptions.plist "${AUTH[@]}" > export.log 2>&1 \
+          xcodebuild -exportArchive -archivePath build/ElectricHunter.xcarchive -exportPath release -exportOptionsPlist ExportOptions.plist "${AUTH[@]}" > export.log 2>&1 \
             || { set +e; tail -25 export.log | while read -r l; do echo "::error::$l"; done; exit 1; }
           touch "$RUNNER_TEMP/em-uploaded"
           echo "::notice::Uploaded build $GITHUB_RUN_NUMBER to App Store Connect"

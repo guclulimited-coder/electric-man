@@ -13,3 +13,8 @@ android/app/src/main/assets/www/
 android/local.properties
 ios/build/
 ios/ElectricMan/www/
+hunter-app/android/app/src/main/assets/www/
+hunter-app/ios/ElectricHunter/www/
+hunter-app/ios/*.xcodeproj/
+hunter-app/android/app/build/
+hunter-app/android/.gradle/

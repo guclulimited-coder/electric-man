@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ElectricHunter" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/sky</item>
+        <item name="android:statusBarColor">@color/sky</item>
+        <item name="android:navigationBarColor">@color/sky_light</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <color name="sky">#120A1F</color>
+    <color name="sky_light">#120A1F</color>
+    <color name="icon_bg">#1A0B38</color>
+</resources>

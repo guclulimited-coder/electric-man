@@ -1,9 +1,9 @@
-name: Android build
+name: Electric Hunter Android build
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['android/**', 'public/**', '!public/hunter/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/android.yml']
+    paths: ['hunter-app/android/**', 'hunter-app/ads.env', 'public/hunter/**', 'scripts/bundle-native.mjs', '.github/workflows/hunter-android.yml']
 permissions:
   contents: write
 jobs:
@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '22'
       - name: Bundle the game into the app
-        run: node scripts/bundle-native.mjs android/app/src/main/assets/www
+        run: node scripts/bundle-native.mjs hunter-app/android/app/src/main/assets/www hunter
       - name: Android SDK 36
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
       - uses: gradle/actions/setup-gradle@v4
@@ -32,11 +32,11 @@ jobs:
         run: |
           echo "EM_VERSION_CODE=$((100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
           echo "EM_VERSION_NAME=1.0.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
-          grep -E '^EM_' native/ads.env >> "$GITHUB_ENV"
+          grep -E '^EM_.*=.+' hunter-app/ads.env >> "$GITHUB_ENV" || true
       - name: Debug APK (official test ads)
         run: |
           set +e
-          gradle -p android assembleDebug --no-daemon > build.log 2>&1; code=$?
+          gradle -p hunter-app/android assembleDebug --no-daemon > build.log 2>&1; code=$?
           grep -E "^e: |error:|FAILURE|What went wrong|BUILD (SUCCESSFUL|FAILED)" -A2 build.log | head -40 | while read -r l; do echo "::warning::$l"; done
           exit $code
       - name: Signed release bundle
@@ -46,25 +46,25 @@ jobs:
         run: |
           if [ -z "$KEYSTORE_B64" ]; then echo "No upload key secret yet; skipping release bundle."; exit 0; fi
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          EM_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks" gradle -p android bundleRelease --no-daemon
+          EM_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks" gradle -p hunter-app/android bundleRelease --no-daemon
           rm -f "$RUNNER_TEMP/upload.jks"
       - uses: actions/upload-artifact@v4
         with:
-          name: ElectricMan-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: ElectricHunter-debug-apk
+          path: hunter-app/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
-          name: ElectricMan-release-aab
-          path: android/app/build/outputs/bundle/release/*.aab
+          name: ElectricHunter-release-aab
+          path: hunter-app/android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: ignore
           retention-days: 30
       - name: Keep the release bundle on the builds branch (artifact storage is not reachable from every tool)
-        if: hashFiles('android/app/build/outputs/bundle/release/*.aab') != ''
+        if: hashFiles('hunter-app/android/app/build/outputs/bundle/release/*.aab') != ''
         run: |
           set -e
-          mkdir -p "$RUNNER_TEMP/b" && cp android/app/build/outputs/bundle/release/*.aab "$RUNNER_TEMP/b/ElectricMan-$EM_VERSION_NAME-$EM_VERSION_CODE.aab"
+          mkdir -p "$RUNNER_TEMP/b" && cp hunter-app/android/app/build/outputs/bundle/release/*.aab "$RUNNER_TEMP/b/ElectricHunter-$EM_VERSION_NAME-$EM_VERSION_CODE.aab"
           cd "$RUNNER_TEMP/b"
-          git init -q -b builds && git config user.name "github-actions[bot]" && git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add . && git commit -qm "Android release bundle $EM_VERSION_NAME ($EM_VERSION_CODE)"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" builds
+          git init -q -b hunter-builds && git config user.name "github-actions[bot]" && git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -qm "Electric Hunter Android release bundle $EM_VERSION_NAME ($EM_VERSION_CODE)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" hunter-builds

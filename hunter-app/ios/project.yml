@@ -1,0 +1,41 @@
+name: ElectricHunter
+options:
+  bundleIdPrefix: com.tusneldax
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: tr
+packages:
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    exactVersion: 13.11.0
+targets:
+  ElectricHunter:
+    type: application
+    platform: iOS
+    sources:
+      - path: ElectricHunter
+        excludes: ["www/**"]
+      - path: ElectricHunter/www
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: GoogleMobileAds
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tusneldax.electrichunter
+        PRODUCT_NAME: ElectricHunter
+        INFOPLIST_FILE: ElectricHunter/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        DEVELOPMENT_TEAM: YMAU5R6AA4
+        CODE_SIGN_STYLE: Automatic
+        OTHER_LDFLAGS: ["$(inherited)", "-ObjC"]
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        EM_ADMOB_APP_IOS: ca-app-pub-3940256099942544~1458002511
+        EM_AD_APP_OPEN_IOS: ""
+        EM_AD_INTERSTITIAL_IOS: ""
+        EM_AD_REWARDED_IOS: ""

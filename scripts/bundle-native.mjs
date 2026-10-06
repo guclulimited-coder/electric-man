@@ -1,16 +1,17 @@
 // Builds the offline game bundle that ships inside the Android/iOS apps:
 // copies the web game and vendors three.js so the apps do not need a CDN.
-// Usage: node scripts/bundle-native.mjs <outDir>
+// Usage: node scripts/bundle-native.mjs <outDir> [hunter]   (hunter = Electric Hunter, from public/hunter)
 import {mkdirSync, cpSync, readFileSync, writeFileSync, rmSync, existsSync} from 'node:fs';
 import {dirname, join} from 'node:path';
-const root = new URL('..', import.meta.url).pathname, out = process.argv[2];
+const root = new URL('..', import.meta.url).pathname, out = process.argv[2], HUNTER = process.argv[3] === 'hunter', SRC = HUNTER ? 'public/hunter' : 'public';
 if (!out) { console.error('usage: bundle-native.mjs <outDir>'); process.exit(1); }
 const CDN = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 const VENDOR = ['build/three.module.js', 'examples/jsm/loaders/GLTFLoader.js', 'examples/jsm/utils/SkeletonUtils.js', 'examples/jsm/utils/BufferGeometryUtils.js'];
 if (existsSync(out)) rmSync(out, {recursive: true});
 mkdirSync(out, {recursive: true});
-for (const f of ['engine.js', 'serhat.txt', 'zeynep.txt', 'icon-192.png', 'icon-512.png']) cpSync(join(root, 'public', f), join(out, f));
-for (const d of ['i18n', 'avatars']) cpSync(join(root, 'public', d), join(out, d), {recursive: true});
+const FILES = HUNTER ? ['serhat.txt', 'logo.png', 'favicon.png', 'icon-1024.png', ...['zeynep', 'dilan', 'fahri', 'rasim', 'samet', 'cebrail', 'zulfu', 'huseyin', 'siyar'].map(n => 'boss-' + n + '.txt')] : ['engine.js', 'serhat.txt', 'zeynep.txt', 'icon-192.png', 'icon-512.png'];
+for (const f of FILES) cpSync(join(root, SRC, f), join(out, f));
+for (const d of HUNTER ? ['i18n'] : ['i18n', 'avatars']) cpSync(join(root, SRC, d), join(out, d), {recursive: true});
 for (const f of VENDOR){
   const dest = join(out, 'vendor/three', f);
   mkdirSync(dirname(dest), {recursive: true});
@@ -20,9 +21,9 @@ for (const f of VENDOR){
   else { const r = await fetch(CDN + f); if (!r.ok) throw new Error('download failed ' + f); body = Buffer.from(await r.arrayBuffer()); }
   writeFileSync(dest, body);
 }
-let html = readFileSync(join(root, 'public/index.html'), 'utf8');
+let html = readFileSync(join(root, SRC, 'index.html'), 'utf8');
 const n = html.split(CDN).length - 1;
-if (n < 4) throw new Error('expected CDN references in index.html, found ' + n);
+if (n < (HUNTER ? 3 : 4)) throw new Error('expected CDN references in index.html, found ' + n);
 html = html.replaceAll(CDN, './vendor/three/');
 // vendor the Google Fonts (Bungee, Rubik) when reachable; system fonts are the fallback otherwise
 try {
