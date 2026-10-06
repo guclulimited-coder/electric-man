@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key><string>Electric Man</string>
+	<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key><string>ElectricMan</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleDevelopmentRegion</key><string>tr</string>
+	<key>CFBundleLocalizations</key>
+	<array><string>tr</string><string>en</string><string>zh-Hans</string><string>hi</string><string>es</string><string>ar</string><string>fr</string><string>bn</string><string>pt</string><string>ru</string><string>id</string><string>de</string><string>ja</string></array>
+	<key>CFBundleURLTypes</key>
+	<array><dict><key>CFBundleURLName</key><string>com.tusneldax.electricman.signin</string><key>CFBundleURLSchemes</key><array><string>electricman</string></array></dict></array>
+	<key>ITSAppUsesNonExemptEncryption</key><false/>
+	<key>LSRequiresIPhoneOS</key><true/>
+	<key>UILaunchScreen</key><dict><key>UIColorName</key><string></string></dict>
+	<key>UIStatusBarStyle</key><string>UIStatusBarStyleDarkContent</string>
+	<key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>
+	<key>UISupportedInterfaceOrientations~ipad</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationPortraitUpsideDown</string></array>
+	<key>UIRequiresFullScreen</key><true/>
+	<key>GADApplicationIdentifier</key><string>$(EM_ADMOB_APP_IOS)</string>
+	<key>EMAdAppOpen</key><string>$(EM_AD_APP_OPEN_IOS)</string>
+	<key>EMAdInterstitial</key><string>$(EM_AD_INTERSTITIAL_IOS)</string>
+	<key>EMAdRewarded</key><string>$(EM_AD_REWARDED_IOS)</string>
+	<key>NSUserTrackingUsageDescription</key><string>Reklamları ilgi alanına göre göstermek ve oyunu ücretsiz tutmak için kullanılır. / Used to show more relevant ads and keep the game free.</string>
+	<key>SKAdNetworkItems</key>
+	<array><dict><key>SKAdNetworkIdentifier</key><string>cstr6suwn9.skadnetwork</string></dict></array>
+</dict>
+</plist>
