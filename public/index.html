@@ -1078,7 +1078,8 @@ const Online = (() => {
   function bindLang(body){ const s = body.querySelector('#langSel'); if (s) s.onchange = () => { store.set('lang', s.value); location.reload(); }; }
   const settingsRow = () => `<div class="field"><label>${esc(T('sound'))}</label><button class="btn small ghost" id="soundToggle" aria-pressed="${!muted}" style="align-self:flex-start">${esc(muted ? T('off') : T('on'))}</button></div>`;
   function bindSettings(body){ Profile.bind(body); const s = body.querySelector('#soundToggle'); if (s) s.onclick = toggleSound; }
-  const legal = () => T('consent', {terms:`<a href="/kosullar" target="_blank" rel="noopener">${esc(T('terms'))}</a>`, privacy:`<a href="/gizlilik" target="_blank" rel="noopener">${esc(T('privacy'))}</a>`});
+  const SITE = Native.app ? 'https://electricman.tusneldax.com' : '';
+  const legal = () => T('consent', {terms:`<a href="${SITE}/kosullar" target="_blank" rel="noopener">${esc(T('terms'))}</a>`, privacy:`<a href="${SITE}/gizlilik" target="_blank" rel="noopener">${esc(T('privacy'))}</a>`});
   async function openAccount(){
     if (!cfg){ const b = sheet(T('accTitle'), `<p>${esc(T('accPreview'))}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`); bindLang(b); bindSettings(b); return; }
     if (!me && Native.app){

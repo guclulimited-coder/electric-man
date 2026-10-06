@@ -1,0 +1,57 @@
+name: Android build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['android/**', 'public/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/android.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bundle the game into the app
+        run: node scripts/bundle-native.mjs android/app/src/main/assets/www
+      - name: Android SDK 36
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - name: Version
+        run: |
+          echo "EM_VERSION_CODE=$((100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          echo "EM_VERSION_NAME=1.0.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          grep -E '^EM_' native/ads.env >> "$GITHUB_ENV"
+      - name: Debug APK (official test ads)
+        run: gradle -p android assembleDebug --no-daemon --stacktrace
+      - name: Signed release bundle
+        env:
+          KEYSTORE_B64: ${{ secrets.EM_ANDROID_KEYSTORE_B64 }}
+          EM_KEYSTORE_PASSWORD: ${{ secrets.EM_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "No upload key secret yet; skipping release bundle."; exit 0; fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          EM_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks" gradle -p android bundleRelease --no-daemon
+          rm -f "$RUNNER_TEMP/upload.jks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectricMan-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectricMan-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: ignore
+          retention-days: 30

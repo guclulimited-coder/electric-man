@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ElectricMan" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/sky</item>
+        <item name="android:statusBarColor">@color/sky</item>
+        <item name="android:navigationBarColor">@color/sky_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <color name="sky">#6EC6FF</color>
+    <color name="sky_light">#D9F3FF</color>
+    <color name="icon_bg">#2F7FE8</color>
+</resources>
