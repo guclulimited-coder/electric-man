@@ -73,7 +73,8 @@ jobs:
           PY
           chmod 600 "$KEY"
           # Signing without stored certificates: create a temporary Apple Distribution certificate + App Store profile
-          # through the App Store Connect API, sign and upload, then revoke the certificate (see the cleanup step).
+          # through the App Store Connect API, sign and upload. The certificate is revoked only when the upload fails:
+          # revoking it after a successful upload makes Apple mark that build "Invalid Binary".
           python3 -m venv "$RUNNER_TEMP/asc" && "$RUNNER_TEMP/asc/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
           "$RUNNER_TEMP/asc/bin/python" - "$KEY" <<'PY'
           import base64, json, os, pathlib, plistlib, secrets, subprocess, sys, time, traceback, urllib.request, urllib.error, jwt
@@ -134,8 +135,9 @@ jobs:
             || { set +e; { grep -E "error:|Signing|signing" archive.log | sort -u | head -20; tail -15 archive.log; } | while read -r l; do echo "::error::$l"; done; exit 1; }
           xcodebuild -exportArchive -archivePath build/ElectricMan.xcarchive -exportPath release -exportOptionsPlist ExportOptions.plist "${AUTH[@]}" > export.log 2>&1 \
             || { set +e; tail -25 export.log | while read -r l; do echo "::error::$l"; done; exit 1; }
+          touch "$RUNNER_TEMP/em-uploaded"
           echo "::notice::Uploaded build $GITHUB_RUN_NUMBER to App Store Connect"
-      - name: Clean up signing files (revoke temporary certificate)
+      - name: Clean up signing files (revoke the certificate only if nothing was uploaded)
         if: always()
         env:
           KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
@@ -147,7 +149,9 @@ jobs:
           import os, sys, time, pathlib, urllib.request, jwt
           env = os.environ; temp = pathlib.Path(env['RUNNER_TEMP']); key = open(sys.argv[1]).read()
           tok = jwt.encode({'iss': env['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': env['KEY_ID'], 'typ': 'JWT'})
-          for kind, f in [('profiles', 'em-profile-id'), ('certificates', 'em-cert-id')]:
+          kinds = [('profiles', 'em-profile-id')] + ([] if (temp / 'em-uploaded').exists() else [('certificates', 'em-cert-id')])
+          if (temp / 'em-uploaded').exists() and (temp / 'em-cert-id').exists(): print('::notice::kept distribution certificate ' + (temp / 'em-cert-id').read_text().strip() + ' (the uploaded build depends on it)')
+          for kind, f in kinds:
               p = temp / f
               if p.exists():
                   try:
