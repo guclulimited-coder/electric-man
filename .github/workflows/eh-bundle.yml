@@ -39,4 +39,7 @@ jobs:
               print('::notice::bundle ID registered: ' + b['id'])
           apps = api('GET', '/v1/apps?filter[bundleId]=' + ident)['data']
           print('::notice::App Store Connect app record: ' + (apps[0]['id'] if apps else 'not created yet'))
+          for c in api('GET', '/v1/certificates?limit=50')['data']:
+              at = c['attributes']
+              print('::notice::certificate ' + at.get('certificateType', '') + ' | ' + at.get('displayName', at.get('name', '')) + ' | id ' + c['id'] + ' | expires ' + str(at.get('expirationDate', ''))[:10])
           PY
