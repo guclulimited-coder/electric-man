@@ -14,8 +14,16 @@ BASE = 'https://api.appstoreconnect.apple.com'
 SITE = 'https://electricman.tusneldax.com'
 IAP_ID = 'em_coins_500'
 
+LOG = []
 def note(msg, level='notice'):
-    print(f'::{level}::{msg}'.replace('\n', ' '), flush=True)
+    LOG.append(('! ' if level != 'notice' else '') + str(msg).replace('\n', ' '))
+    print(msg, flush=True)
+
+import atexit
+@atexit.register
+def _summary():
+    # GitHub keeps only 10 annotations per level and step, so everything goes into one annotation
+    print('::notice::' + '%0A'.join(LOG).replace('\r', ''), flush=True)
 
 _tok = [None, 0]
 def token():
@@ -90,7 +98,7 @@ Gizlilik: https://electricman.tusneldax.com/gizlilik
 Kullanım koşulları: https://electricman.tusneldax.com/kosullar''',
     iap_name='500 Jeton', iap_desc='Oyun içi 500 jeton'),
   'en-US': dict(
-    name='Electric Man', subtitle='Rotate cables, light up homes',
+    name='Electric Man: Cable Puzzle', subtitle='Rotate cables, light up homes',
     keywords='puzzle,cable,electric,brain,logic,connect,pipe,circuit,light,path,3d,wire',
     promo='300 levels across 15 districts! Rotate the cables, light up the town and race your friends in the weekly league.',
     description='''Time to light up the neighbourhood with Electric Man! Tap the cables to rotate them and carry power from the transformer to every house. Master electricians Serhat and Zeynep run to the cable you tap and make the connection.
