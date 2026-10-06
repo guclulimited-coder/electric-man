@@ -1,0 +1,33 @@
+name: Electric Hunter App Store listing
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  listing:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[eh-asc]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Fill metadata, screenshots, price, IAP
+        env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          set -euo pipefail
+          KEY="$RUNNER_TEMP/AuthKey.p8"
+          python3 - "$KEY" <<'PY'
+          import os, re, sys, textwrap
+          raw = os.environ['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw))
+          open(sys.argv[1], 'w').write('-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n')
+          PY
+          python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/v/bin/python" scripts/eh_asc_store.py "$KEY" "$KEY_ID" "$ISSUER" hunter-app/shots/ios
+          rm -f "$KEY"
