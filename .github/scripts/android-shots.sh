@@ -13,7 +13,7 @@ adb shell am broadcast -a com.android.systemui.demo -e command notifications -e 
 adb shell am start -n $PKG/.MainActivity --ei emShot 1 --es emShotLang tr; sleep 60
 for L in tr en; do
   mkdir -p shots/android/$L
-  for N in 1 2 3 4 5 6; do
+  for N in 1 2 3 4 5 6 7; do
     adb shell am force-stop $PKG
     adb shell am start -n $PKG/.MainActivity --ei emShot $N --es emShotLang $L
     if [ $N = 3 ]; then sleep 55; else sleep 45; fi

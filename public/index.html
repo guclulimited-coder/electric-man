@@ -215,10 +215,10 @@ const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (win
 // apps keep a copy of the save outside the web view (restored before the game starts)
 try { if (Native.app && window.__EM_RESTORE && !localStorage.getItem('em_max')) for (const [k, v] of Object.entries(window.__EM_RESTORE)) if (k.startsWith('em_')) localStorage.setItem(k, v); } catch (e){}
 /* store screenshot mode (?shot=1..6): demo save + mocked online data, no ads/prompts */
-const SHOT = Math.max(0, Math.min(6, +(new URLSearchParams(location.search).get('shot') || 0) || 0));
+const SHOT = Math.max(0, Math.min(7, +(new URLSearchParams(location.search).get('shot') || 0) || 0));
 if (SHOT){ try { localStorage.clear(); const st = {}; for (let i = 1; i <= 58; i++) st[i] = i % 4 ? 3 : 2;
   const lang = (new URLSearchParams(location.search).get('lang') || ''); if (lang) localStorage.setItem('em_lang', JSON.stringify(lang));
-  Object.entries({gender:'m', muted:true, coins:240, max:61, stars:st, level:[0,7,46,21,58,58,58][SHOT]}).forEach(([k, v]) => localStorage.setItem('em_' + k, JSON.stringify(v))); } catch (e){} }
+  Object.entries({gender:'m', muted:true, coins:240, max:61, stars:st, level:[0,7,46,21,58,58,58,12][SHOT]}).forEach(([k, v]) => localStorage.setItem('em_' + k, JSON.stringify(v))); } catch (e){} }
 let persistTimer = null;
 const store = {
   get(k, d){ try { const v = localStorage.getItem('em_'+k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
@@ -1328,6 +1328,7 @@ function shotScene(){
   else if (SHOT === 4){ click('#msgBtn'); setTimeout(() => click('[data-chat]'), 900); }
   else if (SHOT === 5) click('#leagueBtn');
   else if (SHOT === 6) click('#mapBtn');
+  else if (SHOT === 7) Shop.open();
   setTimeout(() => { document.title = 'EM_SHOT_READY'; window.__emShotReady = true; }, SHOT === 3 ? 9000 : 5000);
 }
 window.__em = { generate, diff, stepsCW, setDir(cw){ dirCW = cw; }, get S(){ return S; }, start, tap, act, screenOf(){ const r = canvas.getBoundingClientRect(); return S.tiles.filter(t => t.kind === 'cable').map(t => { const v = new THREE.Vector3(t.g.position.x, .165, t.g.position.z).project(camera); return {idx:t.idx, fixed:!!t.fixed || !!t.fog, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height}; }); } };
