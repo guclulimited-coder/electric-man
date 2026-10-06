@@ -14,3 +14,9 @@ CREATE TABLE IF NOT EXISTS em_friends(id TEXT PRIMARY KEY, a TEXT NOT NULL, b TE
 CREATE INDEX IF NOT EXISTS em_friends_a ON em_friends(a);
 CREATE INDEX IF NOT EXISTS em_friends_b ON em_friends(b);
 CREATE TABLE IF NOT EXISTS em_blocks(id TEXT PRIMARY KEY, a TEXT NOT NULL, b TEXT NOT NULL);
+-- chat (friends only), translation cache, abuse reports — the API also creates these on first use
+CREATE TABLE IF NOT EXISTS em_messages(id INTEGER PRIMARY KEY AUTOINCREMENT, pair TEXT NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, text TEXT NOT NULL, lang TEXT NOT NULL, created INTEGER NOT NULL, read INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX IF NOT EXISTS em_messages_pair ON em_messages(pair, id);
+CREATE INDEX IF NOT EXISTS em_messages_unread ON em_messages(recipient, read);
+CREATE TABLE IF NOT EXISTS em_translations(msg INTEGER NOT NULL, lang TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(msg, lang));
+CREATE TABLE IF NOT EXISTS em_reports(id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, msg INTEGER, snapshot TEXT, reason TEXT, created INTEGER NOT NULL);

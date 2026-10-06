@@ -79,14 +79,14 @@ export function normalizeEmail(v){
 }
 async function mac(secret, value){ const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC', hash:'SHA-256'}, false, ['sign']); return hex(await crypto.subtle.sign('HMAC', key, enc.encode(value))); }
 function otp(){ let n; do { n = crypto.getRandomValues(new Uint32Array(1))[0]; } while (n >= 4200000000); return String(n % 1000000).padStart(6, '0'); }
-async function sendEmailCode(db, env, nonceId, email, expires, fetcher = fetch){
+async function sendEmailCode(db, env, nonceId, email, expires, fetcher = fetch, lang = 'tr'){
+  const m = MAIL[lang] || MAIL.tr || {subject:'Electric Man giriş kodun: {code}', body:'Electric Man\n\nGiriş kodun: {code}\n\nKod 5 dakika geçerlidir. Kimseyle paylaşma. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.\n\nTusneldaX'};
   const id = random(), code = otp(), emailHash = await hash(email), digest = await mac(env.EM_EMAIL_OTP_SECRET, id + ':' + nonceId + ':' + emailHash + ':' + code);
   await db.batch([db.prepare('DELETE FROM em_email_codes WHERE expires<? OR nonce=?').bind(Date.now(), nonceId),
     db.prepare('INSERT INTO em_email_codes(id,nonce,email_hash,digest,attempts,expires) VALUES(?,?,?,?,0,?)').bind(id, nonceId, emailHash, digest, Math.min(expires, Date.now() + 300000))]);
   try {
     const r = await fetcher('https://api.resend.com/emails', {method:'POST', headers:{Authorization:'Bearer ' + env.EM_RESEND_API_KEY, 'Content-Type':'application/json', 'Idempotency-Key':'em-otp-' + id},
-      body: JSON.stringify({from: env.EM_EMAIL_FROM, to:[email], subject:'Electric Man giriş kodun: ' + code,
-        text:'Electric Man\n\nGiriş kodun: ' + code + '\n\nKod 5 dakika geçerlidir. Kimseyle paylaşma. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.\n\nTusneldaX'}), signal: AbortSignal.timeout(10000)});
+      body: JSON.stringify({from: env.EM_EMAIL_FROM, to:[email], subject: m.subject.replaceAll('{code}', code), text: m.body.replaceAll('{code}', code)}), signal: AbortSignal.timeout(10000)});
     await r.body?.cancel?.(); if (!r.ok) fail('EMAIL_UNAVAILABLE', 503);
   } catch { await run(db, 'DELETE FROM em_email_codes WHERE id=?', id); fail('EMAIL_UNAVAILABLE', 503); }
   return {challenge:id};
@@ -127,6 +127,41 @@ async function newSession(db, player){
 }
 const publicMe = p => ({name:p.name, code:p.code});
 const blocked = (db, a, b) => one(db, 'SELECT id FROM em_blocks WHERE (a=? AND b=?) OR (a=? AND b=?)', a, b, b, a);
+const pairId = (a, b) => [a, b].sort().join(':');
+
+/* ---------- chat (friends only) + translation ---------- */
+export const LANGS = ['tr', 'en', 'zh', 'hi', 'es', 'ar', 'fr', 'bn', 'pt', 'ru', 'id', 'de', 'ja'];
+const SCHEMA = [
+  'CREATE TABLE IF NOT EXISTS em_messages(id INTEGER PRIMARY KEY AUTOINCREMENT, pair TEXT NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, text TEXT NOT NULL, lang TEXT NOT NULL, created INTEGER NOT NULL, read INTEGER NOT NULL DEFAULT 0)',
+  'CREATE INDEX IF NOT EXISTS em_messages_pair ON em_messages(pair, id)',
+  'CREATE INDEX IF NOT EXISTS em_messages_unread ON em_messages(recipient, read)',
+  'CREATE TABLE IF NOT EXISTS em_translations(msg INTEGER NOT NULL, lang TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(msg, lang))',
+  'CREATE TABLE IF NOT EXISTS em_reports(id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, msg INTEGER, snapshot TEXT, reason TEXT, created INTEGER NOT NULL)',
+];
+let schemaReady = null;
+const ensureSchema = db => schemaReady ||= db.batch(SCHEMA.map(q => db.prepare(q))).catch(e => { schemaReady = null; throw e; });
+export function cleanText(v){
+  if (typeof v !== 'string') fail('INVALID_MESSAGE');
+  const s = v.normalize('NFC').replace(/[\u0000-\u0009\u000B-\u001F\u007F​-‏‪-‮⁦-⁩]/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  if (!s || [...s].length > 300) fail('INVALID_MESSAGE');
+  return s;
+}
+async function friendOf(db, me, code){
+  const other = await one(db, 'SELECT * FROM em_players WHERE code=?', String(code || '').trim().toUpperCase());
+  if (!other || other.id === me.id) fail('PLAYER_NOT_FOUND', 404);
+  if (!await one(db, "SELECT id FROM em_friends WHERE id=? AND status='accepted'", pairId(me.id, other.id)) || await blocked(db, me.id, other.id)) fail('NOT_FRIENDS', 403);
+  return other;
+}
+async function translateText(ai, text, from, to){
+  try {
+    const r = await ai.run('@cf/meta/m2m100-1.2b', {text, source_lang: from, target_lang: to});
+    const t = typeof r?.translated_text === 'string' ? r.translated_text.trim().slice(0, 900) : '';
+    return t || null;
+  } catch (e){ console.error('em-translate', e.message); return null; }
+}
+/* localized login e-mail; filled in by scripts/build.mjs from public/i18n/*.json */
+const MAIL = globalThis.__EM_MAIL__ || {};
+const DEL_WORDS = globalThis.__EM_DEL_WORDS__ || ['SIL', 'DELETE'];
 
 export async function emAPI(req, env, deps = {}){
   const fetcher = deps.fetch || fetch;
@@ -153,7 +188,7 @@ export async function emAPI(req, env, deps = {}){
       if (!nonce) fail('LOGIN_EXPIRED', 401);
       const email = normalizeEmail(body.email);
       await quota(db, 'email-ip:' + ip, 10, 3600000); await quota(db, 'email-minute:' + email, 1, 60000); await quota(db, 'email-hour:' + email, 6, 3600000);
-      return reply(await sendEmailCode(db, env, nonce.id, email, nonce.expires, fetcher));
+      return reply(await sendEmailCode(db, env, nonce.id, email, nonce.expires, fetcher, LANGS.includes(body.lang) ? body.lang : 'tr'));
     }
     if ((path === '/auth/google' || path === '/auth/email') && req.method === 'POST'){
       const n = cookie(req, NONCE);
@@ -170,7 +205,61 @@ export async function emAPI(req, env, deps = {}){
     if (path === '/me'){ const p = await current(req, db); return reply({player: p ? publicMe(p) : null}); }
 
     const me = await current(req, db); if (!me) fail('LOGIN_REQUIRED', 401);
-    await quota(db, 'user:' + me.id, 180, 60000);
+    // polling reads (chat refresh, badges) are not counted: the quota itself is a write
+    if (!(req.method === 'GET' && (path === '/chat' || path === '/badges'))) await quota(db, 'user:' + me.id, 180, 60000);
+    await ensureSchema(db);
+
+    if (path === '/badges' && req.method === 'GET'){
+      const r = await one(db, "SELECT (SELECT COUNT(*) FROM em_friends WHERE b=? AND status='pending') AS requests, (SELECT COUNT(*) FROM em_messages WHERE recipient=? AND read=0) AS unread", me.id, me.id);
+      return reply({requests: r.requests, unread: r.unread});
+    }
+    if (path === '/chat' && req.method === 'GET'){
+      const other = await friendOf(db, me, url.searchParams.get('with')), pair = pairId(me.id, other.id);
+      const after = Math.max(0, Math.floor(Number(url.searchParams.get('after')) || 0));
+      const list = after
+        ? await rows(db, 'SELECT id,sender,text,lang,created FROM em_messages WHERE pair=? AND id>? ORDER BY id LIMIT 100', pair, after)
+        : (await rows(db, 'SELECT id,sender,text,lang,created FROM em_messages WHERE pair=? ORDER BY id DESC LIMIT 60', pair)).reverse();
+      if (list.some(m => m.sender === other.id)) await run(db, 'UPDATE em_messages SET read=1 WHERE pair=? AND recipient=? AND read=0', pair, me.id);
+      return reply({friend: publicMe(other), messages: list.map(m => ({id:m.id, mine: m.sender === me.id, text:m.text, lang:m.lang, created:m.created}))});
+    }
+    if (path === '/chat' && req.method === 'POST'){
+      const other = await friendOf(db, me, body.to), text = cleanText(body.text), lang = LANGS.includes(body.lang) ? body.lang : 'tr';
+      await quota(db, 'chat:' + me.id, 20, 60000); await quota(db, 'chat-day:' + me.id, 600, 86400000);
+      const m = await one(db, 'INSERT INTO em_messages(pair,sender,recipient,text,lang,created,read) VALUES(?,?,?,?,?,?,0) RETURNING id,created', pairId(me.id, other.id), me.id, other.id, text, lang, Date.now());
+      if (Math.random() < .02){ // retention: messages are kept for 90 days
+        await db.batch([db.prepare('DELETE FROM em_messages WHERE created<?').bind(Date.now() - 90 * 86400000), db.prepare('DELETE FROM em_translations WHERE msg NOT IN (SELECT id FROM em_messages)')]);
+      }
+      return reply({message: {id:m.id, mine:true, text, lang, created:m.created}});
+    }
+    if (path === '/translate' && req.method === 'POST'){
+      const to = body.to; if (!LANGS.includes(to)) fail('INVALID_LANG');
+      const ids = (Array.isArray(body.ids) ? body.ids : []).filter(Number.isSafeInteger).slice(0, 20);
+      const out = {};
+      if (ids.length) await quota(db, 'translate:' + me.id, 120, 60000);
+      for (const id of ids){
+        const m = await one(db, 'SELECT id,text,lang FROM em_messages WHERE id=? AND (sender=? OR recipient=?)', id, me.id, me.id);
+        if (!m || m.lang === to) continue;
+        const cached = await one(db, 'SELECT text FROM em_translations WHERE msg=? AND lang=?', id, to);
+        if (cached){ out[id] = cached.text; continue; }
+        if (!env.AI) fail('TRANSLATE_UNAVAILABLE', 503);
+        const t = await translateText(env.AI, m.text, m.lang, to);
+        if (t){ out[id] = t; await run(db, 'INSERT INTO em_translations(msg,lang,text) VALUES(?,?,?) ON CONFLICT DO NOTHING', id, to, t); }
+      }
+      return reply({tr: out});
+    }
+    if (path === '/report' && req.method === 'POST'){
+      const other = await one(db, 'SELECT * FROM em_players WHERE code=?', String(body.code || '').trim().toUpperCase());
+      if (!other || other.id === me.id) fail('PLAYER_NOT_FOUND', 404);
+      await quota(db, 'report:' + me.id, 20, 86400000);
+      const recent = await rows(db, 'SELECT id,text,created FROM em_messages WHERE pair=? AND sender=? ORDER BY id DESC LIMIT 20', pairId(me.id, other.id), other.id);
+      const pair = pairId(me.id, other.id);
+      await db.batch([
+        db.prepare('INSERT INTO em_reports(reporter,target,msg,snapshot,reason,created) VALUES(?,?,?,?,?,?)').bind(me.id, other.id, Number.isSafeInteger(body.msg) ? body.msg : null, JSON.stringify(recent), String(body.reason || '').slice(0, 200), Date.now()),
+        db.prepare('INSERT INTO em_blocks(id,a,b) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING').bind(me.id + ':' + other.id, me.id, other.id),
+        db.prepare('DELETE FROM em_friends WHERE id=?').bind(pair),
+        db.prepare('UPDATE em_messages SET read=1 WHERE pair=?').bind(pair)]);
+      return reply({ok:true});
+    }
 
     if (path === '/logout' && req.method === 'POST'){ await run(db, 'DELETE FROM em_sessions WHERE id=?', await hash(cookie(req, COOKIE))); return reply({ok:true}, 200, {'Set-Cookie': ck(COOKIE, '', 0)}); }
     if (path === '/profile' && req.method === 'POST'){
@@ -208,16 +297,17 @@ export async function emAPI(req, env, deps = {}){
     }
     if (path === '/friends' && req.method === 'GET'){
       const list = await rows(db, `SELECT f.status, f.a AS requester, p.code, p.name,
-          (SELECT json_extract(body,'$.max') FROM em_saves s WHERE s.player=p.id) AS max
+          (SELECT json_extract(body,'$.max') FROM em_saves s WHERE s.player=p.id) AS max,
+          (SELECT COUNT(*) FROM em_messages m WHERE m.recipient=? AND m.sender=p.id AND m.read=0) AS unread
         FROM em_friends f JOIN em_players p ON p.id = CASE WHEN f.a=? THEN f.b ELSE f.a END
-        WHERE (f.a=? OR f.b=?) LIMIT 200`, me.id, me.id, me.id);
-      return reply({me: publicMe(me), friends: list.map(f => ({code:f.code, name:f.name, max:f.max || 1, status: f.status, incoming: f.status === 'pending' && f.requester !== me.id}))});
+        WHERE (f.a=? OR f.b=?) LIMIT 200`, me.id, me.id, me.id, me.id);
+      return reply({me: publicMe(me), friends: list.map(f => ({code:f.code, name:f.name, max:f.max || 1, status: f.status, incoming: f.status === 'pending' && f.requester !== me.id, unread: f.status === 'accepted' ? f.unread : 0}))});
     }
     if (path === '/friends' && req.method === 'POST'){
       const other = await one(db, 'SELECT * FROM em_players WHERE code=?', String(body.code || '').trim().toUpperCase());
       if (!other || other.id === me.id) fail('PLAYER_NOT_FOUND', 404);
       const id = [me.id, other.id].sort().join(':');
-      if (body.action === 'block'){ await db.batch([db.prepare('INSERT INTO em_blocks(id,a,b) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING').bind(me.id + ':' + other.id, me.id, other.id), db.prepare('DELETE FROM em_friends WHERE id=?').bind(id)]); return reply({ok:true}); }
+      if (body.action === 'block'){ await db.batch([db.prepare('INSERT INTO em_blocks(id,a,b) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING').bind(me.id + ':' + other.id, me.id, other.id), db.prepare('DELETE FROM em_friends WHERE id=?').bind(id), db.prepare('UPDATE em_messages SET read=1 WHERE pair=?').bind(id)]); return reply({ok:true}); }
       if (await blocked(db, me.id, other.id)) fail('PLAYER_NOT_FOUND', 404);
       if (body.action === 'request'){
         await quota(db, 'friend:' + me.id, 30, 86400000);
@@ -226,14 +316,16 @@ export async function emAPI(req, env, deps = {}){
         else await run(db, "INSERT INTO em_friends(id,a,b,status) VALUES(?,?,?,'pending') ON CONFLICT(id) DO NOTHING", id, me.id, other.id);
       }
       else if (body.action === 'accept') await run(db, "UPDATE em_friends SET status='accepted' WHERE id=? AND b=?", id, me.id);
-      else if (body.action === 'remove') await run(db, 'DELETE FROM em_friends WHERE id=?', id);
+      else if (body.action === 'remove') await db.batch([db.prepare('DELETE FROM em_friends WHERE id=?').bind(id), db.prepare('UPDATE em_messages SET read=1 WHERE pair=?').bind(id)]);
       else fail('ACTION');
       return reply({ok:true});
     }
     if (path === '/delete-account' && req.method === 'POST'){
-      if (body.confirm !== 'SIL') fail('CONFIRM_DELETE');
+      if (typeof body.confirm !== 'string' || !DEL_WORDS.includes(body.confirm.trim().toUpperCase()) && !DEL_WORDS.includes(body.confirm.trim())) fail('CONFIRM_DELETE');
       await db.batch(['DELETE FROM em_identities WHERE player=?', 'DELETE FROM em_sessions WHERE player=?', 'DELETE FROM em_saves WHERE player=?', 'DELETE FROM em_clears WHERE player=?', 'DELETE FROM em_players WHERE id=?']
-        .map(q => db.prepare(q).bind(me.id)).concat([db.prepare('DELETE FROM em_friends WHERE a=? OR b=?').bind(me.id, me.id), db.prepare('DELETE FROM em_blocks WHERE a=? OR b=?').bind(me.id, me.id)]));
+        .map(q => db.prepare(q).bind(me.id)).concat([db.prepare('DELETE FROM em_friends WHERE a=? OR b=?').bind(me.id, me.id), db.prepare('DELETE FROM em_blocks WHERE a=? OR b=?').bind(me.id, me.id),
+          db.prepare('DELETE FROM em_messages WHERE sender=? OR recipient=?').bind(me.id, me.id), db.prepare('DELETE FROM em_reports WHERE reporter=? OR target=?').bind(me.id, me.id),
+          db.prepare('DELETE FROM em_translations WHERE msg NOT IN (SELECT id FROM em_messages)')]));
       return reply({ok:true}, 200, {'Set-Cookie': ck(COOKIE, '', 0)});
     }
     fail('NOT_FOUND', 404);

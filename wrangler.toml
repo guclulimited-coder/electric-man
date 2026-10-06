@@ -8,6 +8,10 @@ binding = "DB"
 database_name = "electric-man"
 database_id = "ff6c38eb-6238-4399-97e7-41ca3ae26ced"
 
+# Workers AI: automatic chat translation (@cf/meta/m2m100-1.2b)
+[ai]
+binding = "AI"
+
 [vars]
 EM_EMAIL_ENABLED = "true"
 EM_EMAIL_FROM = "Electric Man <giris@mail.tusneldax.com>"

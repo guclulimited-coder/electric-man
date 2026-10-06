@@ -42,7 +42,7 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 .iconbtn{appearance:none;border:0;background:var(--panel);color:var(--ink);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;box-shadow:0 1px 0 var(--line)}
 .iconbtn:focus-visible,.tool:focus-visible,.btn:focus-visible,.node:focus-visible{outline:2px solid var(--btn);outline-offset:2px}
 
-.hero{display:flex;align-items:center;gap:6px;padding:0 16px 0 6px;height:118px}
+.hero{display:flex;align-items:center;gap:6px;padding:0 16px 0 6px;height:124px;box-sizing:border-box}
 #heroCanvas{width:104px;height:118px;flex:0 0 auto;display:block}
 .bubble{position:relative;flex:1;min-width:0;background:#fff;color:var(--ink);border-radius:14px;padding:9px 12px;font-weight:600;font-size:13.5px;line-height:1.32;min-height:40px;display:flex;align-items:center;box-shadow:0 2px 0 var(--line)}
 .bubble::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-7px;border:7px solid transparent;border-right-color:#fff;border-left:0}
@@ -126,6 +126,29 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 #gbtn{min-height:44px;display:flex;justify-content:center}
 .divider{display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:12px;font-weight:700}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:#dde6f3}
+/* notification badges */
+#leagueBtn{position:relative}
+.nbadge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#e5484d;color:#fff;font:800 10.5px/17px var(--f-body);text-align:center;border:2px solid #fff;box-sizing:content-box}
+.ibadge{display:inline-block;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#e5484d;color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center;margin-inline-start:6px;vertical-align:middle}
+.item.req{background:#fff6d6;box-shadow:inset 0 0 0 1.5px var(--volt)}
+.sub{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:6px 0 0}
+select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px solid #cfdcef;background:#f6f9fe;color:var(--ink)}
+/* chat */
+.chat-top{display:flex;align-items:center;gap:8px}
+.chat-top .nm{flex:1;min-width:0;font-weight:800;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msgs{display:flex;flex-direction:column;gap:6px;min-height:200px;max-height:46vh;overflow:auto;padding:8px;background:#f2f6fc;border-radius:14px}
+.msg{max-width:80%;padding:8px 11px;border-radius:14px;font-size:15px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;-webkit-user-select:text}
+.msg.in{align-self:flex-start;background:#fff;border-end-start-radius:4px;box-shadow:0 1px 0 var(--line)}
+.msg.out{align-self:flex-end;background:var(--btn);color:#fff;border-end-end-radius:4px}
+.msg .tr{display:block;margin-top:4px;font-size:11.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;text-decoration:underline}
+.msg.out .tr{color:#d7e4ff}
+.msg time{display:block;font-size:10.5px;opacity:.65;margin-top:2px}
+.composer{display:flex;gap:8px;align-items:flex-end}
+.composer textarea{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px solid #cfdcef;background:#f6f9fe;color:var(--ink);resize:none;height:44px;max-height:110px}
+.chat-tools{display:flex;gap:8px;justify-content:flex-end}
+.toast{position:absolute;left:50%;top:58px;transform:translateX(-50%);z-index:40;background:#16304f;color:#fff;padding:9px 14px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 8px 20px rgba(22,48,79,.3);max-width:88%;cursor:pointer}
+.hero{padding-top:6px}
+[dir=rtl] .bubble::before{left:auto;right:-7px;border-right-color:transparent;border-left:7px solid #fff;border-right:0}
 </style>
 
 <div id="app">
@@ -133,32 +156,32 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
     <div class="brand">ELECTRIC<br>MAN<small id="lvl">KÖY · 1/300</small></div>
     <div class="chips">
       <div class="chip"><span class="coin"><svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6l-1.5 8.5L19 10h-6.2z"/></svg></span><span id="coins">0</span></div>
-      <button class="iconbtn" id="leagueBtn" aria-label="Lig ve arkadaşlar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></button>
-      <button class="iconbtn" id="accountBtn" aria-label="Hesap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><i id="accountDot" hidden></i></button>
-      <button class="iconbtn" id="mapBtn" aria-label="Bölüm haritası"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
-      <button class="iconbtn" id="soundBtn" aria-label="Sesi aç veya kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="sndOff" d="M17 9l5 6M22 9l-5 6" hidden/></svg></button>
-      <button class="iconbtn" id="restart" aria-label="Bölümü yeniden başlat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button class="iconbtn" id="leagueBtn" data-ta="aLeague" aria-label="Lig ve arkadaşlar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><b id="leagueBadge" class="nbadge" hidden>1</b></button>
+      <button class="iconbtn" id="accountBtn" data-ta="aAccount" aria-label="Hesap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><i id="accountDot" hidden></i></button>
+      <button class="iconbtn" id="mapBtn" data-ta="aMap" aria-label="Bölüm haritası"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+      <button class="iconbtn" id="soundBtn" data-ta="aSound" aria-label="Sesi aç veya kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="sndOff" d="M17 9l5 6M22 9l-5 6" hidden/></svg></button>
+      <button class="iconbtn" id="restart" data-ta="aRestart" aria-label="Bölümü yeniden başlat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
     </div>
   </div>
   <div class="hero">
-    <canvas id="heroCanvas" role="button" aria-label="Karakteri değiştir"></canvas>
+    <canvas id="heroCanvas" role="button" data-ta="aHero" aria-label="Karakteri değiştir"></canvas>
     <div class="bubble" id="bubble" aria-live="polite">Merhaba!</div>
   </div>
   <div class="status">
-    <div class="stat"><div class="lbl">Aydınlanan ev</div><div class="val"><span id="lit">0</span> <small>/ <span id="houses">0</span></small></div><div class="bar"><i id="litbar"></i></div></div>
-    <div class="stat" id="moveStat"><div class="lbl">Hamle</div><div class="val"><span id="moves">0</span> <small id="limitWrap">/ <span id="limit">0</span></small></div><div class="bar"><i id="movebar"></i></div></div>
+    <div class="stat"><div class="lbl" data-t="litLbl">Aydınlanan ev</div><div class="val"><span id="lit">0</span> <small>/ <span id="houses">0</span></small></div><div class="bar"><i id="litbar"></i></div></div>
+    <div class="stat" id="moveStat"><div class="lbl" data-t="movesLbl">Hamle</div><div class="val"><span id="moves">0</span> <small id="limitWrap">/ <span id="limit">0</span></small></div><div class="bar"><i id="movebar"></i></div></div>
   </div>
   <div class="boardwrap" id="wrap">
-    <canvas id="boardCanvas" aria-label="Oyun tahtası: kabloya dokunarak döndür"></canvas>
-    <div class="loading" id="loading">3D sahne yükleniyor…</div>
+    <canvas id="boardCanvas" data-ta="aBoard" aria-label="Oyun tahtası: kabloya dokunarak döndür"></canvas>
+    <div class="loading" id="loading" data-t="loading">3D sahne yükleniyor…</div>
   </div>
   <div class="tools">
-    <button class="tool" id="undo"><span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 9 5 15l6 6"/><path d="M5.5 15H19a7 7 0 0 1 0 14h-4"/></svg></span>Geri al</button>
-    <button class="tool" id="dirBtn" aria-label="Dönüş yönünü değiştir"><span class="ico"><svg id="dirIco" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M25 16a9 9 0 1 1-3-6.7"/><path d="M23 4v6h-6"/></svg></span><span id="dirLbl">Saat yönü</span></button>
-    <button class="tool" id="hintBtn"><span class="ico"><svg viewBox="0 0 32 32"><g stroke="#ffe680" stroke-width="1.8" stroke-linecap="round"><path d="M16 1.5v2.5M5.5 6l1.8 1.8M26.5 6l-1.8 1.8M2.5 15h2.5M27 15h2.5"/></g><path d="M16 6.5a8.3 8.3 0 0 0-4.9 15c.8.6 1.2 1.4 1.2 2.3h7.4c0-.9.4-1.7 1.2-2.3A8.3 8.3 0 0 0 16 6.5z" fill="#fff0a0" stroke="#fff" stroke-width="1.2"/><path d="M13.5 17.5l1.3-3 1.2 2 1.2-2 1.3 3v5" fill="none" stroke="#d29a0c" stroke-width="1.2" stroke-linejoin="round"/><rect x="12" y="23.5" width="8" height="5" rx="1.4" fill="#e3e8ef"/><path d="M12 25.3h8M12 27h8" stroke="#8a95a3" stroke-width=".9"/></svg></span>İpucu<span class="badge" id="hintBadge">1</span></button>
+    <button class="tool" id="undo"><span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 9 5 15l6 6"/><path d="M5.5 15H19a7 7 0 0 1 0 14h-4"/></svg></span><span data-t="undo">Geri al</span></button>
+    <button class="tool" id="dirBtn" data-ta="aDir" aria-label="Dönüş yönünü değiştir"><span class="ico"><svg id="dirIco" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M25 16a9 9 0 1 1-3-6.7"/><path d="M23 4v6h-6"/></svg></span><span id="dirLbl">Saat yönü</span></button>
+    <button class="tool" id="hintBtn"><span class="ico"><svg viewBox="0 0 32 32"><g stroke="#ffe680" stroke-width="1.8" stroke-linecap="round"><path d="M16 1.5v2.5M5.5 6l1.8 1.8M26.5 6l-1.8 1.8M2.5 15h2.5M27 15h2.5"/></g><path d="M16 6.5a8.3 8.3 0 0 0-4.9 15c.8.6 1.2 1.4 1.2 2.3h7.4c0-.9.4-1.7 1.2-2.3A8.3 8.3 0 0 0 16 6.5z" fill="#fff0a0" stroke="#fff" stroke-width="1.2"/><path d="M13.5 17.5l1.3-3 1.2 2 1.2-2 1.3 3v5" fill="none" stroke="#d29a0c" stroke-width="1.2" stroke-linejoin="round"/><rect x="12" y="23.5" width="8" height="5" rx="1.4" fill="#e3e8ef"/><path d="M12 25.3h8M12 27h8" stroke="#8a95a3" stroke-width=".9"/></svg></span><span data-t="hint">İpucu</span><span class="badge" id="hintBadge">1</span></button>
   </div>
-  <div class="map" id="map" hidden><div class="mhead"><h2>TusneldaX · Harita</h2><button class="iconbtn" id="mapClose" aria-label="Haritayı kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="list" id="mapList"></div></div>
-  <div class="sheet" id="sheet" hidden><div class="sheet-card"><div class="sheet-head"><h2 id="sheetTitle"></h2><button class="iconbtn" id="sheetClose" aria-label="Kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="sheet-body" id="sheetBody"></div></div></div>
+  <div class="map" id="map" hidden><div class="mhead"><h2 data-t="mapTitle">TusneldaX · Harita</h2><button class="iconbtn" id="mapClose" data-ta="aClose" aria-label="Kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="list" id="mapList"></div></div>
+  <div class="sheet" id="sheet" hidden><div class="sheet-card"><div class="sheet-head"><h2 id="sheetTitle"></h2><button class="iconbtn" id="sheetClose" data-ta="aClose" aria-label="Kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="sheet-body" id="sheetBody"></div></div></div>
   <div class="modal" id="modal" hidden><div class="card" id="card"></div></div>
 </div>
 
@@ -166,13 +189,37 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
-import {MAX_LEVEL, HOUSE_COLORS, DISTRICTS, district, DIRS, OPP, rotN, BASE, diff, stepsCW, stepsBest, generate, starsFor} from './engine.js';
+import { clone as cloneSkinned } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/SkeletonUtils.js';
+import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js';
+import {MAX_LEVEL, HOUSE_COLORS, DIRS, OPP, rotN, BASE, diff, stepsCW, stepsBest, generate, starsFor} from './engine.js';
 
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d){ try { const v = localStorage.getItem('em_'+k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem('em_'+k, JSON.stringify(v)); } catch(e){} }
 };
+
+/* ================= languages: Turkish + 12 most spoken, chosen from the device locale ================= */
+const LANG_NAMES = {tr:'Türkçe', en:'English', zh:'中文', hi:'हिन्दी', es:'Español', ar:'العربية', fr:'Français', bn:'বাংলা', pt:'Português', ru:'Русский', id:'Bahasa Indonesia', de:'Deutsch', ja:'日本語'};
+function detectLang(){
+  for (const l of (navigator.languages || [navigator.language || ''])){ const b = String(l).toLowerCase().split('-')[0]; if (LANG_NAMES[b]) return b; }
+  return 'en';
+}
+let LANG = LANG_NAMES[store.get('lang')] ? store.get('lang') : detectLang();
+let L = {};
+async function loadLang(code){ const r = await fetch('i18n/' + code + '.json'); if (!r.ok) throw new Error(r.status); return r.json(); }
+try { L = await loadLang(LANG); } catch { try { LANG = 'tr'; L = await loadLang('tr'); } catch { L = {}; } }
+const T = (k, v = {}) => { let s = L[k]; if (Array.isArray(s)) s = s[Math.floor(Math.random() * s.length)]; if (typeof s !== 'string') s = k; return s.replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m); };
+const district = lv => (L.districts || [])[Math.min(14, Math.floor((lv - 1) / 20))] || '';
+const fmtTime = ts => new Date(ts).toLocaleTimeString(LANG, {hour:'2-digit', minute:'2-digit'});
+const langName = code => { try { return new Intl.DisplayNames([LANG], {type:'language'}).of(code); } catch { return LANG_NAMES[code] || code; } };
+function applyStatic(){
+  document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-t]').forEach(e => e.textContent = T(e.dataset.t));
+  document.querySelectorAll('[data-ta]').forEach(e => e.setAttribute('aria-label', T(e.dataset.ta)));
+  const md = document.querySelector('meta[name=description]'); if (md && L.metaDesc) md.content = L.metaDesc;
+}
+applyStatic();
 const HINT_PRICE = 20, MOVES_PRICE = 25;
 const BOLT = '<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6l-1.5 8.5L19 10h-6.2z"/></svg>';
 
@@ -228,10 +275,12 @@ function initBoard(){
   MAT.tileBolt = std(0xaab4c6, {roughness:.45, metalness:.5});
   MAT.base = std(0x5fb556, {roughness:.95});
   MAT.baseEdge = std(0x8a6a48, {roughness:.95});
-  MAT.sheath = std(0x3a3f4f, {roughness:.45});
-  MAT.sheathOn = std(0xffc21a, {roughness:.35, emissive:0xffa800, emissiveIntensity:.9});
-  MAT.sheathBroken = std(0x8a2f36, {roughness:.5, emissive:0xff3b2b, emissiveIntensity:.35});
-  MAT.plug = std(0xc9d1da, {roughness:.3, metalness:.8});
+  MAT.sheath = std(0x23262e, {roughness:.5});
+  MAT.sheathOn = std(0xff9d1c, {roughness:.4, emissive:0xff8a00, emissiveIntensity:.55});
+  MAT.sheathBroken = std(0x7a2a30, {roughness:.55, emissive:0xff3b2b, emissiveIntensity:.3});
+  MAT.plug = std(0xd9a441, {roughness:.28, metalness:.85});
+  MAT.clip = std(0xf4f6f9, {roughness:.4});
+  MAT.pulse = new THREE.SpriteMaterial({map:glowTex, color:0xfff2b0, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending});
   MAT.hub = std(0x4d5876, {roughness:.4, metalness:.3});
   MAT.hubOn = std(0x4d5876, {roughness:.4, metalness:.3, emissive:0xffb300, emissiveIntensity:.3});
   MAT.bolt = std(0xdfe5ef, {roughness:.25, metalness:.9});
@@ -252,23 +301,37 @@ function initBoard(){
   MAT.trunk = std(0x7a5232, {roughness:.9});
 
   GEO.tile = slab(.9, .9, .1, .12, .025);
-  GEO.plug = new THREE.CylinderGeometry(.075, .075, .06, 16); GEO.plug.rotateX(Math.PI/2);
-  GEO.hub = slab(.26, .26, .1, .06, .02);
+  // a real cable: thin rubber-insulated line with a gentle wave, held by small clips, brass ferrules at the edges
+  GEO.plug = new THREE.CylinderGeometry(.05, .05, .07, 14); GEO.plug.rotateX(Math.PI/2);
+  GEO.hub = slab(.24, .24, .09, .05, .02);
   GEO.bolt = new THREE.CylinderGeometry(.045, .045, .03, 6);
-  const R0 = .068, Y = .19;
-  const tube = curve => new THREE.TubeGeometry(curve, 24, R0, 12, false);
-  const L3 = (a, b) => new THREE.LineCurve3(new THREE.Vector3(...a), new THREE.Vector3(...b));
-  GEO.straight = [tube(L3([0,Y,-.5],[0,Y,.5]))];
-  const cp = new THREE.CurvePath(); cp.add(L3([0,Y,-.5],[0,Y,-.2])); cp.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(0,Y,-.2), new THREE.Vector3(0,Y,0), new THREE.Vector3(.2,Y,0))); cp.add(L3([.2,Y,0],[.5,Y,0]));
-  GEO.corner = [new THREE.TubeGeometry(cp, 48, R0, 12, false)];
-  GEO.tee = [tube(L3([0,Y,-.5],[0,Y,.5])), tube(L3([0,Y,0],[.5,Y,0]))];
-  GEO.cross = [tube(L3([0,Y,-.5],[0,Y,.5])), tube(L3([-.5,Y,0],[.5,Y,0]))];
-  GEO.stub = tube(L3([0,Y,0],[0,Y,-.5]));
+  const R0 = .036, Y = .165, V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const wave = (a, b, amp) => { const pts = []; for (let i = 0; i <= 20; i++){ const k = i / 20, off = Math.sin(k * Math.PI * 2) * amp; const x = a[0] + (b[0] - a[0]) * k, z = a[2] + (b[2] - a[2]) * k; const len = Math.hypot(b[0] - a[0], b[2] - a[2]) || 1; pts.push(V3(x + off * (b[2] - a[2]) / len, Y, z - off * (b[0] - a[0]) / len)); } return new THREE.CatmullRomCurve3(pts); };
+  const arc = () => { const pts = []; for (let i = 0; i <= 20; i++){ const th = Math.PI - i / 20 * Math.PI / 2; pts.push(V3(.5 + .5 * Math.cos(th), Y, -.5 + .5 * Math.sin(th))); } return new THREE.CatmullRomCurve3(pts); };
+  GEO.curves = {
+    straight: [wave([0,0,-.5], [0,0,.5], .035)],
+    corner: [arc()],
+    tee: [wave([0,0,-.5], [0,0,.5], .035), wave([0,0,0], [.5,0,0], .03)],
+    cross: [wave([0,0,-.5], [0,0,.5], .035), wave([-.5,0,0], [.5,0,0], .035)],
+  };
+  const tube = c => new THREE.TubeGeometry(c, 40, R0, 10, false);
+  const clipsFor = (curves, ts) => {
+    const parts = [];
+    curves.forEach((c, ci) => (ts[ci] || []).forEach(t => {
+      const g = new THREE.TorusGeometry(R0 + .012, .011, 6, 12, Math.PI);
+      const p = c.getPointAt(t), d = c.getTangentAt(t);
+      g.rotateY(Math.atan2(d.x, d.z)); g.translate(p.x, Y - .004, p.z); parts.push(g);
+    }));
+    return parts.length ? mergeGeometries(parts) : null;
+  };
+  const CLIP_T = {straight:[[.25, .75]], corner:[[.5]], tee:[[.22, .78], [.6]], cross:[[.2, .8], [.2, .8]]};
+  ['straight', 'corner', 'tee', 'cross'].forEach(k => { GEO[k] = GEO.curves[k].map(tube); GEO['clip_' + k] = clipsFor(GEO.curves[k], CLIP_T[k]); });
+  GEO.stub = tube(new THREE.LineCurve3(V3(0, Y, 0), V3(0, Y, -.5)));
   GEO.spark = new THREE.SphereGeometry(.03, 6, 6);
   GEO.cloud = new THREE.SphereGeometry(.22, 14, 10);
   addEventListeners();
 }
-const SHARED = () => new Set(Object.values(GEO).flat());
+const SHARED = () => new Set(Object.values(GEO).flat().filter(g => g && g.isBufferGeometry));
 
 let BOARD = null, clockT = 0;
 const tweens = [];
@@ -289,9 +352,11 @@ function buildBoard3D(){
     if (t.kind === 'cable'){
       const rg = new THREE.Group(); g.add(rg); t.rg = rg; rg.rotation.y = -t.rot * Math.PI / 2; t.target = rg.rotation.y;
       t.sheaths = GEO[t.shape].map(geo => mesh(geo, MAT.sheath, 0, 0, 0, rg));
+      if (GEO['clip_' + t.shape]) mesh(GEO['clip_' + t.shape], MAT.clip, 0, 0, 0, rg).castShadow = false;
       const arms = BASE[t.shape];
-      [1,2,4,8].forEach(b => { if (arms & b){ const a = ARM_ANGLE[b]; const p = mesh(GEO.plug, MAT.plug, -Math.sin(a) * .44, .19, -Math.cos(a) * .44, rg); p.rotation.y = a; } });
-      if (t.shape === 'tee' || t.shape === 'cross') t.hub = mesh(GEO.hub, MAT.hub, 0, .14, 0, rg);
+      [1,2,4,8].forEach(b => { if (arms & b){ const a = ARM_ANGLE[b]; const p = mesh(GEO.plug, MAT.plug, -Math.sin(a) * .45, .165, -Math.cos(a) * .45, rg); p.rotation.y = a; } });
+      if (t.shape === 'tee' || t.shape === 'cross') t.hub = mesh(GEO.hub, MAT.hub, 0, .13, 0, rg);
+      t.pulses = GEO.curves[t.shape].map(() => { const sp = new THREE.Sprite(MAT.pulse); sp.scale.setScalar(.2); sp.visible = false; rg.add(sp); return sp; });
       if (t.fixed) [[-.36,-.36],[.36,-.36],[-.36,.36],[.36,.36]].forEach(([x,z]) => mesh(GEO.bolt, MAT.bolt, x, .14, z, g));
       if (t.broken){ t.sparks = []; for (let i=0;i<5;i++){ const s = new THREE.Mesh(GEO.spark, MAT.spark); rg.add(s); t.sparks.push(s); } }
       if (t.fog){
@@ -301,7 +366,7 @@ function buildBoard3D(){
       }
     } else {
       t.stubs = [];
-      [1,2,4,8].forEach(b => { if (t.mask & b){ const st = new THREE.Group(); st.rotation.y = ARM_ANGLE[b]; g.add(st); t.stubs.push(mesh(GEO.stub, MAT.sheath, 0, 0, 0, st)); mesh(GEO.plug, MAT.plug, 0, .19, -.44, st); } });
+      [1,2,4,8].forEach(b => { if (t.mask & b){ const st = new THREE.Group(); st.rotation.y = ARM_ANGLE[b]; g.add(st); t.stubs.push(mesh(GEO.stub, MAT.sheath, 0, 0, 0, st)); mesh(GEO.plug, MAT.plug, 0, .165, -.45, st); } });
       t.house = t.kind === 'house' ? buildHouse(t.style, HOUSE_COLORS[t.color]) : buildTrafo();
       t.house.position.y = .1; g.add(t.house);
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0}));
@@ -403,16 +468,19 @@ function fitCamera(){
 /* ---------- picking ---------- */
 let down = null;
 function addEventListeners(){
-  canvas.addEventListener('pointerdown', e => { down = {x:e.clientX, y:e.clientY}; });
+  const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -.165), hitP = new THREE.Vector3();
+  canvas.addEventListener('pointerdown', e => { if (e.isPrimary) down = {x:e.clientX, y:e.clientY, id:e.pointerId}; });
+  canvas.addEventListener('pointercancel', () => { down = null; });
   canvas.addEventListener('pointerup', e => {
-    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12 || !S) return; down = null;
+    if (!down || down.id !== e.pointerId || !S) return;
+    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y); down = null;
+    if (moved > 24) return;
     const r = canvas.getBoundingClientRect();
     const p = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(p, camera);
-    const hit = raycaster.intersectObjects(S.tiles.map(t => t.g), true)[0];
-    if (!hit) return;
-    let o = hit.object; while (o && !S.tiles.some(t => t.g === o)) o = o.parent;
-    tap(S.tiles.find(t => t.g === o));
+    if (!raycaster.ray.intersectPlane(plane, hitP)) return;
+    const c = Math.round(hitP.x + (S.W - 1) / 2), rr = Math.round(hitP.z + (S.H - 1) / 2);
+    tap(at(rr, c));
   });
   new ResizeObserver(() => fitCamera()).observe($('wrap'));
 }
@@ -492,9 +560,12 @@ function loadChar(i, greet){
     if (curModel) hScene.remove(curModel); else hScene.remove(man.root);
     curModel = rec.scene; hScene.add(curModel);
     mixer = rec.mixer; actions = rec.actions; curAction = null;
-    hCamera.fov = 24; hCamera.position.set(.5, 1.05, 5.2); hCamera.lookAt(0, .9, 0); hCamera.updateProjectionMatrix();
+    // frame the whole figure with head room, so the head never touches the header text
+    const h = rec.height, fov = 24, d = (h * .62) / Math.tan(fov / 2 * Math.PI / 180);
+    hCamera.fov = fov; hCamera.position.set(.35, h * .52, d); hCamera.lookAt(0, h * .5, 0); hCamera.updateProjectionMatrix();
     playClip('Idle'); setMood(man.state);
-    if (greet){ say(`Merhaba, ben ${c.name}! Hadi ışıkları yakalım.`); setMood('happy'); }
+    Worker.use(rec);
+    if (greet){ say(T('greet', {name:c.name})); setMood('happy'); }
   };
   if (loaded[c.id]) return show(loaded[c.id]);
   const onErr = err => console.warn(c.name + ' yüklenemedi, yedek karakter kullanılıyor', err);
@@ -508,10 +579,19 @@ function loadChar(i, greet){
       new GLTFLoader().parse(buf.buffer, '', gltf => {
         const sc = gltf.scene; sc.rotation.y = .3;
         sc.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+        // keep the character facing the player: remove the vertical-axis twist of the hips (except while dancing)
+        // twist about the parent's vertical axis: q = T·S, T = normalize(0, q.y, 0, q.w); keep the rest pose's own twist
+        const q = new THREE.Quaternion(), tw = new THREE.Quaternion(), hips = sc.getObjectByName('Hips');
+        const rest = hips ? new THREE.Quaternion(0, hips.quaternion.y, 0, hips.quaternion.w).normalize() : new THREE.Quaternion();
+        gltf.animations.forEach(cl => { if (cl.name === 'Dance') return; cl.tracks.forEach(tr => {
+          if (!/Hips\.quaternion$/.test(tr.name)) return;
+          for (let i = 0; i < tr.values.length; i += 4){ q.fromArray(tr.values, i); tw.set(0, q.y, 0, q.w).normalize().invert(); q.premultiply(tw).premultiply(rest).normalize().toArray(tr.values, i); }
+        }); });
+        const box = new THREE.Box3().setFromObject(sc); const height = box.max.y - box.min.y;
         const mx = new THREE.AnimationMixer(sc), acts = {};
         gltf.animations.forEach(cl => acts[cl.name] = mx.clipAction(cl));
         mx.addEventListener('finished', () => { if (man.state === 'happy') setMood(''); });
-        loaded[c.id] = {scene:sc, mixer:mx, actions:acts};
+        loaded[c.id] = {scene:sc, mixer:mx, actions:acts, clips:gltf.animations, height: height > .5 && height < 5 ? height : 1.9};
         if (CHARS[charIdx].id === c.id) show(loaded[c.id]);
       }, onErr);
     } finally { window.createImageBitmap = cib; }
@@ -557,10 +637,10 @@ function start(lv){
   S = {W:g.W, H:g.H, tiles:g.tiles, houses:g.houses, opt:g.opt, D:g.D, moves:0,
        limit: g.D.slack === Infinity ? Infinity : g.opt + g.D.slack, history:[], actions:[], extra:0, over:false, freeHints:1, lit:new Set(), on:new Set()};
   maxLevel = Math.max(maxLevel, level); store.set('max', maxLevel);
-  $('lvl').textContent = `${district(level).toUpperCase()} · ${level}/${MAX_LEVEL}`;
+  $('lvl').textContent = `${district(level).toLocaleUpperCase(LANG)} · ${level}/${MAX_LEVEL}`;
   $('modal').hidden = true; $('map').hidden = true; $('houses').textContent = S.houses;
   buildBoard3D(); power(false); renderStats(); renderTools(); renderCoins();
-  setMood(''); say(intro(level));
+  setMood(''); say(intro(level)); Worker.home();
 }
 function at(r, c){ return (r>=0 && r<S.H && c>=0 && c<S.W) ? S.tiles[r * S.W + c] : null; }
 function power(animate){
@@ -614,22 +694,17 @@ function renderStats(){
 function renderTools(){
   $('hintBadge').innerHTML = S.freeHints > 0 ? S.freeHints : '<span class="coin">' + BOLT + '</span>' + HINT_PRICE;
   $('undo').disabled = !S.history.length;
-  $('dirLbl').textContent = dirCW ? 'Saat yönü' : 'Ters yön';
+  $('dirLbl').textContent = dirCW ? T('cw') : T('ccw');
   $('dirIco').style.transform = dirCW ? '' : 'scaleX(-1)';
 }
 function renderCoins(){ $('coins').textContent = coins; store.set('coins', coins); if (typeof Online !== 'undefined') Online.saveSoon(); }
 function say(text){ const b = $('bubble'); b.textContent = text; b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); }
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function intro(L){
-  if (L === 1) return 'Merhaba! Kabloya dokun, döndür; trafodan her eve akım ulaştır. Karakteri değiştirmek için bana dokun.';
-  if (L === 2) return 'Alttaki yön tuşuyla kabloların dönüş yönünü sen seçebilirsin.';
-  if (L === 3) return 'Bu bölümden itibaren hamle sınırı var. Az hamle, çok yıldız!';
-  if (L === 6) return 'Yeni: cıvatalı kablolar dönmez. Çözümü onlara göre kur.';
-  if (L === 9) return 'Yeni: kırık kablo! Önce bir kez dokunup tamir et, sonra döndür.';
-  if (L === 40) return 'Yeni: bulut! Bulutun altındaki kabloyu ancak akım yanına ulaşınca görürsün.';
-  if (L === MAX_LEVEL) return 'Son bölüm! Bütün ustalığını göster.';
-  if (L % 20 === 1) return district(L) + ' semtine hoş geldin! Işıkları yakalım.';
-  return pick(['Hadi bakalım, ışıkları yakalım!', 'Trafodan başla, dallara doğru ilerle.', 'Evden geriye doğru düşün: her evin tek bağlantısı var.', 'Kenardaki kablolar en kolayı, oradan başla.', 'Yönü değiştirmek bazen hamle kazandırır.']);
+  if ([1, 2, 3, 6, 9, 40].includes(L)) return T('i' + L);
+  if (L === MAX_LEVEL) return T('iLast');
+  if (L % 20 === 1) return T('iDistrict', {d: district(L)});
+  return T('iRand');
 }
 
 function turn(t, dir){
@@ -638,12 +713,63 @@ function turn(t, dir){
   const from = t.rg.rotation.y, to = t.target - dir * Math.PI / 2; t.target = to;
   tween(170, k => { const e = 1 - Math.pow(1 - k, 3); t.rg.rotation.y = from + (to - from) * e; t.rg.position.y = Math.sin(k * Math.PI) * .08; }, () => { t.rg.rotation.y = to; t.rg.position.y = 0; });
 }
+/* the electrician walks to the tapped cable and connects it (taps queue up while walking) */
+const Worker = (() => {
+  let obj = null, mixer = null, acts = {}, cur = null, queue = [], busy = false, gen = 0, recId = null;
+  const SPEED = 10, H = .72;
+  function play(name, fade = .12){ const a = acts[name]; if (!a || cur === a) return; a.reset().fadeIn(fade).play(); if (cur) cur.fadeOut(fade); cur = a; }
+  function use(rec){
+    if (!scene || recId === rec) return; recId = rec;
+    const at0 = obj ? obj.position.clone() : null;
+    if (obj) scene.remove(obj);
+    obj = cloneSkinned(rec.scene); obj.rotation.set(0, 0, 0); obj.scale.setScalar(H / rec.height);
+    obj.traverse(o => { if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });
+    mixer = new THREE.AnimationMixer(obj); acts = {}; cur = null;
+    rec.clips.forEach(cl => acts[cl.name] = mixer.clipAction(cl));
+    scene.add(obj); play('Idle', 0);
+    if (at0) obj.position.copy(at0); else home();
+  }
+  function spot(t){ return new THREE.Vector3(t.g.position.x + .42, .115, t.g.position.z + .42); }
+  function home(){
+    if (!obj || !S) return; queue.length = 0; busy = false; gen++;
+    const tr = S.tiles.find(t => t.kind === 'trafo'); obj.position.copy(spot(tr)); obj.rotation.y = -Math.PI * .75; play('Idle', 0);
+  }
+  function face(dx, dz){ if (Math.abs(dx) + Math.abs(dz) > 1e-4) obj.rotation.y = Math.atan2(dx, dz); }
+  function walk(t, then){
+    const g = gen, dest = spot(t), from = obj.position.clone(), d = from.distanceTo(dest);
+    if (d < .05){ face(t.g.position.x - dest.x, t.g.position.z - dest.z); then(); return; }
+    face(dest.x - from.x, dest.z - from.z); play('Run');
+    const dur = Math.max(110, Math.min(320, d / SPEED * 1000));
+    tween(dur, k => { if (g === gen) obj.position.lerpVectors(from, dest, k); }, () => {
+      if (g !== gen) return;
+      face(t.g.position.x - dest.x, t.g.position.z - dest.z); play('Idle'); then();
+    });
+  }
+  function next(){
+    const job = queue.shift();
+    if (!job || !S || S.over){ queue.length = 0; busy = false; return; }
+    busy = true; const g = gen;
+    walk(job, () => { if (g !== gen) return; act(job); setTimeout(() => { if (g === gen) next(); }, 40); });
+  }
+  function request(t){
+    if (!obj){ act(t); return; }
+    if (queue.length < 4) queue.push(t);
+    if (!busy) next();
+  }
+  function goTo(t){ if (!obj) return; queue.length = 0; gen++; busy = false; walk(t, () => {}); }
+  function update(dt){ if (mixer) mixer.update(dt); }
+  return {use, home, request, goTo, update, clear(){ queue.length = 0; gen++; busy = false; if (obj) play('Idle'); }};
+})();
 function tap(t){
   if (!S || S.over || !t || t.kind !== 'cable') return;
-  if (t.fixed){ snd('deny'); shake(t.g); say('Bu kablo cıvatalı, dönmez. Çözümü ona göre kur.'); return; }
+  Worker.request(t);
+}
+function act(t){
+  if (!S || S.over || !t || t.kind !== 'cable' || !S.tiles.includes(t)) return;
+  if (t.fixed){ snd('deny'); shake(t.g); say(T('fixed')); return; }
   if (t.broken){
     t.broken = false; (t.sparks || []).forEach(s => s.visible = false);
-    S.moves++; { const a = [t.idx, 0]; S.actions.push(a); S.history.push({t, k:'fix', a}); } snd('fix'); say('Tamir edildi! Şimdi döndürebilirsin.');
+    S.moves++; { const a = [t.idx, 0]; S.actions.push(a); S.history.push({t, k:'fix', a}); } snd('fix'); say(T('repaired'));
     return after();
   }
   const dir = dirCW ? 1 : -1;
@@ -657,13 +783,13 @@ function after(){
   if (S.lit.size === S.houses) return win();
   if (S.moves >= S.limit) return lose();
   const left = S.limit - S.moves;
-  if (fresh){ snd('lit'); setMood('happy'); if (Math.random() < .5) say(pick(['Bir ev daha aydınlandı!', 'Işıklar yandı!', 'Süper bağlantı!', 'Akım geldi, harika!'])); }
-  else if (left <= 3){ setMood('worried'); say(left === 1 ? 'Son hamle! Dikkatli seç.' : `Sadece ${left} hamle kaldı!`); }
+  if (fresh){ snd('lit'); setMood('happy'); if (Math.random() < .5) say(T('litSay')); }
+  else if (left <= 3){ setMood('worried'); say(left === 1 ? T('lastMove') : T('movesLeft', {n:left})); }
   else if (S.mood === 'worried') setMood('');
 }
 const starSVG = (on, s=38) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.6L12 17.1 6.1 20.4l1.3-6.6L2.5 9.3l6.6-.8z" fill="${on ? '#ffc928' : '#dfe6f0'}" stroke="${on ? '#d99a00' : '#c4cfde'}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
 function win(){
-  S.over = true; setMood('win'); snd('win'); say(pick(['Mahalle ışıl ışıl!', 'İşte bu! Bütün evler yandı.', 'Electric Man iş başında!']));
+  S.over = true; setMood('win'); snd('win'); say(T('winSay'));
   S.tiles.forEach((t, i) => { if (t.kind === 'house') setTimeout(() => bounce(t.house), i * 25); });
   const stars = starsFor(S.moves, S.opt);
   const reward = stars * 5 + Math.min(level, 40);
@@ -672,14 +798,14 @@ function win(){
   const last = level >= MAX_LEVEL;
   if (!last){ maxLevel = Math.max(maxLevel, level + 1); store.set('max', maxLevel); }
   Online.cleared(level, S.actions.slice(), S.extra); Online.saveSoon();
-  setTimeout(() => modal(last ? 'Bütün şehir aydınlandı!' : 'Mahalle aydınlandı', `<div class="stars">${[1,2,3].map(i => starSVG(i <= stars)).join('')}</div><p>${S.houses} eve ${S.moves} hamlede elektrik verdin. En kısa çözüm ${S.opt} hamleydi. +${reward} jeton.${last ? ' 300 bölümün hepsini bitirdin!' : ''}</p>`,
-    last ? [{t:'Bölüm haritası', alt:true, f:openMap}] : [{t:'Sonraki bölüm', alt:true, f:() => start(level + 1)}, {t:'Daha az hamleyle dene', f:() => start(level)}]), 900);
+  setTimeout(() => modal(last ? T('winAllTitle') : T('winTitle'), `<div class="stars">${[1,2,3].map(i => starSVG(i <= stars)).join('')}</div><p>${T('winText', {h:S.houses, m:S.moves, o:S.opt, r:reward})}${last ? ' ' + T('winAllText') : ''}</p>`,
+    last ? [{t:T('mapBtn'), alt:true, f:openMap}] : [{t:T('next'), alt:true, f:() => start(level + 1)}, {t:T('retryFewer'), f:() => start(level)}]), 900);
 }
 function lose(){
-  S.over = true; setMood(mixer ? 'sit' : 'worried'); snd('fail'); say('Hamlem bitti... Bir daha deneyelim!');
-  modal('Hamlen bitti', `<p>${S.houses - S.lit.size} ev hâlâ karanlık. ${MOVES_PRICE} jetonla 5 hamle daha alabilir ya da bölümü baştan oynayabilirsin.</p>`, [
-    {t:`+5 hamle (${MOVES_PRICE} jeton)`, alt:true, dis: coins < MOVES_PRICE, f:() => { coins -= MOVES_PRICE; renderCoins(); S.limit += 5; S.extra += 5; S.over = false; $('modal').hidden = true; setMood(''); renderStats(); }},
-    {t:'Bölümü yeniden başlat', f:() => start(level)},
+  S.over = true; setMood(mixer ? 'sit' : 'worried'); snd('fail'); say(T('loseSay'));
+  modal(T('loseTitle'), `<p>${T('loseText', {n:S.houses - S.lit.size, p:MOVES_PRICE})}</p>`, [
+    {t:T('buyMoves', {p:MOVES_PRICE}), alt:true, dis: coins < MOVES_PRICE, f:() => { coins -= MOVES_PRICE; renderCoins(); S.limit += 5; S.extra += 5; S.over = false; $('modal').hidden = true; setMood(''); renderStats(); }},
+    {t:T('restartLvl'), f:() => start(level)},
   ]);
 }
 function modal(title, html, btns){
@@ -694,25 +820,26 @@ function modal(title, html, btns){
 
 $('undo').onclick = () => {
   if (!S || S.over || !S.history.length) return;
+  Worker.clear();
   const h = S.history.pop(); { const i = S.actions.lastIndexOf(h.a); if (i >= 0) S.actions.splice(i, 1); }
   if (h.k === 'fix'){ h.t.broken = true; (h.t.sparks || []).forEach(s => s.visible = true); } else turn(h.t, -h.dir);
   S.moves = Math.max(0, S.moves - 1); snd('tap');
   power(false); renderStats(); renderTools();
 };
-$('dirBtn').onclick = () => { dirCW = !dirCW; store.set('cw', dirCW); renderTools(); snd('tap'); say(dirCW ? 'Kablolar artık saat yönünde dönüyor.' : 'Kablolar artık saatin tersine dönüyor.'); };
+$('dirBtn').onclick = () => { dirCW = !dirCW; store.set('cw', dirCW); renderTools(); snd('tap'); say(dirCW ? T('dirCWsay') : T('dirCCWsay')); };
 $('hintBtn').onclick = () => {
   if (!S || S.over) return;
   const wrong = S.tiles.filter(t => t.kind === 'cable' && !t.fixed && (t.mask !== t.sol || t.broken));
-  if (!wrong.length){ say('Kablolar doğru, evlere giden yolu kontrol et.'); return; }
+  if (!wrong.length){ say(T('hintOk')); return; }
   if (S.freeHints > 0) S.freeHints--;
   else if (coins >= HINT_PRICE){ coins -= HINT_PRICE; renderCoins(); }
-  else { say('Jetonun yetmiyor: ipucu ' + HINT_PRICE + ' jeton.'); return; }
+  else { say(T('hintNoCoins', {p:HINT_PRICE})); return; }
   const near = wrong.find(t => DIRS.some(([dr, dc]) => { const n = at(t.r+dr, t.c+dc); return n && S.on.has(n); })) || wrong[0];
-  revealFog(near);
+  revealFog(near); Worker.goTo(near);
   if (near.broken){ near.broken = false; (near.sparks || []).forEach(s => s.visible = false); }
   const k = stepsCW(near), dir = (near.shape !== 'straight' && k === 3) ? -1 : 1, n = dir === 1 ? k : 1;
   for (let i=0;i<n;i++) turn(near, dir);
-  say('Şu kabloyu düzelttim, gerisi sende!'); snd('fix');
+  say(T('hintDone')); snd('fix');
   S.history = S.history.filter(x => x.t !== near); S.actions.push([near.idx, 9]);
   after();
 };
@@ -750,13 +877,13 @@ function openMap(){
   for (let d = 0; d < lastD; d++){
     const sec = document.createElement('section'); sec.className = 'district';
     let got = 0; for (let i = 1; i <= 20; i++) got += stars[d * 20 + i] || 0;
-    sec.innerHTML = `<h3><span>${d + 1}. ${DISTRICTS[d]}</span><span>${got} / 60 yıldız</span></h3>`;
+    sec.innerHTML = `<h3><span>${d + 1}. ${district(d * 20 + 1)}</span><span>${T('mapStars', {n:got})}</span></h3>`;
     const g = document.createElement('div'); g.className = 'nodes';
     for (let i = 1; i <= 20; i++){
       const n = d * 20 + i, b = document.createElement('button'), st = stars[n] || 0;
       b.className = 'node' + (st ? ' done' : '') + (n === level ? ' cur' : '');
       b.disabled = n > maxLevel;
-      b.setAttribute('aria-label', 'Bölüm ' + n + (st ? ', ' + st + ' yıldız' : ''));
+      b.setAttribute('aria-label', T('levelAria', {n}) + (st ? ', ' + T('starsAria', {n:st}) : ''));
       b.innerHTML = `<span>${n}</span>` + (st ? `<span class="st">${[1,2,3].map(k => starSVG(k <= st, 9)).join('')}</span>` : '');
       b.onclick = () => start(n);
       g.appendChild(b);
@@ -770,16 +897,16 @@ $('mapBtn').onclick = openMap;
 $('mapClose').onclick = () => { $('map').hidden = true; };
 
 
-/* ================= online: account, cloud save, league, friends ================= */
+/* ================= online: account, cloud save, league, friends, chat ================= */
 const API = '/api/em';
 const Online = (() => {
   let cfg = null, me = null, revision = 0, saveTimer = null, saving = false;
-  const ERR = {LOGIN_EXPIRED:'Süre doldu, yeniden dene.', INVALID_CODE:'Kod hatalı ya da süresi dolmuş.', INVALID_EMAIL:'E-posta adresini kontrol et.', RATE_LIMIT:'Çok sık denendi, biraz bekle.', EMAIL_UNAVAILABLE:'E-posta gönderilemedi, sonra tekrar dene.', PLAYER_NOT_FOUND:'Bu koda sahip oyuncu bulunamadı.', LOGIN_NOT_CONFIGURED:'Bu giriş yöntemi henüz açık değil.', INVALID_NAME:'Ad en az 2 harf olmalı.', INVALID_IDENTITY:'Giriş doğrulanamadı.'};
-  const msg = e => ERR[e] || 'Bağlantı kurulamadı, tekrar dene.';
+  let badges = {requests:0, unread:0}, badgeTimer = null, chat = null;
+  const msg = e => { const k = 'e' + e; return L[k] ? T(k) : T('eNET'); };
   async function call(path, body){
     const r = await fetch(API + path, body === undefined ? {credentials:'same-origin'} : {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw Object.assign(new Error(j.error || 'NETWORK'), {status: r.status});
+    if (!r.ok) throw Object.assign(new Error(j.error || 'NET'), {status: r.status});
     return j;
   }
   const localSave = () => ({max: maxLevel, coins, stars: store.get('stars', {}), char: (CHARS[charIdx] || {}).id});
@@ -793,10 +920,7 @@ const Online = (() => {
   }
   async function sync(){
     if (!me) return;
-    try {
-      const r = await call('/progress'); revision = r.revision || 0; applySave(r.save);
-      await push();
-    } catch (e){}
+    try { const r = await call('/progress'); revision = r.revision || 0; applySave(r.save); await push(); } catch (e){}
   }
   async function push(){
     if (!me || saving) return; saving = true;
@@ -805,35 +929,60 @@ const Online = (() => {
     saving = false;
   }
   function saveSoon(){ if (!me) return; clearTimeout(saveTimer); saveTimer = setTimeout(push, 1500); }
-  async function cleared(lv, actions, extra){
-    if (!me) return;
-    try { await call('/clear', {level: lv, actions, extra}); } catch (e){}
-  }
+  async function cleared(lv, actions, extra){ if (!me) return; try { await call('/clear', {level: lv, actions, extra}); } catch (e){} }
+  function setMe(p){ me = p; $('accountDot').hidden = !me; if (me) pollBadges(); else { clearTimeout(badgeTimer); renderBadge({requests:0, unread:0}); } }
   async function init(){
     try { cfg = await call('/config'); } catch { cfg = null; }
     if (!cfg) return;
-    try { me = (await call('/me')).player; } catch {}
-    $('accountDot').hidden = !me;
+    try { setMe((await call('/me')).player); } catch {}
     if (me) sync();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && me) pollBadges(); });
+  }
+
+  /* ---------- notification badges (friend requests + unread messages) ---------- */
+  function toast(text, onClick){
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = text; t.setAttribute('role', 'status');
+    t.onclick = () => { t.remove(); onClick && onClick(); };
+    $('app').appendChild(t); setTimeout(() => t.remove(), 4500);
+  }
+  function renderBadge(b){
+    const n = (b.requests || 0) + (b.unread || 0), el = $('leagueBadge');
+    el.hidden = !n; el.textContent = n > 99 ? '99+' : n;
+  }
+  async function pollBadges(){
+    clearTimeout(badgeTimer);
+    if (!me) return;
+    try {
+      const b = await call('/badges');
+      if (b.requests > badges.requests){ snd('lit'); toast(T('newReq'), () => openLeague('friends')); }
+      else if (b.unread > badges.unread && !(chat && !$('sheet').hidden)){ snd('lit'); toast(T('newMsg', {n: '💬'}), () => openLeague('friends')); }
+      badges = b; renderBadge(b);
+    } catch {}
+    badgeTimer = setTimeout(pollBadges, document.hidden ? 60000 : 12000);
   }
 
   /* ---------- sheets ---------- */
-  function sheet(title, html){ $('sheetTitle').textContent = title; $('sheetBody').innerHTML = html; $('sheet').hidden = false; return $('sheetBody'); }
+  function sheet(title, html){ stopChat(); $('sheetTitle').textContent = title; $('sheetBody').innerHTML = html; $('sheet').hidden = false; return $('sheetBody'); }
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const langPicker = () => `<div class="field"><label for="langSel">${esc(T('language'))} · Language</label><select id="langSel" class="lang">${Object.entries(LANG_NAMES).map(([k, v]) => `<option value="${k}"${k === LANG ? ' selected' : ''}>${v}</option>`).join('')}</select></div>`;
+  function bindLang(body){ const s = body.querySelector('#langSel'); if (s) s.onchange = () => { store.set('lang', s.value); location.reload(); }; }
+  const legal = () => T('consent', {terms:`<a href="/kosullar" target="_blank" rel="noopener">${esc(T('terms'))}</a>`, privacy:`<a href="/gizlilik" target="_blank" rel="noopener">${esc(T('privacy'))}</a>`});
   async function openAccount(){
-    if (!cfg){ sheet('Hesap', '<p>Hesap, bulutta kayıt ve lig özellikleri electricman.tusneldax.com adresinde açık. Bu önizlemede ilerlemen yalnızca bu cihazda saklanıyor.</p>'); return; }
+    if (!cfg){ bindLang(sheet(T('accTitle'), `<p>${esc(T('accPreview'))}</p>${langPicker()}`)); return; }
     if (me) return accountView();
-    const body = sheet('Giriş yap', `<p>Giriş yaparsan ilerlemen bulutta saklanır, telefon değiştirsen de kaybolmaz. Haftalık lige ve arkadaş listesine de katılırsın.</p>
+    const body = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p>
       ${cfg.googleClientId ? '<div id="gbtn"></div>' : ''}
-      ${cfg.googleClientId && cfg.email ? '<div class="divider">ya da</div>' : ''}
-      ${cfg.email ? `<div class="field"><label for="em_email">E-posta</label><input id="em_email" type="email" inputmode="email" autocomplete="email" placeholder="ornek@mail.com"></div>
-        <div class="field" id="codeField" hidden><label for="em_code">6 haneli kod</label><input id="em_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></div>
-        <button class="btn" id="emailGo">Kod gönder</button>` : ''}
-      ${!cfg.googleClientId && !cfg.email ? '<p>Giriş yöntemleri henüz açılmadı.</p>' : ''}
+      ${cfg.googleClientId && cfg.email ? `<div class="divider">${esc(T('or'))}</div>` : ''}
+      ${cfg.email ? `<div class="field"><label for="em_email">${esc(T('emailLbl'))}</label><input id="em_email" type="email" inputmode="email" autocomplete="email" placeholder="${esc(T('emailPh'))}"></div>
+        <div class="field" id="codeField" hidden><label for="em_code">${esc(T('codeLbl'))}</label><input id="em_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></div>
+        <button class="btn" id="emailGo">${esc(T('sendCode'))}</button>` : ''}
+      ${!cfg.googleClientId && !cfg.email ? `<p>${esc(T('noMethods'))}</p>` : ''}
       <div class="err" id="loginErr"></div>
-      <p class="note">Giriş yaparak <a href="/kosullar" target="_blank" rel="noopener">Kullanım Koşulları</a> ve <a href="/gizlilik" target="_blank" rel="noopener">Gizlilik Politikası</a>'nı kabul edersin.</p>`);
+      <p class="note">${legal()}</p>${langPicker()}`);
+    bindLang(body);
     const err = t => { $('loginErr').textContent = t || ''; };
-    const done = async () => { me = (await call('/me')).player; $('accountDot').hidden = !me; await sync(); accountView(); say(`Hoş geldin ${me.name}! İlerlemen artık bulutta.`); };
+    const done = async () => { setMe((await call('/me')).player); await sync(); accountView(); say(T('welcome', {name: me.name})); };
     if (cfg.googleClientId) googleButton(async token => { try { await call('/auth/google', {token}); await done(); } catch (e){ err(msg(e.message)); } });
     if (cfg.email){
       let challenge = null;
@@ -841,66 +990,150 @@ const Online = (() => {
         const btn = ev.currentTarget; err(''); btn.disabled = true;
         try {
           const email = $('em_email').value.trim();
-          if (!challenge){ await call('/auth/nonce', {}); challenge = (await call('/auth/email/request', {email})).challenge; $('codeField').hidden = false; $('em_code').focus(); btn.textContent = 'Giriş yap'; }
+          if (!challenge){ await call('/auth/nonce', {}); challenge = (await call('/auth/email/request', {email, lang: LANG})).challenge; $('codeField').hidden = false; $('em_code').focus(); btn.textContent = T('loginBtn'); }
           else { await call('/auth/email', {email, challenge, code: $('em_code').value.trim()}); await done(); }
-        } catch (e){ err(msg(e.message)); if (e.message === 'LOGIN_EXPIRED'){ challenge = null; $('codeField').hidden = true; btn.textContent = 'Kod gönder'; } }
+        } catch (e){ err(msg(e.message)); if (e.message === 'LOGIN_EXPIRED'){ challenge = null; $('codeField').hidden = true; btn.textContent = T('sendCode'); } }
         btn.disabled = false;
       };
     }
   }
   function accountView(){
-    const body = sheet('Hesabım', `<div class="field"><label for="em_name">Oyuncu adın</label><div class="row"><input id="em_name" maxlength="24" value="${esc(me.name)}" style="flex:1"><button class="btn small" id="nameSave">Kaydet</button></div></div>
-      <div class="field"><label>Arkadaş kodun</label><div class="row"><div class="codebox" id="myCode">${esc(me.code)}</div><button class="btn small ghost" id="copyCode">Kopyala</button></div></div>
-      <p>İlerlemen bulutta: ${maxLevel}. bölüme kadar açık, ${Object.values(store.get('stars', {})).reduce((a, b) => a + b, 0)} yıldız.</p>
+    const w = T('delWord'), stars = Object.values(store.get('stars', {})).reduce((a, b) => a + b, 0);
+    const body = sheet(T('myAccount'), `<div class="field"><label for="em_name">${esc(T('nameLbl'))}</label><div class="row"><input id="em_name" maxlength="24" value="${esc(me.name)}" style="flex:1"><button class="btn small" id="nameSave">${esc(T('save'))}</button></div></div>
+      <div class="field"><label>${esc(T('friendCodeLbl'))}</label><div class="row"><div class="codebox" id="myCode" dir="ltr">${esc(me.code)}</div><button class="btn small ghost" id="copyCode">${esc(T('copy'))}</button></div></div>
+      <p>${esc(T('progressTxt', {m: maxLevel, s: stars}))}</p>
+      ${langPicker()}
       <div class="err" id="accErr"></div>
-      <button class="btn ghost" id="logout">Çıkış yap</button>
-      <details><summary class="note" style="cursor:pointer">Hesabı sil</summary><div class="field" style="margin-top:10px"><p>Hesabın, bulut kaydın, lig puanların ve arkadaşlıkların kalıcı olarak silinir. Onaylamak için SIL yaz.</p><div class="row"><input id="delConfirm" placeholder="SIL" style="flex:1"><button class="btn small danger" id="delGo">Sil</button></div></div></details>`);
+      <button class="btn ghost" id="logout">${esc(T('logout'))}</button>
+      <details><summary class="note" style="cursor:pointer">${esc(T('delAcc'))}</summary><div class="field" style="margin-top:10px"><p>${esc(T('delText', {w}))}</p><div class="row"><input id="delConfirm" placeholder="${esc(w)}" style="flex:1"><button class="btn small danger" id="delGo">${esc(T('del'))}</button></div></div></details>`);
+    bindLang(body);
     const err = t => { $('accErr').textContent = t || ''; };
-    body.querySelector('#nameSave').onclick = async () => { try { const r = await call('/profile', {name: $('em_name').value}); me.name = r.name; $('em_name').value = r.name; err(''); say('Adın güncellendi: ' + r.name); } catch (e){ err(msg(e.message)); } };
-    body.querySelector('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(me.code); say('Kodun kopyalandı: ' + me.code); } catch { const r = document.createRange(); r.selectNodeContents($('myCode')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
-    body.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch {} me = null; $('accountDot').hidden = true; $('sheet').hidden = true; say('Çıkış yaptın. İlerlemen bu cihazda duruyor.'); };
-    body.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); me = null; $('accountDot').hidden = true; $('sheet').hidden = true; say('Hesabın silindi.'); } catch (e){ err(e.message === 'CONFIRM_DELETE' ? 'Onay için SIL yaz.' : msg(e.message)); } };
+    body.querySelector('#nameSave').onclick = async () => { try { const r = await call('/profile', {name: $('em_name').value}); me.name = r.name; $('em_name').value = r.name; err(''); say(T('nameSaved', {n: r.name})); } catch (e){ err(msg(e.message)); } };
+    body.querySelector('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(me.code); say(T('copied', {c: me.code})); } catch { const r = document.createRange(); r.selectNodeContents($('myCode')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
+    body.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch {} setMe(null); $('sheet').hidden = true; say(T('loggedOut')); };
+    body.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); $('sheet').hidden = true; say(T('deleted')); } catch (e){ err(e.message === 'CONFIRM_DELETE' ? T('confirmDel', {w}) : msg(e.message)); } };
   }
   function googleButton(onToken){
     const render = async () => {
       try {
         const {nonce} = await call('/auth/nonce', {});
         google.accounts.id.initialize({client_id: cfg.googleClientId, nonce, callback: r => onToken(r.credential), ux_mode:'popup', use_fedcm_for_prompt:true});
-        google.accounts.id.renderButton($('gbtn'), {theme:'outline', size:'large', shape:'pill', text:'continue_with', locale:'tr', width: Math.min(320, $('gbtn').clientWidth || 320)});
+        google.accounts.id.renderButton($('gbtn'), {theme:'outline', size:'large', shape:'pill', text:'continue_with', locale: LANG, width: Math.min(320, $('gbtn').clientWidth || 320)});
       } catch (e){ $('loginErr').textContent = msg(e.message); }
     };
     if (window.google?.accounts?.id) return render();
     const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = render; document.head.appendChild(sc);
   }
   async function openLeague(tab = 'league'){
-    if (!cfg){ sheet('Lig ve arkadaşlar', '<p>Haftalık lig ve arkadaş listesi electricman.tusneldax.com adresinde açık.</p>'); return; }
-    if (!me){ sheet('Lig ve arkadaşlar', '<p>Haftalık lige katılmak ve arkadaş eklemek için giriş yap.</p><button class="btn" id="goLogin">Giriş yap</button>').querySelector('#goLogin').onclick = openAccount; return; }
-    const body = sheet('Lig ve arkadaşlar', `<div class="tabs" role="tablist"><button role="tab" data-t="league" aria-selected="${tab === 'league'}">Haftalık lig</button><button role="tab" data-t="friends" aria-selected="${tab === 'friends'}">Arkadaşlar</button></div><div id="tabBody"><p class="note">Yükleniyor…</p></div>`);
+    if (!cfg){ sheet(T('leagueTitle'), `<p>${esc(T('leaguePreview'))}</p>`); return; }
+    if (!me){ sheet(T('leagueTitle'), `<p>${esc(T('leagueLogin'))}</p><button class="btn" id="goLogin">${esc(T('loginBtn'))}</button>`).querySelector('#goLogin').onclick = openAccount; return; }
+    const fb = badges.requests + badges.unread;
+    const body = sheet(T('leagueTitle'), `<div class="tabs" role="tablist"><button role="tab" data-t="league" aria-selected="${tab === 'league'}">${esc(T('tabLeague'))}</button><button role="tab" data-t="friends" aria-selected="${tab === 'friends'}">${esc(T('tabFriends'))}${fb ? `<span class="ibadge">${fb}</span>` : ''}</button></div><div id="tabBody"><p class="note">${esc(T('loadingTxt'))}</p></div>`);
     body.querySelectorAll('.tabs button').forEach(b => b.onclick = () => openLeague(b.dataset.t));
     const tb = $('tabBody');
     try {
       if (tab === 'league'){
-        const L = await call('/league');
-        const ends = new Date(L.ends).toLocaleDateString('tr-TR', {day:'numeric', month:'long'});
-        tb.innerHTML = `<p>Bu hafta bitirdiğin her bölüm yıldız başına 10 puan getirir. Lig ${ends} günü sıfırlanır.</p><div class="list" style="margin-top:10px">${L.rows.length ? L.rows.map(r => `<div class="item${r.me ? ' me' : ''}"><span class="rk">${r.rank}</span><span class="nm">${esc(r.name)}<small>${r.levels} bölüm</small></span><span class="pt">${r.points}</span></div>`).join('') : '<p class="note">Bu hafta henüz kimse puan almadı. İlk sen ol!</p>'}</div>`;
+        const lg = await call('/league');
+        const ends = new Date(lg.ends).toLocaleDateString(LANG, {day:'numeric', month:'long'});
+        tb.innerHTML = `<p>${esc(T('leagueInfo', {d: ends}))}</p><div class="list" style="margin-top:10px">${lg.rows.length ? lg.rows.map(r => `<div class="item${r.me ? ' me' : ''}"><span class="rk">${r.rank}</span><span class="nm">${esc(r.name)}<small>${esc(T('levelsN', {n: r.levels}))}</small></span><span class="pt">${r.points}</span></div>`).join('') : `<p class="note">${esc(T('leagueEmpty'))}</p>`}</div>`;
       } else {
         const F = await call('/friends');
-        tb.innerHTML = `<div class="field" style="margin-top:4px"><label for="fcode">Arkadaş kodu ile ekle</label><div class="row"><input id="fcode" placeholder="EM1A2B3C" maxlength="8" style="flex:1;text-transform:uppercase"><button class="btn small" id="fadd">Ekle</button></div><div class="err" id="fErr"></div></div>
-          <p class="note">Senin kodun: <b>${esc(F.me.code)}</b></p>
-          <div class="list">${F.friends.length ? F.friends.map(f => `<div class="item"><span class="nm">${esc(f.name)}<small>${f.status === 'accepted' ? f.max + '. bölümde' : f.incoming ? 'Seni eklemek istiyor' : 'İstek gönderildi'}</small></span>${f.incoming ? `<button class="btn small" data-acc="${esc(f.code)}">Kabul et</button>` : `<button class="btn small ghost" data-rm="${esc(f.code)}">${f.status === 'accepted' ? 'Çıkar' : 'İptal'}</button>`}</div>`).join('') : '<p class="note">Henüz arkadaşın yok. Kodunu paylaş ya da bir arkadaşının kodunu gir.</p>'}</div>`;
-        const act = async (action, code) => { try { await call('/friends', {action, code}); openLeague('friends'); } catch (e){ $('fErr').textContent = msg(e.message); } };
+        const reqs = F.friends.filter(f => f.incoming), rest = F.friends.filter(f => !f.incoming);
+        const row = f => `<div class="item${f.incoming ? ' req' : ''}"><span class="nm">${esc(f.name)}<small>${esc(f.status === 'accepted' ? T('atLevel', {n: f.max}) : f.incoming ? T('wantsAdd') : T('reqSent'))}</small></span>${
+          f.incoming ? `<button class="btn small" data-acc="${esc(f.code)}">${esc(T('accept'))}</button>` :
+          f.status === 'accepted' ? `<button class="btn small" data-chat="${esc(f.code)}" data-name="${esc(f.name)}">${esc(T('message'))}${f.unread ? `<span class="ibadge">${f.unread}</span>` : ''}</button><button class="btn small ghost" data-rm="${esc(f.code)}">${esc(T('removeF'))}</button>` :
+          `<button class="btn small ghost" data-rm="${esc(f.code)}">${esc(T('cancelReq'))}</button>`}</div>`;
+        tb.innerHTML = `<div class="field" style="margin-top:4px"><label for="fcode">${esc(T('addByCode'))}</label><div class="row"><input id="fcode" placeholder="EM1A2B3C" maxlength="8" dir="ltr" style="flex:1;text-transform:uppercase"><button class="btn small" id="fadd">${esc(T('add'))}</button></div><div class="err" id="fErr"></div></div>
+          <p class="note">${T('yourCode', {c: `<b dir="ltr">${esc(F.me.code)}</b>`})}</p>
+          ${reqs.length ? `<p class="sub">${esc(T('requestsHead'))}</p><div class="list">${reqs.map(row).join('')}</div>` : ''}
+          ${rest.length ? `<p class="sub">${esc(T('friendsHead'))}</p><div class="list">${rest.map(row).join('')}</div>` : (reqs.length ? '' : `<p class="note">${esc(T('noFriends'))}</p>`)}`;
+        const act = async (action, code) => { try { await call('/friends', {action, code}); await pollBadges(); openLeague('friends'); } catch (e){ $('fErr').textContent = msg(e.message); } };
         tb.querySelector('#fadd').onclick = () => act('request', $('fcode').value.trim().toUpperCase());
         tb.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => act('accept', b.dataset.acc));
         tb.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => act('remove', b.dataset.rm));
+        tb.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => openChat(b.dataset.chat, b.dataset.name));
       }
-    } catch (e){ tb.innerHTML = `<p class="err">${msg(e.message)}</p>`; }
+    } catch (e){ tb.innerHTML = `<p class="err">${esc(msg(e.message))}</p>`; }
   }
-  return {init, saveSoon, cleared, openAccount, openLeague};
+
+  /* ---------- chat: friends only, polled every 1.5 s while open, auto-translated into the reader's language ---------- */
+  function stopChat(){ if (chat){ clearTimeout(chat.timer); chat = null; } }
+  function openChat(code, name){
+    const body = sheet(name, `<div class="chat-top"><button class="btn small ghost" id="chatBack">${LANG === 'ar' ? '→' : '←'} ${esc(T('back'))}</button><span class="nm"></span><button class="btn small ghost" id="chatBlock">${esc(T('block'))}</button><button class="btn small danger" id="chatReport">${esc(T('report'))}</button></div>
+      <p class="note">${esc(T('chatSafety'))}</p>
+      <div class="msgs" id="msgs" aria-live="polite"><p class="note">${esc(T('loadingTxt'))}</p></div>
+      <div class="err" id="chatErr"></div>
+      <div class="composer"><textarea id="chatIn" maxlength="300" placeholder="${esc(T('chatPh'))}" rows="1"></textarea><button class="btn small" id="chatSend">${esc(T('send'))}</button></div>`);
+    chat = {code, name, last:0, seen:new Set(), timer:null, tr:{}, showOrig:new Set()};
+    const me_ = chat, box = $('msgs'), input = $('chatIn'), err = t => { $('chatErr').textContent = t || ''; };
+    const confirmThen = (q, f) => modal(T(q === 'blockQ' ? 'block' : 'report'), `<p>${esc(T(q, {n: name}))}</p>`, [{t: T('yes'), alt:true, f: async () => { $('modal').hidden = true; await f(); }}, {t: T('no'), f: () => { $('modal').hidden = true; }}]);
+    $('chatBack').onclick = () => openLeague('friends');
+    $('chatBlock').onclick = () => confirmThen('blockQ', async () => { try { await call('/friends', {action:'block', code}); say(T('blocked', {n: name})); pollBadges(); openLeague('friends'); } catch (e){ err(msg(e.message)); } });
+    $('chatReport').onclick = () => confirmThen('reportQ', async () => { try { await call('/report', {code, reason:'chat'}); say(T('reported', {n: name})); pollBadges(); openLeague('friends'); } catch (e){ err(msg(e.message)); } });
+    const bubble = m => {
+      const d = document.createElement('div'); d.className = 'msg ' + (m.mine ? 'out' : 'in'); d.dataset.id = m.id;
+      const needTr = !m.mine && m.lang !== LANG;
+      const txt = document.createElement('span'); d.appendChild(txt);
+      const paint = () => {
+        const t = chat && chat.tr[m.id], orig = !t || chat.showOrig.has(m.id);
+        txt.textContent = orig ? m.text : t;
+        let link = d.querySelector('.tr');
+        if (needTr){
+          if (!link){ link = document.createElement('span'); link.className = 'tr'; link.setAttribute('role', 'button'); link.tabIndex = 0; d.appendChild(link); link.onclick = () => { chat.showOrig.has(m.id) ? chat.showOrig.delete(m.id) : chat.showOrig.add(m.id); paint(); }; }
+          link.textContent = !t ? T('translating') : orig ? T('showTr') : T('translatedFrom', {l: langName(m.lang)}) + ' · ' + T('showOrig');
+        }
+      };
+      d.paint = paint; paint();
+      const tm = document.createElement('time'); tm.textContent = fmtTime(m.created); d.appendChild(tm);
+      return d;
+    };
+    async function translate(list){
+      const ids = list.filter(m => !m.mine && m.lang !== LANG && !(m.id in chat.tr)).map(m => m.id);
+      for (let i = 0; i < ids.length; i += 20){
+        try {
+          const r = await call('/translate', {ids: ids.slice(i, i + 20), to: LANG});
+          if (chat !== me_) return;
+          Object.assign(chat.tr, r.tr);
+        } catch (e){ if (chat !== me_) return; ids.slice(i, i + 20).forEach(id => chat.tr[id] = chat.tr[id] || null); if (e.message === 'TRANSLATE_UNAVAILABLE') err(msg(e.message)); }
+        box.querySelectorAll('.msg').forEach(d => { const m = +d.dataset.id; if (ids.includes(m)){ if (!chat.tr[m]){ const l = d.querySelector('.tr'); if (l) l.remove(); } else d.paint(); } });
+      }
+    }
+    function add(list){
+      const fresh = list.filter(m => !chat.seen.has(m.id)); if (!fresh.length) return;
+      if (!chat.last) box.innerHTML = '';
+      const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+      fresh.forEach(m => { chat.seen.add(m.id); chat.last = Math.max(chat.last, m.id); box.appendChild(bubble(m)); });
+      if (atBottom || fresh.some(m => m.mine)) box.scrollTop = box.scrollHeight;
+      translate(fresh);
+    }
+    async function poll(){
+      if (chat !== me_) return;
+      try {
+        const r = await call('/chat?with=' + encodeURIComponent(code) + (chat.last ? '&after=' + chat.last : ''));
+        if (chat !== me_) return;
+        if (!chat.last && !r.messages.length) box.innerHTML = `<p class="note">${esc(T('chatEmpty'))}</p>`;
+        if (r.messages.some(m => !m.mine)) badges.unread = 0;
+        add(r.messages); err('');
+      } catch (e){ if (chat !== me_) return; err(msg(e.message)); if (e.status === 403 || e.status === 404){ stopChat(); return; } }
+      chat.timer = setTimeout(poll, document.hidden ? 8000 : 1500);
+    }
+    const send = async () => {
+      const text = input.value.trim(); if (!text) return;
+      $('chatSend').disabled = true;
+      try { const r = await call('/chat', {to: code, text, lang: LANG}); input.value = ''; add([r.message]); err(''); }
+      catch (e){ err(msg(e.message)); }
+      $('chatSend').disabled = false; input.focus();
+    };
+    $('chatSend').onclick = send;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); } });
+    poll(); setTimeout(() => pollBadges(), 2500);
+  }
+  return {init, saveSoon, cleared, openAccount, openLeague, stopChat};
 })();
 $('accountBtn').onclick = () => Online.openAccount();
 $('leagueBtn').onclick = () => Online.openLeague();
-$('sheetClose').onclick = () => { $('sheet').hidden = true; };
-$('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') $('sheet').hidden = true; });
+$('sheetClose').onclick = () => { $('sheet').hidden = true; Online.stopChat(); };
+$('sheet').addEventListener('click', e => { if (e.target.id === 'sheet'){ $('sheet').hidden = true; Online.stopChat(); } });
 
 /* ---------- main loop ---------- */
 let lastT = performance.now();
@@ -908,16 +1141,17 @@ function loop(now){
   requestAnimationFrame(loop);
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now; clockT += dt;
   for (let i = tweens.length - 1; i >= 0; i--){ const w = tweens[i], k = Math.min(1, (now - w.t0) / w.dur); w.fn(k); if (k >= 1){ tweens.splice(i, 1); w.done && w.done(); } }
-  MAT.sheathOn.emissiveIntensity = .75 + Math.sin(clockT * 5) * .25;
+  MAT.sheathOn.emissiveIntensity = .45 + Math.sin(clockT * 5) * .12;
   if (S && S.tiles){
     S.tiles.forEach(t => {
       if (t.glow){ const o = t.glow.material.opacity, tgt = t.glowTarget || 0; t.glow.material.opacity = o + (tgt - o) * .12; }
+      if (t.pulses){ const live = S.on.has(t) && !t.broken && !t.fog; t.pulses.forEach((sp, i) => { sp.visible = live; if (live){ const k = (clockT * .8 + t.idx * .37 + i * .5) % 1; sp.position.copy(GEO.curves[t.shape][i].getPointAt(k)); sp.position.y += .03; } }); }
       if (t.sparks && t.broken) t.sparks.forEach((s, i) => { const a = clockT * 12 + i * 1.7; s.position.set(Math.sin(a) * .07, .26 + Math.abs(Math.sin(a * 1.3)) * .1, Math.cos(a * .9) * .07); s.visible = Math.sin(a * 3) > -.2; });
       const sm = t.house && t.house.userData.smoke; if (sm && sm[0].visible){ const b = t.house.userData.smokeAt; sm.forEach((s, i) => { const p = ((clockT * .5 + i / 3) % 1); s.position.set(b.x + Math.sin(p * 6) * .03, b.y + p * .3, b.z); s.material.opacity = .8 * (1 - p); }); }
       const fl = t.house && t.house.userData.flag; if (fl) fl.rotation.y = Math.sin(clockT * 4 + t.idx) * .25;
     });
   }
-  animateMan(clockT);
+  animateMan(clockT); Worker.update(dt);
   if (renderer && S) renderer.render(scene, camera);
   if (hRenderer) hRenderer.render(hScene, hCamera);
 }
@@ -931,8 +1165,8 @@ try {
   Online.init();
 } catch (e){
   $('loading').hidden = false;
-  $('loading').textContent = '3D sahne açılamadı. Tarayıcın WebGL desteklemiyor olabilir.';
+  $('loading').textContent = T('noGL');
   console.error(e);
 }
-window.__em = { generate, diff, get S(){ return S; }, start, tap };
+window.__em = { generate, diff, get S(){ return S; }, start, tap, screenOf(){ const r = canvas.getBoundingClientRect(); return S.tiles.filter(t => t.kind === 'cable').map(t => { const v = new THREE.Vector3(t.g.position.x, .165, t.g.position.z).project(camera); return {idx:t.idx, fixed:!!t.fixed || !!t.fog, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height}; }); } };
 </script>

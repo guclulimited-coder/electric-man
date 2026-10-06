@@ -36,7 +36,7 @@ async function googleToken(sub, nonce, aud = 'client-123'){
   return h + '.' + c + '.' + sig;
 }
 
-const env = {DB: d1(), EM_GOOGLE_CLIENT_ID:'client-123', EM_EMAIL_ENABLED:'true', EM_RESEND_API_KEY:'test', EM_EMAIL_FROM:'Electric Man <giris@mail.tusneldax.com>', EM_EMAIL_OTP_SECRET:'x'.repeat(40)};
+const env = {DB: d1(), EM_GOOGLE_CLIENT_ID:'client-123', EM_EMAIL_ENABLED:'true', EM_RESEND_API_KEY:'test', EM_EMAIL_FROM:'Electric Man <giris@mail.tusneldax.com>', EM_EMAIL_OTP_SECRET:'x'.repeat(40), AI:{calls:0, async run(model, inp){ this.calls++; return {translated_text: '['+inp.source_lang+'>'+inp.target_lang+'] '+inp.text}; }}};
 
 class Client {
   constructor(ip){ this.jar = {}; this.ip = ip; }
@@ -101,10 +101,36 @@ let fb = (await b.call('/friends')).body.friends; assert.equal(fb[0].incoming, t
 await b.call('/friends', {action:'accept', code: meA.code});
 fb = (await b.call('/friends')).body.friends; assert.equal(fb[0].status, 'accepted'); assert.equal(fb[0].max, 5); ok('friend request + accept');
 
+// badges, chat, translation, report
+assert.deepEqual((await a.call('/badges')).body, {requests:0, unread:0}); ok('badges empty');
+const c = new Client('4.4.4.4'); { const n = (await c.call('/auth/nonce', {})).body.nonce; await c.call('/auth/google', {token: await googleToken('g-sub-2', n)}); }
+const meC = (await c.call('/me')).body.player;
+await c.call('/friends', {action:'request', code: meA.code});
+assert.equal((await a.call('/badges')).body.requests, 1); ok('friend request badge');
+assert.equal((await c.call('/chat', {to: meA.code, text:'selam'})).status, 403); ok('chat needs accepted friendship');
+const sent = await b.call('/chat', {to: meA.code, text:'Hallo Freund!', lang:'de'});
+assert.equal(sent.status, 200); assert.equal(sent.body.message.mine, true);
+await b.call('/chat', {to: meA.code, text:'  zweite  ', lang:'de'});
+assert.equal((await a.call('/badges')).body.unread, 2); ok('unread badge');
+assert.equal((await a.call('/friends')).body.friends.find(f => f.code === meB.code).unread, 2); ok('unread per friend');
+const conv = (await a.call('/chat?with=' + meB.code)).body;
+assert.equal(conv.messages.length, 2); assert.equal(conv.messages[1].text, 'zweite'); assert.equal(conv.messages[0].mine, false);
+assert.equal((await a.call('/badges')).body.unread, 0); ok('reading clears unread');
+assert.equal((await a.call('/chat?with=' + meB.code + '&after=' + conv.messages[1].id)).body.messages.length, 0); ok('poll after id');
+const tr1 = (await a.call('/translate', {ids: conv.messages.map(m => m.id), to:'tr'})).body.tr;
+assert.equal(tr1[conv.messages[0].id], '[de>tr] Hallo Freund!');
+await a.call('/translate', {ids: [conv.messages[0].id], to:'tr'}); assert.equal(env.AI.calls, 2); ok('translation + cache');
+assert.deepEqual((await c.call('/translate', {ids: [conv.messages[0].id], to:'en'})).body.tr, {}); ok('cannot translate others\' messages');
+assert.equal((await b.call('/chat', {to: meA.code, text:'x'.repeat(301)})).status, 400); ok('message length limit');
+assert.equal((await c.call('/report', {code: meA.code, reason:'test'})).status, 200);
+assert.equal((await a.call('/badges')).body.requests, 0); ok('report blocks and drops request');
+assert.equal((await c.call('/friends', {action:'request', code: meA.code})).status, 404); ok('blocked cannot re-request');
+
 // profile, logout, delete
 assert.equal((await a.call('/profile', {name:'Ömer <script>'})).body.name, 'Ömer script'); ok('name cleaned');
 assert.equal((await a.call('/delete-account', {confirm:'no'})).status, 400);
-assert.equal((await a.call('/delete-account', {confirm:'SIL'})).status, 200);
+assert.equal((await a.call('/delete-account', {confirm:'DELETE'})).status, 200);
+assert.equal(env.DB.raw.prepare('SELECT COUNT(*) n FROM em_messages').get().n, 0);
 assert.equal((await a.call('/me')).body.player, null);
 assert.equal((await b.call('/friends')).body.friends.length, 0); ok('account deletion removes data');
 await b.call('/logout', {}); assert.equal((await b.call('/me')).body.player, null); ok('logout');
