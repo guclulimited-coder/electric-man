@@ -2304,6 +2304,8 @@ function attach(model){
 }
 player.regen = .6; buildIsland(0); applyTheme(themeOf(0)); player.pos.copy(spawnPoint(0)); portal.position.set(player.pos.x, 1.8, player.pos.z - 2.5);
 renderSlots(); renderStats();
+// store screenshots: ?shot=1 exposes a small handle so the capture script can stage scenes
+if (new URLSearchParams(location.search).has('shot')) window.__eh = {player, enemies, islands, corpses, startGame, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
 window.__dbg = () => ({alive: enemies.filter(e => !e.dead).length, chasing: enemies.filter(e => !e.dead && e.state === 'chase').length, corpses: corpses.length, isl: curIsl, pos: player.pos.toArray().map(v => +v.toFixed(1)), hp: Math.round(player.hp), kills: player.kills, eaten: player.eaten, hook: hook.state, gear: gear.map(g => g.id + g.lv).join(','), active});
 loop();
 Online.init(); Shop.pending(); renderAdBtn();
