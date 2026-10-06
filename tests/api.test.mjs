@@ -139,6 +139,22 @@ assert.equal((await c.call('/friends', {action:'request', code: meA.code})).stat
 await b.call('/progress', {save:{max:3, coins:10, stars:{}, avatar:'zeynep'}, revision:0});
 assert.equal((await a.call('/friends')).body.friends.find(f => f.code === meB.code).avatar, 'zeynep'); ok('avatar in friend list');
 
+// Electric Hunter: same account, separate save + weekly league
+assert.equal((await b.call('/eh/progress')).body.save, null);
+assert.equal((await b.call('/eh/progress', {save:{save:{isl:2, gear:[{id:'pense', lv:3}]}, coins:150}, revision:0})).body.revision, 1);
+assert.equal((await b.call('/eh/progress', {save:{save:{isl:3}}, revision:0})).status, 409);
+assert.equal((await b.call('/eh/progress')).body.save.save.isl, 2);
+assert.equal((await b.call('/progress')).body.save.avatar, 'zeynep'); ok('hunter save is separate from Electric Man');
+assert.equal((await b.call('/eh/progress', {save:{save:{isl:-1}}, revision:1})).status, 400);
+assert.equal((await b.call('/eh/progress', {save:{blob:'x'.repeat(30000)}, revision:1})).status, 400); ok('hunter save validated');
+assert.equal((await b.call('/eh/score', {island:3, power:1500})).status, 200);
+await b.call('/eh/score', {island:2, power:9000});
+assert.equal((await b.call('/eh/score', {island:0, power:5})).status, 400);
+const hl = (await a.call('/eh/league')).body.rows; assert.equal(hl[0].code, meB.code); assert.equal(hl[0].island, 3); assert.equal(hl[0].power, 9000); ok('hunter league keeps best island and power');
+assert.equal((await a.call('/eh/friends')).body.friends.find(f => f.code === meB.code).island, 3); ok('hunter friend list shows island');
+{ const portal = await worker.fetch(new Request('https://portal.tusneldax.com/i18n/tr.json'), {...env, ASSETS: {fetch: async r => new Response('page:' + new URL(r.url).pathname)}});
+  assert.equal(await portal.text(), 'page:/hunter/i18n/tr.json'); ok('portal host serves /hunter'); }
+
 // profile, logout, delete
 assert.equal((await a.call('/profile', {name:'Ömer <script>'})).body.name, 'Ömer script'); ok('name cleaned');
 assert.equal((await a.call('/delete-account', {confirm:'no'})).status, 400);

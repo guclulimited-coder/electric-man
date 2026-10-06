@@ -139,7 +139,18 @@ const SCHEMA = [
   'CREATE TABLE IF NOT EXISTS em_translations(msg INTEGER NOT NULL, lang TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(msg, lang))',
   'CREATE TABLE IF NOT EXISTS em_tickets(id TEXT PRIMARY KEY, player TEXT NOT NULL, challenge TEXT NOT NULL, expires INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS em_reports(id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, msg INTEGER, snapshot TEXT, reason TEXT, created INTEGER NOT NULL)',
+  // Electric Hunter: same TusneldaX accounts, its own progress and weekly league
+  'CREATE TABLE IF NOT EXISTS eh_saves(player TEXT PRIMARY KEY, body TEXT NOT NULL, revision INTEGER NOT NULL, updated INTEGER NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS eh_scores(id TEXT PRIMARY KEY, player TEXT NOT NULL, week TEXT NOT NULL, island INTEGER NOT NULL, power INTEGER NOT NULL, updated INTEGER NOT NULL)',
+  'CREATE INDEX IF NOT EXISTS eh_scores_week ON eh_scores(week, island, power)',
 ];
+/* Electric Hunter cloud save: an opaque game object, size-capped; the client merges by revision */
+export function safeHunter(v){
+  if (!v || typeof v !== 'object' || Array.isArray(v)) fail('INVALID_SAVE');
+  const json = JSON.stringify(v); if (json.length > 24000) fail('INVALID_SAVE');
+  const isl = v.save && v.save.isl; if (isl !== undefined && !(Number.isSafeInteger(isl) && isl >= 0 && isl < 1000)) fail('INVALID_SAVE');
+  return json;
+}
 let schemaReady = null;
 const ensureSchema = db => schemaReady ||= db.batch(SCHEMA.map(q => db.prepare(q))).catch(e => { schemaReady = null; throw e; });
 export function cleanText(v){
@@ -313,6 +324,42 @@ export async function emAPI(req, env, deps = {}){
       const list = await rows(db, "SELECT p.code,p.name,SUM(c.points) AS points,COUNT(*) AS levels,(SELECT json_extract(body,'$.avatar') FROM em_saves s WHERE s.player=p.id) AS avatar FROM em_clears c JOIN em_players p ON p.id=c.player WHERE c.week=? GROUP BY c.player ORDER BY points DESC,levels DESC,p.code ASC LIMIT 100", w);
       return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, avatar: p.avatar || 'serhat', rank:i + 1, me: p.code === me.code}))});
     }
+    if (path === '/eh/progress' && req.method === 'GET'){
+      const p = await one(db, 'SELECT body,revision,updated FROM eh_saves WHERE player=?', me.id);
+      return reply(p ? {save: JSON.parse(p.body), revision: p.revision, updated: p.updated} : {save:null, revision:0});
+    }
+    if (path === '/eh/progress' && req.method === 'POST'){
+      const json = safeHunter(body.save);
+      if (!Number.isSafeInteger(body.revision) || body.revision < 0) fail('INVALID_REVISION');
+      const now = Date.now();
+      const r = body.revision === 0
+        ? await run(db, 'INSERT INTO eh_saves(player,body,revision,updated) VALUES(?,?,1,?) ON CONFLICT(player) DO NOTHING', me.id, json, now)
+        : await run(db, 'UPDATE eh_saves SET body=?,revision=revision+1,updated=? WHERE player=? AND revision=?', json, now, me.id, body.revision);
+      if (!r.meta.changes) return reply({error:'SAVE_CONFLICT'}, 409);
+      return reply({revision: body.revision + 1, updated: now});
+    }
+    if (path === '/eh/score' && req.method === 'POST'){
+      await quota(db, 'ehscore:' + me.id, 30, 60000);
+      const island = body.island, power = body.power;
+      if (!Number.isSafeInteger(island) || island < 1 || island > 999 || !Number.isSafeInteger(power) || power < 0 || power > 1e12) fail('INVALID_RESULT');
+      const w = week();
+      await run(db, `INSERT INTO eh_scores(id,player,week,island,power,updated) VALUES(?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET island=MAX(island,excluded.island), power=MAX(power,excluded.power), updated=excluded.updated`, me.id + ':' + w, me.id, w, island, power, Date.now());
+      return reply({ok:true});
+    }
+    if (path === '/eh/league' && req.method === 'GET'){
+      const w = week();
+      const list = await rows(db, 'SELECT p.code,p.name,s.island,s.power FROM eh_scores s JOIN em_players p ON p.id=s.player WHERE s.week=? ORDER BY s.island DESC,s.power DESC,p.code ASC LIMIT 100', w);
+      return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, rank:i + 1, me: p.code === me.code}))});
+    }
+    if (path === '/eh/friends' && req.method === 'GET'){
+      const list = await rows(db, `SELECT f.status, f.a AS requester, p.code, p.name,
+          (SELECT json_extract(body,'$.save.isl') FROM eh_saves s WHERE s.player=p.id) AS isl,
+          (SELECT COUNT(*) FROM em_messages m WHERE m.recipient=? AND m.sender=p.id AND m.read=0) AS unread
+        FROM em_friends f JOIN em_players p ON p.id = CASE WHEN f.a=? THEN f.b ELSE f.a END
+        WHERE (f.a=? OR f.b=?) LIMIT 200`, me.id, me.id, me.id, me.id);
+      return reply({me: publicMe(me), friends: list.map(f => ({code:f.code, name:f.name, island:(f.isl || 0) + 1, status: f.status, incoming: f.status === 'pending' && f.requester !== me.id, unread: f.status === 'accepted' ? f.unread : 0}))});
+    }
     if (path === '/friends' && req.method === 'GET'){
       const list = await rows(db, `SELECT f.status, f.a AS requester, p.code, p.name,
           (SELECT json_extract(body,'$.max') FROM em_saves s WHERE s.player=p.id) AS max,
@@ -341,7 +388,7 @@ export async function emAPI(req, env, deps = {}){
     }
     if (path === '/delete-account' && req.method === 'POST'){
       if (typeof body.confirm !== 'string' || !DEL_WORDS.includes(body.confirm.trim().toUpperCase()) && !DEL_WORDS.includes(body.confirm.trim())) fail('CONFIRM_DELETE');
-      await db.batch(['DELETE FROM em_identities WHERE player=?', 'DELETE FROM em_sessions WHERE player=?', 'DELETE FROM em_saves WHERE player=?', 'DELETE FROM em_clears WHERE player=?', 'DELETE FROM em_players WHERE id=?']
+      await db.batch(['DELETE FROM em_identities WHERE player=?', 'DELETE FROM em_sessions WHERE player=?', 'DELETE FROM em_saves WHERE player=?', 'DELETE FROM em_clears WHERE player=?', 'DELETE FROM eh_saves WHERE player=?', 'DELETE FROM eh_scores WHERE player=?', 'DELETE FROM em_players WHERE id=?']
         .map(q => db.prepare(q).bind(me.id)).concat([db.prepare('DELETE FROM em_friends WHERE a=? OR b=?').bind(me.id, me.id), db.prepare('DELETE FROM em_blocks WHERE a=? OR b=?').bind(me.id, me.id),
           db.prepare('DELETE FROM em_messages WHERE sender=? OR recipient=?').bind(me.id, me.id), db.prepare('DELETE FROM em_reports WHERE reporter=? OR target=?').bind(me.id, me.id), db.prepare('DELETE FROM em_tickets WHERE player=?').bind(me.id),
           db.prepare('DELETE FROM em_translations WHERE msg NOT IN (SELECT id FROM em_messages)')]));
