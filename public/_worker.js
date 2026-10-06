@@ -487,6 +487,8 @@ export default {
   async fetch(request, env){
     const url = new URL(request.url);
     if (url.pathname.startsWith(ROOT + '/')) return emAPI(request, env);
+    // Electric Hunter lives in /hunter and is served at the root of portal.tusneldax.com (same accounts API)
+    if (/^(portal|hunter)\./.test(url.hostname) && !url.pathname.startsWith('/api/') && !url.pathname.startsWith('/hunter/')) url.pathname = '/hunter' + url.pathname;
     // Pages serves /gizlilik from gizlilik.html itself (and 308-redirects *.html to the clean URL), so no rewrite here
     const res = await env.ASSETS.fetch(new Request(url, request));
     const h = new Headers(res.headers);
