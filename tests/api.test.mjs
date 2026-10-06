@@ -151,7 +151,7 @@ await b.call('/logout', {}); assert.equal((await b.call('/me')).body.player, nul
 // static routing through the Pages entry
 const assets = {fetch: async r => new Response('page:' + new URL(r.url).pathname)};
 const page = await worker.fetch(new Request(ORIGIN + '/gizlilik'), {...env, ASSETS: assets});
-assert.equal(await page.text(), 'page:/gizlilik.html'); assert.equal(page.headers.get('X-Content-Type-Options'), 'nosniff'); ok('static routing');
+assert.equal(await page.text(), 'page:/gizlilik'); assert.equal(page.headers.get('X-Content-Type-Options'), 'nosniff'); ok('static routing');
 
 // rate limit
 const spam = new Client('9.9.9.9'); let limited = false;

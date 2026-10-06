@@ -487,7 +487,7 @@ export default {
   async fetch(request, env){
     const url = new URL(request.url);
     if (url.pathname.startsWith(ROOT + '/')) return emAPI(request, env);
-    if (['/gizlilik', '/kosullar', '/hesap-silme', '/app-login'].includes(url.pathname)) url.pathname += '.html';
+    // Pages serves /gizlilik from gizlilik.html itself (and 308-redirects *.html to the clean URL), so no rewrite here
     const res = await env.ASSETS.fetch(new Request(url, request));
     const h = new Headers(res.headers);
     h.set('X-Content-Type-Options', 'nosniff'); h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
