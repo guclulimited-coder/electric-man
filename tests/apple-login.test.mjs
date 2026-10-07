@@ -31,7 +31,7 @@ const api=req=>emAPI(req,env,{fetch:fetcher});
 async function start(back='/'){const r=await api(new Request(ORIGIN+'/api/em/auth/apple/start?back='+encodeURIComponent(back)));assert.equal(r.status,302);assert.match(r.headers.get('set-cookie'),/Secure; SameSite=None/);return {url:new URL(r.headers.get('location')),cookie:r.headers.get('set-cookie').split(';')[0]};}
 async function finish(flow,fields={},cookie=flow.cookie){const body=new URLSearchParams({state:flow.url.searchParams.get('state'),id_token:await token(flow.url.searchParams.get('nonce')),...fields});return api(new Request(ORIGIN+'/api/em/auth/apple/callback',{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded',origin:'https://appleid.apple.com'},body}));}
 let checks=0;const ok=()=>checks++;
-let f=await start('/hunter/');assert.equal(f.url.origin,'https://appleid.apple.com');assert.equal(f.url.searchParams.get('redirect_uri'),ORIGIN+'/api/em/auth/apple/callback');ok();
+let f=await start('/hunter/');assert.equal(f.url.origin,'https://appleid.apple.com');assert.equal(f.url.searchParams.get('response_type'),'code id_token');assert.equal(f.url.searchParams.get('redirect_uri'),ORIGIN+'/api/em/auth/apple/callback');ok();
 let r=await finish(f,{state:'wrong'});assert.equal(r.headers.get('location'),'/hunter/?login=fail');assert.equal(keyCalls,0);ok();
 r=await finish(f,{},'');assert.equal(r.headers.get('location'),'/?login=fail');ok();
 r=await finish(f,{id_token:await token(f.url.searchParams.get('nonce'),{aud:'wrong'})});assert.equal(r.headers.get('location'),'/hunter/?login=fail');ok();

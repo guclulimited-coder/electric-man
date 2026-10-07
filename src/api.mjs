@@ -153,7 +153,7 @@ async function appleStart(db, env, url){
   if (!env.EM_APPLE_SERVICE_ID) fail('LOGIN_NOT_CONFIGURED', 503);
   const state = random(), back = ttBack(url.searchParams.get('back'));
   await db.batch([db.prepare('DELETE FROM em_nonces WHERE expires<?').bind(Date.now()), db.prepare('INSERT INTO em_nonces(id,expires) VALUES(?,?)').bind(await hash('apple:' + state), Date.now() + 600000)]);
-  const q = new URLSearchParams({client_id:env.EM_APPLE_SERVICE_ID, redirect_uri:url.origin + ROOT + '/auth/apple/callback', response_type:'id_token', response_mode:'form_post', state, nonce:await hash('apple-token:' + state)});
+  const q = new URLSearchParams({client_id:env.EM_APPLE_SERVICE_ID, redirect_uri:url.origin + ROOT + '/auth/apple/callback', response_type:'code id_token', response_mode:'form_post', state, nonce:await hash('apple-token:' + state)});
   return new Response(null,{status:302,headers:{Location:'https://appleid.apple.com/auth/authorize?' + q,'Cache-Control':'no-store','Set-Cookie':appleCookie(state + '~' + encodeURIComponent(back),600)}});
 }
 async function appleCallback(db, env, req, fetcher){
