@@ -127,11 +127,17 @@ async function ttCallback(db, env, req, url, fetcher){
   const [state = '', rawBack = ''] = cookie(req, TT).split('~');
   let back = '/'; try { back = ttBack(decodeURIComponent(rawBack)); } catch {}
   const code = url.searchParams.get('code') || '';
-  if (!isTok(state) || url.searchParams.get('state') !== state || !code || code.length > 2000 || !ttEnabled(env)) return ttGo(back, 'fail');
-  if (!await one(db, 'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id', await hash('tt:' + state), Date.now())) return ttGo(back, 'fail');
+  // Log only failure categories, never OAuth codes, state values or cookies.
+  const reject = reason => { console.warn('tiktok-flow', reason); return ttGo(back, 'fail'); };
+  if (url.searchParams.has('error')) return reject('provider-declined');
+  if (!isTok(state)) return reject('missing-browser-state');
+  if (url.searchParams.get('state') !== state) return reject('state-mismatch');
+  if (!code || code.length > 2000) return reject('invalid-code-shape');
+  if (!ttEnabled(env)) return reject('provider-unconfigured');
+  if (!await one(db, 'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id', await hash('tt:' + state), Date.now())) return reject('expired-or-used-state');
   let open = '';
   try {
-    const r = await fetcher('https://open.tiktokapis.com/v2/oauth/token/', {method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000), headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Cache-Control': 'no-cache'},
+    const r = await fetcher('https://open.tiktokapis.com/v2/oauth/token/', {method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(10000), headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Cache-Control': 'no-cache'},
       body: new URLSearchParams({client_key: env.EM_TIKTOK_CLIENT_KEY, client_secret: env.EM_TIKTOK_CLIENT_SECRET, code, grant_type: 'authorization_code', redirect_uri: url.origin + ROOT + '/auth/tiktok/callback'})});
     const j = await r.json().catch(() => ({}));
     if (r.ok && typeof j.open_id === 'string' && /^[\w.-]{1,255}$/.test(j.open_id) && j.access_token) open = j.open_id;

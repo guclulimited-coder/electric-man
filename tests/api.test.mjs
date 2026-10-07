@@ -33,7 +33,9 @@ const fakeFetch = async (url, init) => {
     return Response.json({status:'success', paymentStatus:'FAILURE', basketId:b.conversationId});
   }
   if (String(url) === 'https://open.tiktokapis.com/v2/oauth/token/'){
+    assert.equal(init.redirect, 'manual', 'Cloudflare-safe token exchange must not follow redirects');
     const f = new URLSearchParams(init.body); ttCalls.push(Object.fromEntries(f));
+    if (f.get('code') === 'redirect-code') return new Response(null, {status:302, headers:{Location:'https://untrusted.example/token'}});
     if (f.get('code') === 'good-code') return Response.json({access_token:'act.x', open_id:'tt-open-1', scope:'user.info.basic', expires_in:86400});
     return Response.json({error:'invalid_grant', error_description:'bad code'}, {status:400});
   }
@@ -224,6 +226,10 @@ async function raw(cl, path, extra = {}){
   r = await raw(t3, '/auth/tiktok/start?back=%2F', TTENV); const st4 = new URL(r.headers.get('location')).searchParams.get('state');
   r = await raw(t3, '/auth/tiktok/callback?code=bad&state=' + st4, TTENV); assert.equal(r.headers.get('location'), '/?login=fail');
   assert.equal((await t3.call('/me')).body.player, null); ok('tiktok bad code rejected');
+  r = await raw(t3, '/auth/tiktok/start?back=%2F', TTENV); const st5 = new URL(r.headers.get('location')).searchParams.get('state');
+  r = await raw(t3, '/auth/tiktok/callback?code=redirect-code&state=' + st5, TTENV);
+  assert.equal(r.headers.get('location'), '/?login=fail');
+  assert.equal((await t3.call('/me')).body.player, null); ok('tiktok token redirect rejected without forwarding secrets');
 }
 
 // profile, logout, delete
