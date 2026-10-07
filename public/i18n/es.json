@@ -206,5 +206,6 @@
   "ePAY_UNAVAILABLE": "Los pagos no están disponibles ahora, inténtalo más tarde.",
   "eINVALID_PACK": "Los pagos no están disponibles ahora, inténtalo más tarde.",
   "tiktok": "Continuar con TikTok",
-  "ttFail": "No se pudo completar el inicio de sesión con TikTok. Inténtalo de nuevo."
+  "ttFail": "No se pudo completar el inicio de sesión con TikTok. Inténtalo de nuevo.",
+  "apple": "Continuar con Apple"
 }

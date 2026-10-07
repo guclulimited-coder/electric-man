@@ -298,5 +298,6 @@
  "o_ePAY_UNAVAILABLE": "Payments are unavailable right now, please try again later.",
  "o_eINVALID_PACK": "Payments are unavailable right now, please try again later.",
  "tiktok": "Continue with TikTok",
- "ttFail": "TikTok sign-in could not be completed. Please try again."
+ "ttFail": "TikTok sign-in could not be completed. Please try again.",
+"apple":"Continue with Apple"
 }

@@ -16,3 +16,6 @@ binding = "AI"
 EM_EMAIL_ENABLED = "true"
 EM_EMAIL_FROM = "Electric Man <giris@mail.tusneldax.com>"
 EM_GOOGLE_CLIENT_ID = "41728285329-57ufbn6uq8u891enlriivf4c8h74sc3b.apps.googleusercontent.com"
+
+# Shared web Apple login for Electric Man and Electric Hunter (public identifier).
+EM_APPLE_SERVICE_ID = "com.tusneldax.electricman.web"

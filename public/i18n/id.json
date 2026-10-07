@@ -206,5 +206,6 @@
   "ePAY_UNAVAILABLE": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
   "eINVALID_PACK": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
   "tiktok": "Lanjutkan dengan TikTok",
-  "ttFail": "Masuk dengan TikTok gagal. Coba lagi."
+  "ttFail": "Masuk dengan TikTok gagal. Coba lagi.",
+  "apple": "Lanjutkan dengan Apple"
 }

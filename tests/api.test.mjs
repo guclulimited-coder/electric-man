@@ -63,7 +63,7 @@ let passed = 0; const ok = (name) => { passed++; console.log('ok', name); };
 
 // config + guards
 const anon = new Client('1.1.1.1');
-assert.deepEqual((await anon.call('/config')).body, {googleClientId:'client-123', email:true, tiktok:false, purchases:false, webPay:false, maxLevel:300}); ok('config');
+assert.deepEqual((await anon.call('/config')).body, {googleClientId:'client-123', appleClientId:null, email:true, tiktok:false, purchases:false, webPay:false, maxLevel:300}); ok('config');
 assert.equal((await anon.call('/progress')).status, 401); ok('progress needs login');
 assert.equal((await anon.call('/auth/nonce', {}, {origin:'https://evil.example'})).status, 403); ok('cross-origin POST refused');
 

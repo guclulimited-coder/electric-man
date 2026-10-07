@@ -1087,7 +1087,7 @@ const Online = (() => {
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); say(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     const login = new URLSearchParams(location.search).get('login');
-    if (login){ history.replaceState(null, '', location.pathname); say(login === 'tiktok' && me ? T('welcome', {name: me.name}) : T('ttFail')); }
+    if (login){ history.replaceState(null, '', location.pathname); say(['tiktok','apple'].includes(login) && me ? T('welcome', {name: me.name}) : T('ttFail')); }
     document.addEventListener('visibilitychange', () => { if (!document.hidden && me) pollBadges(); });
   }
 
@@ -1134,12 +1134,13 @@ const Online = (() => {
     if (me) return accountView();
     const body = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p>
       ${cfg.googleClientId ? '<div id="gbtn"></div>' : ''}
+      ${cfg.appleClientId ? `<a class="btn apple" href="/api/em/auth/apple/start?back=%2F">${esc(T('apple'))}</a>` : ''}
       ${cfg.tiktok ? `<a class="btn tt" href="/api/em/auth/tiktok/start?back=%2F">${esc(T('tiktok'))}</a>` : ''}
-      ${(cfg.googleClientId || cfg.tiktok) && cfg.email ? `<div class="divider">${esc(T('or'))}</div>` : ''}
+      ${(cfg.googleClientId || cfg.appleClientId || cfg.tiktok) && cfg.email ? `<div class="divider">${esc(T('or'))}</div>` : ''}
       ${cfg.email ? `<div class="field"><label for="em_email">${esc(T('emailLbl'))}</label><input id="em_email" type="email" inputmode="email" autocomplete="email" placeholder="${esc(T('emailPh'))}"></div>
         <div class="field" id="codeField" hidden><label for="em_code">${esc(T('codeLbl'))}</label><input id="em_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></div>
         <button class="btn" id="emailGo">${esc(T('sendCode'))}</button>` : ''}
-      ${!cfg.googleClientId && !cfg.email && !cfg.tiktok ? `<p>${esc(T('noMethods'))}</p>` : ''}
+      ${!cfg.googleClientId && !cfg.appleClientId && !cfg.email && !cfg.tiktok ? `<p>${esc(T('noMethods'))}</p>` : ''}
       <div class="err" id="loginErr"></div>
       <p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
     bindLang(body); bindSettings(body);

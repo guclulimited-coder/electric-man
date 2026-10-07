@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Electric Man — TusneldaX 3D kablo bulmacası (web: electricman.tusneldax.com)",
+  "description": "Electric Man â€” TusneldaX 3D kablo bulmacasÄ± (web: electricman.tusneldax.com)",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node scripts/build.mjs && node tests/api.test.mjs"
+    "test": "node scripts/build.mjs && node tests/api.test.mjs && node tests/apple-login.test.mjs"
   },
-  "engines": { "node": ">=22.13" }
+  "engines": {
+    "node": ">=22.13"
+  }
 }

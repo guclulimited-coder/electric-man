@@ -206,5 +206,6 @@
   "ePAY_UNAVAILABLE": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
   "eINVALID_PACK": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
   "tiktok": "TikTok ile devam et",
-  "ttFail": "TikTok ile giriş tamamlanamadı, yeniden dene."
+  "ttFail": "TikTok ile giriş tamamlanamadı, yeniden dene.",
+  "apple": "Apple ile devam et"
 }

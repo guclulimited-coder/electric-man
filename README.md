@@ -36,3 +36,16 @@ npm test        # derle + 23 API kontrolü
 5. **Alan adı:** Pages projesi → Custom domains → `electricman.tusneldax.com`. Porkbun'da: CNAME `electricman` → `<proje>.pages.dev`.
 
 Değişken eklenmeden de oyun çalışır; giriş seçenekleri yalnızca yapılandırılınca görünür.
+
+
+## Apple web login (7 October 2026)
+
+`EM_APPLE_SERVICE_ID=com.tusneldax.electricman.web` enables Apple alongside the existing Google/email methods for Electric Man, Hunter and the native browser login page. Registered callbacks:
+- https://electricman.tusneldax.com/api/em/auth/apple/callback
+- https://portal.tusneldax.com/api/em/auth/apple/callback
+
+The server validates Apple's RS256 signature, issuer, audience, nonce and time bounds. Short-lived browser-bound state is consumed once. Cancellation, invalid tokens and replays grant no session. The Apple flow cookie uses Secure/HttpOnly/SameSite=None for Apple's cross-site form POST; ordinary sessions remain SameSite=Lax. Existing identities and saves are not migrated or merged by email. Existing players must use their original provider to keep their original account; Apple creates a separate identity unless a future verified account-linking feature is implemented.
+
+Run `npm test`: existing API checks plus `tests/apple-login.test.mjs`. Tests use generated test signing keys and in-memory SQLite, never production player records. TikTok remains disabled until its existing Login Kit configuration is explicitly completed; do not substitute Bus Rush's sandbox credentials into production.
+
+Usta Şehri already exposes Google and its TUSNELDAX broker path for Apple/email at https://oyun.tusneldax.com/hesap. This change does not modify its source or database.

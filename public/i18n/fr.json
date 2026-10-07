@@ -206,5 +206,6 @@
   "ePAY_UNAVAILABLE": "Les paiements sont indisponibles pour le moment, réessaie plus tard.",
   "eINVALID_PACK": "Les paiements sont indisponibles pour le moment, réessaie plus tard.",
   "tiktok": "Continuer avec TikTok",
-  "ttFail": "La connexion avec TikTok n’a pas abouti. Réessaie."
+  "ttFail": "La connexion avec TikTok n’a pas abouti. Réessaie.",
+  "apple": "Continuer avec Apple"
 }

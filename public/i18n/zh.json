@@ -206,5 +206,6 @@
   "ePAY_UNAVAILABLE": "暂时无法付款，请稍后再试。",
   "eINVALID_PACK": "暂时无法付款，请稍后再试。",
   "tiktok": "使用 TikTok 继续",
-  "ttFail": "TikTok 登录未完成，请重试。"
+  "ttFail": "TikTok 登录未完成，请重试。",
+  "apple": "通过 Apple 继续"
 }

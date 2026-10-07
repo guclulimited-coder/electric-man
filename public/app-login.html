@@ -40,6 +40,7 @@ input{font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1.
   <div id="login" hidden>
     <div id="gbtn"></div>
     <a class="btn tt" id="ttbtn" hidden></a>
+  <a class="btn" id="applebtn" hidden></a>
     <div class="divider" id="or"></div>
     <div><label for="email" id="emailLbl"></label><input id="email" type="email" inputmode="email" autocomplete="email"></div>
     <div id="codeField" hidden><label for="code" id="codeLbl"></label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
@@ -91,8 +92,9 @@ async function showLogin(){
   $('signedIn').hidden = true; $('login').hidden = false;
   $('or').textContent = T('or'); $('emailLbl').textContent = T('emailLbl'); $('codeLbl').textContent = T('codeLbl');
   $('email').placeholder = T('emailPh'); $('emailGo').textContent = T('sendCode');
-  $('gbtn').hidden = !cfg.googleClientId; $('or').hidden = !cfg.googleClientId && !cfg.tiktok;
+  $('gbtn').hidden = !cfg.googleClientId; $('or').hidden = !cfg.googleClientId && !cfg.appleClientId && !cfg.tiktok;
   if (cfg.tiktok){ const t = $('ttbtn'); t.hidden = false; t.textContent = T('tiktok'); t.href = '/api/em/auth/tiktok/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
+  if (cfg.appleClientId){ const t = $('applebtn'); t.hidden = false; t.textContent = T('apple'); t.href = '/api/em/auth/apple/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
   const after = async () => { const me = (await call('/me')).player; if (me) handBack(); };
   if (cfg.googleClientId){
     const render = async () => {
@@ -118,7 +120,7 @@ async function showLogin(){
 try {
   cfg = await call('/config'); const me = (await call('/me')).player;
   if (q.get('login') === 'fail') err(T('ttFail'));
-  if (me && q.get('login') === 'tiktok'){ showSignedIn(me); handBack(); } else me ? showSignedIn(me) : showLogin();
+  if (me && ['tiktok','apple'].includes(q.get('login'))){ showSignedIn(me); handBack(); } else me ? showSignedIn(me) : showLogin();
 }
 catch (e){ err(msg(e.message)); }
 </script>

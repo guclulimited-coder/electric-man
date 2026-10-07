@@ -265,21 +265,24 @@ async function quota(db, key, max, ms){
 }
 
 /* Google ID token: RS256, issuer, audience, nonce, freshness, signature against Google's keys. */
-export async function verifyGoogle(token, aud, nonce, fetcher = fetch){
+async function verifyProvider(token, aud, nonce, provider, fetcher = fetch){
   if (!aud) fail('LOGIN_NOT_CONFIGURED', 503);
   if (typeof token !== 'string' || token.length > 16000) fail('INVALID_IDENTITY', 401);
   const decode = s => Uint8Array.from(atob(s.replaceAll('-', '+').replaceAll('_', '/')), c => c.charCodeAt(0));
   const parts = token.split('.'); if (parts.length !== 3) fail('INVALID_IDENTITY', 401);
   let h, c; try { h = JSON.parse(new TextDecoder().decode(decode(parts[0]))); c = JSON.parse(new TextDecoder().decode(decode(parts[1]))); } catch { fail('INVALID_IDENTITY', 401); }
   const now = Date.now() / 1000;
-  if (h.alg !== 'RS256' || !['accounts.google.com', 'https://accounts.google.com'].includes(c.iss) || c.aud !== aud || c.nonce !== nonce ||
+  if (h.alg !== 'RS256' || !(provider === 'apple' ? ['https://appleid.apple.com'] : ['accounts.google.com', 'https://accounts.google.com']).includes(c.iss) || c.aud !== aud || c.nonce !== nonce ||
       !Number.isFinite(c.exp) || c.exp <= now || !Number.isFinite(c.iat) || c.iat > now + 60 || c.iat < now - 600 || typeof c.sub !== 'string' || !c.sub || c.sub.length > 255) fail('INVALID_IDENTITY', 401);
-  const res = await fetcher('https://www.googleapis.com/oauth2/v3/certs', {signal: AbortSignal.timeout(8000)}); if (!res.ok) fail('LOGIN_UNAVAILABLE', 503);
+  const res = await fetcher(provider === 'apple' ? 'https://appleid.apple.com/auth/keys' : 'https://www.googleapis.com/oauth2/v3/certs', {signal: AbortSignal.timeout(8000), redirect:'error'}); if (!res.ok) fail('LOGIN_UNAVAILABLE', 503);
   const jwk = (await res.json()).keys?.find(k => k.kid === h.kid && k.kty === 'RSA'); if (!jwk) fail('INVALID_IDENTITY', 401);
   const key = await crypto.subtle.importKey('jwk', jwk, {name:'RSASSA-PKCS1-v1_5', hash:'SHA-256'}, false, ['verify']);
   if (!await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, decode(parts[2]), enc.encode(parts[0] + '.' + parts[1]))) fail('INVALID_IDENTITY', 401);
   return c;
 }
+
+export const verifyGoogle = (token, aud, nonce, fetcher = fetch) => verifyProvider(token, aud, nonce, 'google', fetcher);
+export const verifyApple = (token, aud, nonce, fetcher = fetch) => verifyProvider(token, aud, nonce, 'apple', fetcher);
 
 /* ---------- email one-time codes (Resend) ---------- */
 export function emailEnabled(env){ return env.EM_EMAIL_ENABLED === 'true' && !!env.EM_RESEND_API_KEY && !!env.EM_EMAIL_FROM && typeof env.EM_EMAIL_OTP_SECRET === 'string' && env.EM_EMAIL_OTP_SECRET.length >= 32; }
@@ -338,7 +341,7 @@ async function ttCallback(db, env, req, url, fetcher){
   if (!await one(db, 'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id', await hash('tt:' + state), Date.now())) return ttGo(back, 'fail');
   let open = '';
   try {
-    const r = await fetcher('https://open.tiktokapis.com/v2/oauth/token/', {method: 'POST', signal: AbortSignal.timeout(10000), headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Cache-Control': 'no-cache'},
+    const r = await fetcher('https://open.tiktokapis.com/v2/oauth/token/', {method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000), headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Cache-Control': 'no-cache'},
       body: new URLSearchParams({client_key: env.EM_TIKTOK_CLIENT_KEY, client_secret: env.EM_TIKTOK_CLIENT_SECRET, code, grant_type: 'authorization_code', redirect_uri: url.origin + ROOT + '/auth/tiktok/callback'})});
     const j = await r.json().catch(() => ({}));
     if (r.ok && typeof j.open_id === 'string' && /^[\w.-]{1,255}$/.test(j.open_id) && j.access_token) open = j.open_id;
@@ -351,9 +354,41 @@ async function ttCallback(db, env, req, url, fetcher){
   return new Response(null, {status: 303, headers});
 }
 
+/* Apple redirect login: popup-free, short-lived browser-bound state, signed ID token.
+   The flow cookie alone uses SameSite=None because Apple returns a cross-site form POST.
+   Normal game session cookies keep SameSite=Lax. No email-based automatic account merging. */
+const APPLE_COOKIE = '__Host-em-apple';
+const appleCookie = (value, age) => ck(APPLE_COOKIE, value, age).replace('SameSite=Lax', 'SameSite=None');
+async function appleStart(db, env, url){
+  if (!env.EM_APPLE_SERVICE_ID) fail('LOGIN_NOT_CONFIGURED', 503);
+  const state = random(), back = ttBack(url.searchParams.get('back'));
+  await db.batch([db.prepare('DELETE FROM em_nonces WHERE expires<?').bind(Date.now()), db.prepare('INSERT INTO em_nonces(id,expires) VALUES(?,?)').bind(await hash('apple:' + state), Date.now() + 600000)]);
+  const q = new URLSearchParams({client_id:env.EM_APPLE_SERVICE_ID, redirect_uri:url.origin + ROOT + '/auth/apple/callback', response_type:'id_token', response_mode:'form_post', state, nonce:await hash('apple-token:' + state)});
+  return new Response(null,{status:302,headers:{Location:'https://appleid.apple.com/auth/authorize?' + q,'Cache-Control':'no-store','Set-Cookie':appleCookie(state + '~' + encodeURIComponent(back),600)}});
+}
+async function appleCallback(db, env, req, fetcher){
+  const [state = '', rawBack = ''] = cookie(req, APPLE_COOKIE).split('~');
+  let back = '/'; try { back = ttBack(decodeURIComponent(rawBack)); } catch {}
+  const finish = (result, session) => { const h = new Headers({Location:back + (back.includes('?') ? '&' : '?') + 'login=' + result,'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}); h.append('Set-Cookie',appleCookie('',0)); if(session) h.append('Set-Cookie',session); return new Response(null,{status:303,headers:h}); };
+  if (!env.EM_APPLE_SERVICE_ID || !isTok(state) || !req.headers.get('content-type')?.startsWith('application/x-www-form-urlencoded')) return finish('fail');
+  const reader=req.body?.getReader(); if(!reader) return finish('fail');
+  let size=0; const chunks=[];
+  for(;;){ const {done,value}=await reader.read(); if(done) break; size+=value.length; if(size>24000){await reader.cancel();return finish('fail');} chunks.push(value); }
+  const bytes=new Uint8Array(size);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}
+  const form=new URLSearchParams(new TextDecoder().decode(bytes));
+  if(form.get('state')!==state || !await one(db,'SELECT id FROM em_nonces WHERE id=? AND expires>?',await hash('apple:'+state),Date.now())) return finish('fail');
+  try {
+    if(form.has('error')){await run(db,'DELETE FROM em_nonces WHERE id=?',await hash('apple:'+state));return finish('fail');}
+    const claims=await verifyApple(form.get('id_token'),env.EM_APPLE_SERVICE_ID,await hash('apple-token:'+state),fetcher);
+    if(!await one(db,'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id',await hash('apple:'+state),Date.now())) return finish('fail');
+    const id=await resolveIdentity(db,'apple',claims.sub);
+    return finish('apple',await newSession(db,id));
+  } catch { return finish('fail'); }
+}
+
 /* identity → player (separate namespace from Bus Rush) */
 async function resolveIdentity(db, provider, subject){
-  if (!['google', 'email', 'tiktok'].includes(provider) || typeof subject !== 'string' || !subject || subject.length > 512) fail('INVALID_IDENTITY', 401);
+  if (!['google', 'email', 'tiktok', 'apple'].includes(provider) || typeof subject !== 'string' || !subject || subject.length > 512) fail('INVALID_IDENTITY', 401);
   const key = await hash('electric-man:' + provider + ':' + subject);
   const m = await one(db, 'SELECT player FROM em_identities WHERE id=?', key);
   if (m) return m.player;
@@ -433,10 +468,12 @@ export async function emAPI(req, env, deps = {}){
     if (!['GET', 'POST'].includes(req.method)) fail('METHOD', 405);
     // iyzico's server posts the payment result here as a form, so it cannot pass the same-origin JSON check below
     if (path === '/pay/callback' && req.method === 'POST'){ await ensureSchema(db); return await payCallback({db, env, req, url, fetcher}); }
+    if (path === '/auth/apple/callback' && req.method === 'POST') return await appleCallback(db, env, req, fetcher);
+    if (path === '/auth/apple/start' && req.method === 'GET'){ await quota(db, 'auth:' + ip, 40, 3600000); return await appleStart(db, env, url); }
     if (req.method === 'POST' && (req.headers.get('origin') !== url.origin || !req.headers.get('content-type')?.includes('application/json'))) fail('ORIGIN', 403);
     if (path === '/auth/tiktok/start' && req.method === 'GET'){ await quota(db, 'auth:' + ip, 40, 3600000); return await ttStart(db, env, url); }
     if (path === '/auth/tiktok/callback' && req.method === 'GET') return await ttCallback(db, env, req, url, fetcher);
-    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, email: emailEnabled(env), tiktok: ttEnabled(env), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
+    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, appleClientId: env.EM_APPLE_SERVICE_ID || null, email: emailEnabled(env), tiktok: ttEnabled(env), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
     const body = req.method === 'POST' ? await bounded(req) : {};
 
     if (path === '/auth/nonce' && req.method === 'POST'){

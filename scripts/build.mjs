@@ -4,7 +4,7 @@
 import {readFileSync, writeFileSync, readdirSync} from 'node:fs';
 const root = new URL('..', import.meta.url);
 const engine = readFileSync(new URL('src/engine.mjs', root), 'utf8');
-const api = readFileSync(new URL('src/api.mjs', root), 'utf8').replace(/^import \{[^}]+\} from '\.\/(engine|pay)\.mjs';\n/gm, '');
+const api = readFileSync(new URL('src/api.mjs', root), 'utf8').replace(/^import \{[^}]+\} from '\.\/(engine|pay)\.mjs';\r?\n/gm, '');
 const pay = readFileSync(new URL('src/pay.mjs', root), 'utf8');
 const mail = {}, del = new Set(['SIL', 'DELETE']);
 for (const f of readdirSync(new URL('public/i18n/', root)).filter(f => f.endsWith('.json'))){

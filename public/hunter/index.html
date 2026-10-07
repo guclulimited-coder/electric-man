@@ -1513,7 +1513,7 @@ const Online = (() => {
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); toast(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     const login = new URLSearchParams(location.search).get('login');
-    if (login){ history.replaceState(null, '', location.pathname); toast(login === 'tiktok' && me ? T('o_welcome', {name: me.name}) : T('ttFail')); }
+    if (login){ history.replaceState(null, '', location.pathname); toast(['tiktok','apple'].includes(login) && me ? T('o_welcome', {name: me.name}) : T('ttFail')); }
     setInterval(() => { if (running && me) score(); }, 60000);
   }
   function renderBadge(b){ const n = (b.requests || 0) + (b.unread || 0), el = $('profDot'); el.hidden = !n; el.textContent = n > 99 ? '99+' : n; }
@@ -1571,8 +1571,9 @@ const Online = (() => {
     }
     const b = body(`<p class="note">${T('accNote')}</p>
       ${cfg.googleClientId ? '<div id="gbtn" style="min-height:44px"></div>' : ''}
+      ${cfg.appleClientId ? `<a class="buy apple" href="/api/em/auth/apple/start?back=${location.pathname.startsWith('/hunter/') ? '%2Fhunter%2F' : '%2F'}">${esc(T('apple'))}</a>` : ''}
       ${cfg.tiktok ? `<a class="buy tt" href="/api/em/auth/tiktok/start?back=${location.pathname.startsWith('/hunter/') ? '%2Fhunter%2F' : '%2F'}">${esc(T('tiktok'))}</a>` : ''}
-      ${(cfg.googleClientId || cfg.tiktok) && cfg.email ? `<div class="note" style="text-align:center">${T('o_or')}</div>` : ''}
+      ${(cfg.googleClientId || cfg.appleClientId || cfg.tiktok) && cfg.email ? `<div class="note" style="text-align:center">${T('o_or')}</div>` : ''}
       ${cfg.email ? `<div class="field"><input id="ehEmail" type="email" inputmode="email" autocomplete="email" placeholder="${esc(T('o_emailPh'))}" style="text-transform:none;letter-spacing:0"></div>
         <div class="field" id="codeField" hidden><input id="ehOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="${esc(T('o_codeLbl'))}"></div>
         <button class="buy" type="button" id="emailGo">${T('o_sendCode')}</button>` : ''}
