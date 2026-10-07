@@ -110,6 +110,8 @@ assert.equal(league.rows[0].code, meB.code); assert.equal(league.rows.length, 2)
 // friends
 assert.equal((await a.call('/friends', {action:'request', code:'EMNOPE00'})).status, 404); ok('unknown code');
 await a.call('/friends', {action:'request', code: meB.code});
+assert.equal((await a.call('/league')).body.rows.find(p=>p.code===meB.code).friendship,'pending');
+assert.equal((await b.call('/league')).body.rows.find(p=>p.code===meA.code).friendship,'incoming');
 let fb = (await b.call('/friends')).body.friends; assert.equal(fb[0].incoming, true);
 await b.call('/friends', {action:'accept', code: meA.code});
 fb = (await b.call('/friends')).body.friends; assert.equal(fb[0].status, 'accepted'); assert.equal(fb[0].max, 5); ok('friend request + accept');
@@ -138,6 +140,17 @@ assert.equal((await b.call('/chat', {to: meA.code, text:'x'.repeat(301)})).statu
 assert.equal((await c.call('/report', {code: meA.code, reason:'test'})).status, 200);
 assert.equal((await a.call('/badges')).body.requests, 0); ok('report blocks and drops request');
 assert.equal((await c.call('/friends', {action:'request', code: meA.code})).status, 404); ok('blocked cannot re-request');
+
+// League relationship metadata: both games use existing, mutual-consent friendship records.
+for(const client of [a,b,c])await client.call('/eh/score',{island:1,power:10});
+for(const route of ['/league','/eh/league']){
+ const list=(await a.call(route)).body.rows;
+ const self=list.find(p=>p.code===meA.code);if(self)assert.equal(self.friendship,'self');
+ const friend=list.find(p=>p.code===meB.code);if(friend)assert.equal(friend.friendship,'accepted');
+}
+assert.equal((await a.call('/eh/league')).body.rows.find(p=>p.code===meC.code).friendship,'blocked');
+assert.equal((await c.call('/eh/league')).body.rows.find(p=>p.code===meA.code).friendship,'blocked');
+ok('league friend states in both games and two-way block');
 
 // native app sign-in: ticket bound to a PKCE challenge, exchanged once for an app session
 { const verifier = 'ab'.repeat(32), challenge = (await import('node:crypto')).createHash('sha256').update(verifier).digest('hex');

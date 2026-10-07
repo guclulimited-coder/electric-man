@@ -164,6 +164,8 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 .tally span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .loading{font-size:13px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.banner{transition:none}}
+
+[data-lg-code]{flex-shrink:0;max-width:120px;overflow-wrap:anywhere}.lrow [data-lg-code]{grid-column:2/-1;justify-self:end}
 </style>
 
 <div id="stage"></div>
@@ -1572,12 +1574,28 @@ const Online = (() => {
     if (window.google && google.accounts && google.accounts.id) return draw();
     const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = draw; document.head.appendChild(sc);
   }
+  function leagueFriendButton(r){
+    if(r.me||!r.code||r.friendship==='blocked')return '';
+    const state=r.friendship||'none',key=state==='accepted'?'message':state==='incoming'?'accept':state==='pending'?'reqSent':'add';
+    return `<button type="button" class="buy" data-lg-code="${esc(r.code)}" data-lg-state="${esc(state)}" data-lg-name="${esc(r.name)}" ${state==='pending'?'disabled':''} style="min-height:44px;white-space:normal">${esc(T('o_'+key))}</button>`;
+  }
+  function bindLeagueFriends(box){
+    box.querySelectorAll('[data-lg-code]').forEach(button=>button.onclick=async()=>{
+      if(button.disabled)return;button.disabled=true;
+      try{
+        if(button.dataset.lgState==='accepted'){openChat(button.dataset.lgCode,button.dataset.lgName);return;}
+        await call('/friends',{action:button.dataset.lgState==='incoming'?'accept':'request',code:button.dataset.lgCode});
+        await pollBadges();await league();
+      }catch(e){button.disabled=false;toast(msg(e.message));}
+    });
+  }
   async function league(){
     const b = body(`<p class="note">${T('o_loadingTxt')}</p>`);
     try {
       score();
       const lg = await call('/eh/league'), ends = new Date(lg.ends).toLocaleDateString(LANG, {day: 'numeric', month: 'long'});
-      b.innerHTML = `<p class="note">${T('leagueNote')} · ${esc(T('lgEnds', {d: ends}))}</p>` + (lg.rows.length ? lg.rows.map(r => `<div class="lrow${r.me ? ' me' : ''}"><b>${r.rank}</b><div><div class="nm" style="font-weight:700">${esc(r.name)}</div><div class="note">${T('islandN', {n: r.island})}</div></div><div class="note">⚡${fmtPow(r.power)}</div></div>`).join('') : `<div class="empty">${T('o_noFriends') && T('leagueEmpty')}</div>`);
+      b.innerHTML = `<p class="note">${T('leagueNote')} · ${esc(T('lgEnds', {d: ends}))}</p>` + (lg.rows.length ? lg.rows.map(r => `<div class="lrow${r.me ? ' me' : ''}"><b>${r.rank}</b><div><div class="nm" style="font-weight:700">${esc(r.name)}</div><div class="note">${T('islandN', {n: r.island})}</div></div><div class="note">⚡${fmtPow(r.power)}</div>${leagueFriendButton(r)}</div>`).join('') : `<div class="empty">${T('o_noFriends') && T('leagueEmpty')}</div>`);
+      bindLeagueFriends(b);
     } catch(e){ b.innerHTML = `<div class="err">${esc(msg(e.message))}</div>`; }
   }
   async function friends(msgsOnly){

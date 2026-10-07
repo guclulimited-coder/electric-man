@@ -166,6 +166,8 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
 .shop-item .coin{width:30px;height:30px}.shop-item .coin svg{width:18px;height:18px}
 .adcover{position:absolute;inset:0;z-index:60;background:rgba(10,20,40,.55)}
 [dir=rtl] .bubble::before{left:auto;right:-7px;border-right-color:transparent;border-left:7px solid #fff;border-right:0}
+
+[data-lg-code]{flex-shrink:0;max-width:120px;overflow-wrap:anywhere}.lrow [data-lg-code]{grid-column:2/-1;justify-self:end}
 </style>
 
 <div id="app">
@@ -1195,13 +1197,29 @@ const Online = (() => {
     if (!me){ sheet(title, `<p>${esc(T(text))}</p><button class="btn" id="goLogin">${esc(T('loginBtn'))}</button>`).querySelector('#goLogin').onclick = openAccount; return true; }
     return false;
   }
+  function leagueFriendButton(r){
+    if(r.me||!r.code||r.friendship==='blocked')return '';
+    const state=r.friendship||'none',key=state==='accepted'?'message':state==='incoming'?'accept':state==='pending'?'reqSent':'add';
+    return `<button type="button" class="btn small" data-lg-code="${esc(r.code)}" data-lg-state="${esc(state)}" data-lg-name="${esc(r.name)}" ${state==='pending'?'disabled':''} style="min-height:44px;white-space:normal">${esc(T(''+key))}</button>`;
+  }
+  function bindLeagueFriends(box){
+    box.querySelectorAll('[data-lg-code]').forEach(button=>button.onclick=async()=>{
+      if(button.disabled)return;button.disabled=true;
+      try{
+        if(button.dataset.lgState==='accepted'){openChat(button.dataset.lgCode,button.dataset.lgName);return;}
+        await call('/friends',{action:button.dataset.lgState==='incoming'?'accept':'request',code:button.dataset.lgCode});
+        await pollBadges();await openLeague();
+      }catch(e){button.disabled=false;say(msg(e.message));}
+    });
+  }
   async function openLeague(){
     if (needLogin(T('tabLeague'), 'leagueLogin')) return;
     const tb = sheet(T('tabLeague'), `<p class="note">${esc(T('loadingTxt'))}</p>`);
     try {
       const lg = await call('/league');
       const ends = new Date(lg.ends).toLocaleDateString(LANG, {day:'numeric', month:'long'});
-      tb.innerHTML = `<p>${esc(T('leagueInfo', {d: ends}))}</p><div class="list" style="margin-top:10px">${lg.rows.length ? lg.rows.map(r => `<div class="item${r.me ? ' me' : ''}"><span class="rk">${r.rank}</span>${av(r.avatar)}<span class="nm">${esc(r.name)}<small>${esc(T('levelsN', {n: r.levels}))}</small></span><span class="pt">${r.points}</span></div>`).join('') : `<p class="note">${esc(T('leagueEmpty'))}</p>`}</div>`;
+      tb.innerHTML = `<p>${esc(T('leagueInfo', {d: ends}))}</p><div class="list" style="margin-top:10px">${lg.rows.length ? lg.rows.map(r => `<div class="item${r.me ? ' me' : ''}"><span class="rk">${r.rank}</span>${av(r.avatar)}<span class="nm">${esc(r.name)}<small>${esc(T('levelsN', {n: r.levels}))}</small></span><span class="pt">${r.points}</span>${leagueFriendButton(r)}</div>`).join('') : `<p class="note">${esc(T('leagueEmpty'))}</p>`}</div>`;
+      bindLeagueFriends(tb);
     } catch (e){ tb.innerHTML = `<p class="err">${esc(msg(e.message))}</p>`; }
   }
   async function openFriends(){

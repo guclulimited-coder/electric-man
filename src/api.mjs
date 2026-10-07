@@ -1,3 +1,12 @@
+
+// Public league codes only; relationship and both block directions stay server-authoritative.
+async function leagueFriendships(db, me){
+ const links=await rows(db, `SELECT p.code,f.status,f.a AS requester FROM em_friends f JOIN em_players p ON p.id=CASE WHEN f.a=? THEN f.b ELSE f.a END WHERE f.a=? OR f.b=?`,me.id,me.id,me.id);
+ const denied=await rows(db, `SELECT p.code FROM em_blocks b JOIN em_players p ON p.id=CASE WHEN b.a=? THEN b.b ELSE b.a END WHERE b.a=? OR b.b=?`,me.id,me.id,me.id);
+ const result=new Map(links.map(f=>[f.code,f.status==='accepted'?'accepted':f.requester===me.id?'pending':'incoming']));
+ for(const p of denied)result.set(p.code,'blocked');
+ result.set(me.code,'self');return result;
+}
 /* Electric Man API — Cloudflare Pages Functions (advanced mode _worker.js) + D1.
    Accounts are separate from Bus Rush: own tables (em_*), own cookies, own identity hashing.
    Patterns (nonce-bound Google ID tokens, email OTP via Resend, CAS saves, quotas) follow the
@@ -411,9 +420,10 @@ export async function emAPI(req, env, deps = {}){
       return reply({ok:true, stars:res.stars, moves:res.moves, opt:res.opt});
     }
     if (path === '/league' && req.method === 'GET'){
+      const friendships=await leagueFriendships(db,me);
       const w = week();
       const list = await rows(db, "SELECT p.code,p.name,SUM(c.points) AS points,COUNT(*) AS levels,(SELECT json_extract(body,'$.avatar') FROM em_saves s WHERE s.player=p.id) AS avatar FROM em_clears c JOIN em_players p ON p.id=c.player WHERE c.week=? GROUP BY c.player ORDER BY points DESC,levels DESC,p.code ASC LIMIT 100", w);
-      return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, avatar: p.avatar || 'serhat', rank:i + 1, me: p.code === me.code}))});
+      return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, friendship:friendships.get(p.code)||'none', avatar: p.avatar || 'serhat', rank:i + 1, me: p.code === me.code}))});
     }
     if (path === '/eh/progress' && req.method === 'GET'){
       const p = await one(db, 'SELECT body,revision,updated FROM eh_saves WHERE player=?', me.id);
@@ -439,9 +449,10 @@ export async function emAPI(req, env, deps = {}){
       return reply({ok:true});
     }
     if (path === '/eh/league' && req.method === 'GET'){
+      const friendships=await leagueFriendships(db,me);
       const w = week();
       const list = await rows(db, 'SELECT p.code,p.name,s.island,s.power FROM eh_scores s JOIN em_players p ON p.id=s.player WHERE s.week=? ORDER BY s.island DESC,s.power DESC,p.code ASC LIMIT 100', w);
-      return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, rank:i + 1, me: p.code === me.code}))});
+      return reply({week:w, ends: new Date(new Date(w).getTime() + 7 * 86400000).toISOString(), rows: list.map((p, i) => ({...p, friendship:friendships.get(p.code)||'none', rank:i + 1, me: p.code === me.code}))});
     }
     if (path === '/eh/friends' && req.method === 'GET'){
       const list = await rows(db, `SELECT f.status, f.a AS requester, p.code, p.name,
