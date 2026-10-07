@@ -296,5 +296,7 @@
  "payOk": "Ödeme alındı, jetonların hesabına eklendi!",
  "payFail": "Ödeme tamamlanmadı. Kartından para çekilmedi.",
  "o_ePAY_UNAVAILABLE": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
- "o_eINVALID_PACK": "Ödeme şu an alınamıyor, biraz sonra tekrar dene."
+ "o_eINVALID_PACK": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
+ "tiktok": "TikTok ile devam et",
+ "ttFail": "TikTok ile giriş tamamlanamadı, yeniden dene."
 }

@@ -204,5 +204,7 @@
   "payOk": "Zahlung erhalten, deine Münzen wurden gutgeschrieben!",
   "payFail": "Zahlung nicht abgeschlossen. Es wurde nichts abgebucht.",
   "ePAY_UNAVAILABLE": "Zahlungen sind gerade nicht möglich, versuche es später erneut.",
-  "eINVALID_PACK": "Zahlungen sind gerade nicht möglich, versuche es später erneut."
+  "eINVALID_PACK": "Zahlungen sind gerade nicht möglich, versuche es später erneut.",
+  "tiktok": "Mit TikTok fortfahren",
+  "ttFail": "Die Anmeldung mit TikTok wurde nicht abgeschlossen. Bitte versuche es erneut."
 }

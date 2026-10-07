@@ -20,7 +20,7 @@ function d1(){
 }
 
 const ORIGIN = 'https://electricman.tusneldax.com';
-let sentMail = [], iyziCalls = [];
+let sentMail = [], iyziCalls = [], ttCalls = [];
 const keys = await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5', modulusLength:2048, publicExponent:new Uint8Array([1,0,1]), hash:'SHA-256'}, true, ['sign', 'verify']);
 const jwk = {...await crypto.subtle.exportKey('jwk', keys.publicKey), kid:'k1'};
 const fakeFetch = async (url, init) => {
@@ -31,6 +31,11 @@ const fakeFetch = async (url, init) => {
     if (String(url).endsWith('/initialize/auth/ecom')) return Response.json({status:'success', token:'t', paymentPageUrl:'https://sandbox-cpp.iyzipay.com?token=t'});
     if (b.token.startsWith('tok-ok')) return Response.json({status:'success', paymentStatus:'SUCCESS', basketId:b.conversationId, currency:'TRY', paidPrice:'149.99', paymentId:'777'});
     return Response.json({status:'success', paymentStatus:'FAILURE', basketId:b.conversationId});
+  }
+  if (String(url) === 'https://open.tiktokapis.com/v2/oauth/token/'){
+    const f = new URLSearchParams(init.body); ttCalls.push(Object.fromEntries(f));
+    if (f.get('code') === 'good-code') return Response.json({access_token:'act.x', open_id:'tt-open-1', scope:'user.info.basic', expires_in:86400});
+    return Response.json({error:'invalid_grant', error_description:'bad code'}, {status:400});
   }
   throw new Error('unexpected fetch ' + url);
 };
@@ -58,7 +63,7 @@ let passed = 0; const ok = (name) => { passed++; console.log('ok', name); };
 
 // config + guards
 const anon = new Client('1.1.1.1');
-assert.deepEqual((await anon.call('/config')).body, {googleClientId:'client-123', email:true, purchases:false, webPay:false, maxLevel:300}); ok('config');
+assert.deepEqual((await anon.call('/config')).body, {googleClientId:'client-123', email:true, tiktok:false, purchases:false, webPay:false, maxLevel:300}); ok('config');
 assert.equal((await anon.call('/progress')).status, 401); ok('progress needs login');
 assert.equal((await anon.call('/auth/nonce', {}, {origin:'https://evil.example'})).status, 403); ok('cross-origin POST refused');
 
@@ -186,6 +191,40 @@ const st2 = await b.call('/pay/start', {game:'em', pack:'em_coins_500'}); const 
 assert.equal(st2.status, 200); const r2 = await cb(o2, 'tok-bad-9a3e11'); assert.equal(r2.headers.get('location'), ORIGIN + '/?pay=fail');
 assert.equal((await b.call('/pay/claim', {game:'em'})).body.coins, 0); ok('failed payment grants nothing');
 delete env.IYZICO_API_KEY; delete env.IYZICO_SECRET_KEY;
+
+// TikTok login (redirect flow)
+async function raw(cl, path, extra = {}){
+  const headers = {'CF-Connecting-IP': cl.ip, cookie: Object.entries(cl.jar).map(([k, v]) => k + '=' + v).join('; ')};
+  const res = await emAPI(new Request(ORIGIN + '/api/em' + path, {headers, redirect:'manual'}), {...env, ...extra}, {fetch: fakeFetch});
+  for (const c of res.headers.getSetCookie()){ const [kv] = c.split(';'); const [k, v] = kv.split('='); if (v) cl.jar[k] = v; else delete cl.jar[k]; }
+  return res;
+}
+{
+  const TTENV = {EM_TIKTOK_CLIENT_KEY:'awkey123', EM_TIKTOK_CLIENT_SECRET:'sec'};
+  const t = new Client('5.5.5.5');
+  assert.equal((await raw(t, '/auth/tiktok/start?back=%2F')).status, 503); ok('tiktok off without keys');
+  let r = await raw(t, '/auth/tiktok/start?back=%2Fhunter%2F', TTENV);
+  assert.equal(r.status, 302);
+  const loc = new URL(r.headers.get('location')); assert.equal(loc.origin + loc.pathname, 'https://www.tiktok.com/v2/auth/authorize/');
+  assert.equal(loc.searchParams.get('client_key'), 'awkey123'); assert.equal(loc.searchParams.get('redirect_uri'), ORIGIN + '/api/em/auth/tiktok/callback');
+  assert.ok(!r.headers.get('location').includes('sec')); const state = loc.searchParams.get('state'); ok('tiktok start redirect (no secret leaked)');
+  r = await raw(t, '/auth/tiktok/callback?code=good-code&state=' + 'f'.repeat(64), TTENV);
+  assert.equal(r.headers.get('location'), '/hunter/?login=fail'); ok('tiktok state mismatch rejected');
+  r = await raw(t, '/auth/tiktok/start?back=https%3A%2F%2Fevil.example', TTENV); const st2 = new URL(r.headers.get('location')).searchParams.get('state');
+  r = await raw(t, '/auth/tiktok/callback?code=good-code&state=' + st2, TTENV);
+  assert.equal(r.headers.get('location'), '/?login=tiktok'); assert.equal(ttCalls.at(-1).client_secret, 'sec');
+  const me1 = (await t.call('/me')).body.player; assert.ok(me1 && me1.code.startsWith('EM')); ok('tiktok login creates session, foreign back ignored');
+  r = await raw(t, '/auth/tiktok/callback?code=good-code&state=' + st2, TTENV); assert.match(r.headers.get('location'), /login=fail/); ok('tiktok state single use');
+  const t2 = new Client('5.5.5.6');
+  r = await raw(t2, '/auth/tiktok/start?back=%2Fapp-login%3Fchallenge%3Dab%26state%3Dcd%26lang%3Dtr', TTENV); const st3 = new URL(r.headers.get('location')).searchParams.get('state');
+  r = await raw(t2, '/auth/tiktok/callback?code=good-code&state=' + st3, TTENV);
+  assert.equal(r.headers.get('location'), '/app-login?challenge=ab&state=cd&lang=tr&login=tiktok');
+  assert.equal((await t2.call('/me')).body.player.code, me1.code); ok('tiktok same account again, app-login return');
+  const t3 = new Client('5.5.5.7');
+  r = await raw(t3, '/auth/tiktok/start?back=%2F', TTENV); const st4 = new URL(r.headers.get('location')).searchParams.get('state');
+  r = await raw(t3, '/auth/tiktok/callback?code=bad&state=' + st4, TTENV); assert.equal(r.headers.get('location'), '/?login=fail');
+  assert.equal((await t3.call('/me')).body.player, null); ok('tiktok bad code rejected');
+}
 
 // profile, logout, delete
 assert.equal((await a.call('/profile', {name:'Ömer <script>'})).body.name, 'Ömer script'); ok('name cleaned');

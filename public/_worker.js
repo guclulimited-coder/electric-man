@@ -315,9 +315,45 @@ async function verifyEmailCode(db, env, nonceId, body){
   return {sub: email};
 }
 
+/* ---------- TikTok Login Kit (web OAuth 2 redirect) ----------
+   /auth/tiktok/start sets a one-time state (cookie + nonce row) and sends the browser to TikTok; TikTok returns to
+   /auth/tiktok/callback, where the code is exchanged server-side for the user's open_id. The client secret never
+   reaches the browser. Only same-site return paths are accepted. */
+const TT = '__Host-em-tt';
+export const ttEnabled = env => !!(env.EM_TIKTOK_CLIENT_KEY && env.EM_TIKTOK_CLIENT_SECRET);
+export const ttBack = v => typeof v === 'string' && (/^\/(hunter\/)?$/.test(v) || /^\/app-login(\.html)?\?[A-Za-z0-9=&_-]{1,400}$/.test(v)) ? v : '/';
+const ttGo = (back, result, clear = true) => new Response(null, {status: 303, headers: {Location: back + (back.includes('?') ? '&' : '?') + 'login=' + result, 'Cache-Control': 'no-store', ...(clear ? {'Set-Cookie': ck(TT, '', 0)} : {})}});
+async function ttStart(db, env, url){
+  if (!ttEnabled(env)) fail('LOGIN_NOT_CONFIGURED', 503);
+  const state = random(), back = ttBack(url.searchParams.get('back'));
+  await db.batch([db.prepare('DELETE FROM em_nonces WHERE expires<?').bind(Date.now()), db.prepare('INSERT INTO em_nonces(id,expires) VALUES(?,?)').bind(await hash('tt:' + state), Date.now() + 600000)]);
+  const q = new URLSearchParams({client_key: env.EM_TIKTOK_CLIENT_KEY, scope: 'user.info.basic', response_type: 'code', redirect_uri: url.origin + ROOT + '/auth/tiktok/callback', state});
+  return new Response(null, {status: 302, headers: {Location: 'https://www.tiktok.com/v2/auth/authorize/?' + q, 'Cache-Control': 'no-store', 'Set-Cookie': ck(TT, state + '~' + encodeURIComponent(back), 600)}});
+}
+async function ttCallback(db, env, req, url, fetcher){
+  const [state = '', rawBack = ''] = cookie(req, TT).split('~');
+  let back = '/'; try { back = ttBack(decodeURIComponent(rawBack)); } catch {}
+  const code = url.searchParams.get('code') || '';
+  if (!isTok(state) || url.searchParams.get('state') !== state || !code || code.length > 2000 || !ttEnabled(env)) return ttGo(back, 'fail');
+  if (!await one(db, 'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id', await hash('tt:' + state), Date.now())) return ttGo(back, 'fail');
+  let open = '';
+  try {
+    const r = await fetcher('https://open.tiktokapis.com/v2/oauth/token/', {method: 'POST', signal: AbortSignal.timeout(10000), headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Cache-Control': 'no-cache'},
+      body: new URLSearchParams({client_key: env.EM_TIKTOK_CLIENT_KEY, client_secret: env.EM_TIKTOK_CLIENT_SECRET, code, grant_type: 'authorization_code', redirect_uri: url.origin + ROOT + '/auth/tiktok/callback'})});
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && typeof j.open_id === 'string' && /^[\w.-]{1,255}$/.test(j.open_id) && j.access_token) open = j.open_id;
+    else console.error('tiktok-token', r.status, j.error, j.error_description);
+  } catch (e){ console.error('tiktok-token', e.message); }
+  if (!open) return ttGo(back, 'fail');
+  const id = await resolveIdentity(db, 'tiktok', open);
+  const headers = new Headers({Location: back + (back.includes('?') ? '&' : '?') + 'login=tiktok', 'Cache-Control': 'no-store'});
+  headers.append('Set-Cookie', await newSession(db, id)); headers.append('Set-Cookie', ck(TT, '', 0));
+  return new Response(null, {status: 303, headers});
+}
+
 /* identity → player (separate namespace from Bus Rush) */
 async function resolveIdentity(db, provider, subject){
-  if (!['google', 'email'].includes(provider) || typeof subject !== 'string' || !subject || subject.length > 512) fail('INVALID_IDENTITY', 401);
+  if (!['google', 'email', 'tiktok'].includes(provider) || typeof subject !== 'string' || !subject || subject.length > 512) fail('INVALID_IDENTITY', 401);
   const key = await hash('electric-man:' + provider + ':' + subject);
   const m = await one(db, 'SELECT player FROM em_identities WHERE id=?', key);
   if (m) return m.player;
@@ -398,7 +434,9 @@ export async function emAPI(req, env, deps = {}){
     // iyzico's server posts the payment result here as a form, so it cannot pass the same-origin JSON check below
     if (path === '/pay/callback' && req.method === 'POST'){ await ensureSchema(db); return await payCallback({db, env, req, url, fetcher}); }
     if (req.method === 'POST' && (req.headers.get('origin') !== url.origin || !req.headers.get('content-type')?.includes('application/json'))) fail('ORIGIN', 403);
-    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, email: emailEnabled(env), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
+    if (path === '/auth/tiktok/start' && req.method === 'GET'){ await quota(db, 'auth:' + ip, 40, 3600000); return await ttStart(db, env, url); }
+    if (path === '/auth/tiktok/callback' && req.method === 'GET') return await ttCallback(db, env, req, url, fetcher);
+    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, email: emailEnabled(env), tiktok: ttEnabled(env), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
     const body = req.method === 'POST' ? await bounded(req) : {};
 
     if (path === '/auth/nonce' && req.method === 'POST'){

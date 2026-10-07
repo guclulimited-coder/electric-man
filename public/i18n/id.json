@@ -204,5 +204,7 @@
   "payOk": "Pembayaran diterima, koinmu sudah ditambahkan!",
   "payFail": "Pembayaran tidak selesai. Kamu tidak ditagih.",
   "ePAY_UNAVAILABLE": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
-  "eINVALID_PACK": "Pembayaran sedang tidak tersedia, coba lagi nanti."
+  "eINVALID_PACK": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
+  "tiktok": "Lanjutkan dengan TikTok",
+  "ttFail": "Masuk dengan TikTok gagal. Coba lagi."
 }

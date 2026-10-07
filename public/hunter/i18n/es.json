@@ -296,5 +296,7 @@
  "payOk": "¡Pago recibido, tus monedas se han añadido!",
  "payFail": "El pago no se completó. No se te ha cobrado.",
  "o_ePAY_UNAVAILABLE": "Los pagos no están disponibles ahora, inténtalo más tarde.",
- "o_eINVALID_PACK": "Los pagos no están disponibles ahora, inténtalo más tarde."
+ "o_eINVALID_PACK": "Los pagos no están disponibles ahora, inténtalo más tarde.",
+ "tiktok": "Continuar con TikTok",
+ "ttFail": "No se pudo completar el inicio de sesión con TikTok. Inténtalo de nuevo."
 }

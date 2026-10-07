@@ -296,5 +296,7 @@
  "payOk": "Paiement reçu, tes pièces ont été ajoutées !",
  "payFail": "Le paiement n'a pas abouti. Tu n'as pas été débité.",
  "o_ePAY_UNAVAILABLE": "Les paiements sont indisponibles pour le moment, réessaie plus tard.",
- "o_eINVALID_PACK": "Les paiements sont indisponibles pour le moment, réessaie plus tard."
+ "o_eINVALID_PACK": "Les paiements sont indisponibles pour le moment, réessaie plus tard.",
+ "tiktok": "Continuer avec TikTok",
+ "ttFail": "La connexion avec TikTok n’a pas abouti. Réessaie."
 }

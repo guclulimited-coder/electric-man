@@ -25,6 +25,8 @@ input{font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1.
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:#dde6f3}
 #gbtn{min-height:44px;display:flex;justify-content:center}
 .note{font-size:12.5px;text-align:center}
+#login{display:flex;flex-direction:column;gap:12px}
+.btn.tt{display:block;background:#111;box-shadow:inset 0 -4px 0 #000;text-align:center;text-decoration:none}
 </style>
 </head>
 <body>
@@ -37,6 +39,7 @@ input{font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1.
   </div>
   <div id="login" hidden>
     <div id="gbtn"></div>
+    <a class="btn tt" id="ttbtn" hidden></a>
     <div class="divider" id="or"></div>
     <div><label for="email" id="emailLbl"></label><input id="email" type="email" inputmode="email" autocomplete="email"></div>
     <div id="codeField" hidden><label for="code" id="codeLbl"></label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
@@ -88,7 +91,8 @@ async function showLogin(){
   $('signedIn').hidden = true; $('login').hidden = false;
   $('or').textContent = T('or'); $('emailLbl').textContent = T('emailLbl'); $('codeLbl').textContent = T('codeLbl');
   $('email').placeholder = T('emailPh'); $('emailGo').textContent = T('sendCode');
-  $('gbtn').hidden = $('or').hidden = !cfg.googleClientId;
+  $('gbtn').hidden = !cfg.googleClientId; $('or').hidden = !cfg.googleClientId && !cfg.tiktok;
+  if (cfg.tiktok){ const t = $('ttbtn'); t.hidden = false; t.textContent = T('tiktok'); t.href = '/api/em/auth/tiktok/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
   const after = async () => { const me = (await call('/me')).player; if (me) handBack(); };
   if (cfg.googleClientId){
     const render = async () => {
@@ -111,7 +115,11 @@ async function showLogin(){
     $('emailGo').disabled = false;
   };
 }
-try { cfg = await call('/config'); const me = (await call('/me')).player; me ? showSignedIn(me) : showLogin(); }
+try {
+  cfg = await call('/config'); const me = (await call('/me')).player;
+  if (q.get('login') === 'fail') err(T('ttFail'));
+  if (me && q.get('login') === 'tiktok'){ showSignedIn(me); handBack(); } else me ? showSignedIn(me) : showLogin();
+}
 catch (e){ err(msg(e.message)); }
 </script>
 </body>

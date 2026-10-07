@@ -110,6 +110,7 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 .row > *{min-width:0}
 .btn.small{padding:9px 12px;font-size:14px}
 .btn.ghost{background:#eef3fb;color:var(--ink);box-shadow:inset 0 -3px 0 #d6e1f1}
+.btn.tt{display:block;background:#111;color:#fff;box-shadow:inset 0 -4px 0 #000;text-align:center;text-decoration:none}
 .btn.danger{background:#fff0ee;color:#c0392b;box-shadow:inset 0 -3px 0 #f3c9c3}
 .codebox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:.08em;background:#f6f9fe;border:1.5px dashed #b8cbe6;border-radius:12px;padding:10px 12px;text-align:center;flex:1}
 .tabs{display:flex;gap:6px;background:#eef3fb;border-radius:12px;padding:4px}
@@ -1085,6 +1086,8 @@ const Online = (() => {
     if (me) sync().then(claimWeb);
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); say(T(pay === 'ok' ? 'payOk' : 'payFail')); }
+    const login = new URLSearchParams(location.search).get('login');
+    if (login){ history.replaceState(null, '', location.pathname); say(login === 'tiktok' && me ? T('welcome', {name: me.name}) : T('ttFail')); }
     document.addEventListener('visibilitychange', () => { if (!document.hidden && me) pollBadges(); });
   }
 
@@ -1131,11 +1134,12 @@ const Online = (() => {
     if (me) return accountView();
     const body = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p>
       ${cfg.googleClientId ? '<div id="gbtn"></div>' : ''}
-      ${cfg.googleClientId && cfg.email ? `<div class="divider">${esc(T('or'))}</div>` : ''}
+      ${cfg.tiktok ? `<a class="btn tt" href="/api/em/auth/tiktok/start?back=%2F">${esc(T('tiktok'))}</a>` : ''}
+      ${(cfg.googleClientId || cfg.tiktok) && cfg.email ? `<div class="divider">${esc(T('or'))}</div>` : ''}
       ${cfg.email ? `<div class="field"><label for="em_email">${esc(T('emailLbl'))}</label><input id="em_email" type="email" inputmode="email" autocomplete="email" placeholder="${esc(T('emailPh'))}"></div>
         <div class="field" id="codeField" hidden><label for="em_code">${esc(T('codeLbl'))}</label><input id="em_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></div>
         <button class="btn" id="emailGo">${esc(T('sendCode'))}</button>` : ''}
-      ${!cfg.googleClientId && !cfg.email ? `<p>${esc(T('noMethods'))}</p>` : ''}
+      ${!cfg.googleClientId && !cfg.email && !cfg.tiktok ? `<p>${esc(T('noMethods'))}</p>` : ''}
       <div class="err" id="loginErr"></div>
       <p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
     bindLang(body); bindSettings(body);

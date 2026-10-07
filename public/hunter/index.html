@@ -77,6 +77,7 @@ body{margin:0;background:var(--void);color:var(--ink);font-family:var(--f-ui);ov
 .buy{border:0;border-radius:10px;padding:8px 10px;min-width:92px;background:var(--gold);color:#1a1200;font:700 13px var(--f-ui);cursor:pointer;font-variant-numeric:tabular-nums}
 .buy:disabled{background:rgba(255,255,255,.1);color:var(--muted);cursor:not-allowed}
 .buy.alt{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(255,201,74,.6);color:var(--gold)}
+.buy.tt{display:block;text-align:center;text-decoration:none;background:#111;color:#fff;padding:12px;font-size:14px;border-radius:999px;margin:6px 0}
 .note{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
 .sbtn #adBtnTxt{font-size:11px}
 .avatar{width:52px;height:52px;flex:none;border-radius:50%;display:grid;place-items:center;font:400 24px var(--f-display);color:#06121a;background:radial-gradient(circle at 35% 30%,#9ff6ff,#1aa8c8)}
@@ -1511,6 +1512,8 @@ const Online = (() => {
     if (webPay()){ $('shopNote2').textContent = T('payNote'); }
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); toast(T(pay === 'ok' ? 'payOk' : 'payFail')); }
+    const login = new URLSearchParams(location.search).get('login');
+    if (login){ history.replaceState(null, '', location.pathname); toast(login === 'tiktok' && me ? T('o_welcome', {name: me.name}) : T('ttFail')); }
     setInterval(() => { if (running && me) score(); }, 60000);
   }
   function renderBadge(b){ const n = (b.requests || 0) + (b.unread || 0), el = $('profDot'); el.hidden = !n; el.textContent = n > 99 ? '99+' : n; }
@@ -1568,7 +1571,8 @@ const Online = (() => {
     }
     const b = body(`<p class="note">${T('accNote')}</p>
       ${cfg.googleClientId ? '<div id="gbtn" style="min-height:44px"></div>' : ''}
-      ${cfg.googleClientId && cfg.email ? `<div class="note" style="text-align:center">${T('o_or')}</div>` : ''}
+      ${cfg.tiktok ? `<a class="buy tt" href="/api/em/auth/tiktok/start?back=${location.pathname.startsWith('/hunter/') ? '%2Fhunter%2F' : '%2F'}">${esc(T('tiktok'))}</a>` : ''}
+      ${(cfg.googleClientId || cfg.tiktok) && cfg.email ? `<div class="note" style="text-align:center">${T('o_or')}</div>` : ''}
       ${cfg.email ? `<div class="field"><input id="ehEmail" type="email" inputmode="email" autocomplete="email" placeholder="${esc(T('o_emailPh'))}" style="text-transform:none;letter-spacing:0"></div>
         <div class="field" id="codeField" hidden><input id="ehOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="${esc(T('o_codeLbl'))}"></div>
         <button class="buy" type="button" id="emailGo">${T('o_sendCode')}</button>` : ''}
