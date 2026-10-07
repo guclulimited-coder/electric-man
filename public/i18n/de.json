@@ -198,5 +198,11 @@
   "noCoins": "Nicht genug Münzen. Im Shop bekommst du mehr.",
   "undoNoCoins": "Zurücknehmen kostet {p} Münzen. Du hast nicht genug.",
   "loginApp": "Im Browser anmelden",
-  "coinsN": "{n} Münzen"
+  "coinsN": "{n} Münzen",
+  "payLogin": "Melde dich zuerst mit deinem TusneldaX-Konto an, um zu kaufen.",
+  "payNote": "Zahlungen werden sicher über iyzico abgewickelt. Die Münzen landen in deinem Konto und erscheinen auf jedem Gerät, auf dem du angemeldet bist.",
+  "payOk": "Zahlung erhalten, deine Münzen wurden gutgeschrieben!",
+  "payFail": "Zahlung nicht abgeschlossen. Es wurde nichts abgebucht.",
+  "ePAY_UNAVAILABLE": "Zahlungen sind gerade nicht möglich, versuche es später erneut.",
+  "eINVALID_PACK": "Zahlungen sind gerade nicht möglich, versuche es später erneut."
 }

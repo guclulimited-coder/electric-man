@@ -1491,11 +1491,26 @@ const Online = (() => {
     call('/eh/score', {island: curIsl + 1, power: Math.round(playerPower())}).catch(() => {});
   }
   function setMe(p){ me = p; if (me) pollBadges(); else { clearTimeout(badgeTimer); renderBadge({requests: 0, unread: 0}); } }
+  // web purchases (iyzico): the server prices the pack, iyzico takes the card, the coins arrive through /pay/claim
+  const webPay = () => !Native.app && !!(cfg && cfg.webPay);
+  async function claimWeb(){
+    if (!webPay() || !me) return;
+    try { const r = await call('/pay/claim', {game: 'eh'}); if (r.coins > 0){ addCoins(r.coins); sfx.pick(); toast(T('plusCoins', {n: r.coins.toLocaleString(LANG)})); await push(); if (panelOpen === 'shop') renderShop(); } } catch(e){}
+  }
+  async function buyWeb(id, btn){
+    if (!me){ toast(T('payLogin')); closePanel(); openPanel('profile'); return; }
+    btn.disabled = true;
+    try { await push(); const r = await call('/pay/start', {game: 'eh', pack: id, lang: LANG, back: location.pathname.startsWith('/hunter/') ? '/hunter/' : '/'}); location.href = r.url; }
+    catch(e){ toast(msg(e.message)); btn.disabled = false; }
+  }
   async function init(){
     try { cfg = await call('/config'); } catch(e){ cfg = null; }
     if (!cfg) return;
     try { setMe((await call('/me')).player); } catch(e){}
-    if (me){ await sync(); score(); }
+    if (me){ await sync(); score(); await claimWeb(); }
+    if (webPay()){ $('shopNote2').textContent = T('payNote'); }
+    const pay = new URLSearchParams(location.search).get('pay');
+    if (pay){ history.replaceState(null, '', location.pathname); toast(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     setInterval(() => { if (running && me) score(); }, 60000);
   }
   function renderBadge(b){ const n = (b.requests || 0) + (b.unread || 0), el = $('profDot'); el.hidden = !n; el.textContent = n > 99 ? '99+' : n; }
@@ -1545,7 +1560,7 @@ const Online = (() => {
       b.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); toast(T('o_deleted')); render(); } catch(e){ err('accErr', e.message === 'CONFIRM_DELETE' ? T('o_confirmDel', {w}) : msg(e.message)); } };
       return;
     }
-    const done = async () => { setMe((await call('/me')).player); await sync(); score(); toast(T('o_welcome', {name: me.name})); render(); };
+    const done = async () => { setMe((await call('/me')).player); await sync(); score(); await claimWeb(); toast(T('o_welcome', {name: me.name})); render(); };
     if (Native.app){
       const b = body(`<p class="note">${T('accNote')}</p><button class="buy" type="button" id="appLogin">${T('o_loginApp')}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p>${extras()}`);
       b.querySelector('#appLogin').onclick = async ev => { ev.currentTarget.disabled = true; try { await Native.call({action: 'login', lang: LANG}); await done(); } catch(e){ if (e.message !== 'LOGIN_CANCELLED') err('loginErr', msg(e.message)); } if ($('appLogin')) $('appLogin').disabled = false; };
@@ -1653,7 +1668,7 @@ const Online = (() => {
     $('chatSend').onclick = send; input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter' && !e.isComposing){ e.preventDefault(); send(); } });
     poll(); setTimeout(pollBadges, 2500);
   }
-  return {init, render, saveSoon, score, stopChat, get me(){ return me; }};
+  return {init, render, saveSoon, score, stopChat, claimWeb, buyWeb, webPay, get me(){ return me; }};
 })();
 function renderProfile(){ Online.render(); }
 $('profile').addEventListener('click', e => {
@@ -1767,7 +1782,7 @@ const Shop = {
 };
 $('shopPacks').addEventListener('click', e => {
   const b = e.target.closest('[data-pack]'); if (!b) return;
-  if (!Native.app){ toast(T('packsApp')); return; }
+  if (!Native.app){ if (Online.webPay()) Online.buyWeb(PACKS[+b.dataset.pack].id, b); else toast(T('packsApp')); return; }
   Shop.buy(PACKS[+b.dataset.pack].id, b);
 });
 $('resumeBtn').addEventListener('click', togglePause);

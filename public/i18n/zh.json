@@ -198,5 +198,11 @@
   "noCoins": "金币不够，可以去商店获取。",
   "undoNoCoins": "撤销需要 {p} 金币，你的金币不够。",
   "loginApp": "在浏览器中登录",
-  "coinsN": "{n} 金币"
+  "coinsN": "{n} 金币",
+  "payLogin": "请先登录 TusneldaX 账户再购买。",
+  "payNote": "付款由 iyzico 安全处理。金币会存入你的账户，并在你登录的所有设备上显示。",
+  "payOk": "付款成功，金币已到账！",
+  "payFail": "付款未完成，未扣款。",
+  "ePAY_UNAVAILABLE": "暂时无法付款，请稍后再试。",
+  "eINVALID_PACK": "暂时无法付款，请稍后再试。"
 }

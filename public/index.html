@@ -993,13 +993,13 @@ const Shop = {
     // a pack only shows once the store returned it (e.g. not before the paid-apps agreement / product is active)
     const packs = COIN_PACKS.filter(p => !app || SHOT || this.prices[p.id]);
     const row = p => { const bonus = Math.round((p.coins / parseFloat(p.tl.replace('₺', '').replace(',', '.')) / base - 1) * 100);
-      return `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coinsN', {n: p.coins.toLocaleString(LANG)})}${bonus > 0 ? `<small class="bonus">+%${bonus}</small>` : ''}</span><button class="btn small alt" data-buy="${p.id}" ${app ? '' : 'disabled'}>${this.prices[p.id] || p.tl}</button></div>`; };
+      return `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coinsN', {n: p.coins.toLocaleString(LANG)})}${bonus > 0 ? `<small class="bonus">+%${bonus}</small>` : ''}</span><button class="btn small alt" data-buy="${p.id}" ${app || Online.webPay() ? '' : 'disabled'}>${this.prices[p.id] || p.tl}</button></div>`; };
     const body = Online.sheet(T('shopTitle'), `
       ${packs.map(row).join('')}
       <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('watchAd')}<small>${T('adReward', {n: AD_REWARD})} · ${T('adsLeft', {n: left})}</small></span><button class="btn small" id="watchAd" ${app && left ? '' : 'disabled'}>▶</button></div>
-      ${app ? '' : `<p class="note">${T('inAppOnly')}</p>`}
+      ${app ? '' : `<p class="note">${T(Online.webPay() ? 'payNote' : 'inAppOnly')}</p>`}
       <div class="err" id="shopErr"></div>`);
-    if (!app) return;
+    if (!app){ if (Online.webPay()) body.querySelectorAll('[data-buy]').forEach(btn => btn.onclick = ev => Online.buyWeb(ev.currentTarget.dataset.buy, ev.currentTarget)); return; }
     body.querySelectorAll('[data-buy]').forEach(btn => btn.onclick = async ev => {
       const b = ev.currentTarget; b.disabled = true;
       try { const r = await Native.call({action:'buy', id: b.dataset.buy}); if (r && r.ok) { await this.grant(Object.assign({id: b.dataset.buy}, r)); $('sheet').hidden = true; } }
@@ -1066,11 +1066,25 @@ const Online = (() => {
   function saveSoon(){ if (!me) return; clearTimeout(saveTimer); saveTimer = setTimeout(push, 1500); }
   async function cleared(lv, actions, extra){ if (!me) return; try { await call('/clear', {level: lv, actions, extra}); } catch (e){} }
   function setMe(p){ me = p; $('accountDot').hidden = !me; if (me) pollBadges(); else { clearTimeout(badgeTimer); renderBadge({requests:0, unread:0}); } }
+  // web purchases (iyzico): the server prices the pack, iyzico takes the card, the coins arrive through /pay/claim
+  const webPay = () => !Native.app && !SHOT && !!(cfg && cfg.webPay);
+  async function claimWeb(){
+    if (!webPay() || !me) return;
+    try { const r = await call('/pay/claim', {game:'em'}); if (r.coins > 0){ coins += r.coins; renderCoins(); snd('win'); say(T('buyOk', {n: r.coins})); await push(); } } catch (e){}
+  }
+  async function buyWeb(id, btn){
+    if (!me){ say(T('payLogin')); openAccount(); return; }
+    btn.disabled = true;
+    try { await push(); const r = await call('/pay/start', {game:'em', pack: id, lang: LANG, back:'/'}); location.href = r.url; }
+    catch (e){ say(msg(e.message)); btn.disabled = false; }
+  }
   async function init(){
     try { cfg = await call('/config'); } catch { cfg = null; }
     if (!cfg) return;
     try { setMe((await call('/me')).player); } catch {}
-    if (me) sync();
+    if (me) sync().then(claimWeb);
+    const pay = new URLSearchParams(location.search).get('pay');
+    if (pay){ history.replaceState(null, '', location.pathname); say(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     document.addEventListener('visibilitychange', () => { if (!document.hidden && me) pollBadges(); });
   }
 
@@ -1126,7 +1140,7 @@ const Online = (() => {
       <p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
     bindLang(body); bindSettings(body);
     const err = t => { $('loginErr').textContent = t || ''; };
-    const done = async () => { setMe((await call('/me')).player); await sync(); accountView(); say(T('welcome', {name: me.name})); };
+    const done = async () => { setMe((await call('/me')).player); await sync(); await claimWeb(); accountView(); say(T('welcome', {name: me.name})); };
     if (cfg.googleClientId) googleButton(async token => { try { await call('/auth/google', {token}); await done(); } catch (e){ err(msg(e.message)); } });
     if (cfg.email){
       let challenge = null;
@@ -1280,7 +1294,7 @@ const Online = (() => {
     input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); } });
     poll(); setTimeout(() => pollBadges(), 2500);
   }
-  return {init, saveSoon, cleared, openAccount, openLeague, openFriends, stopChat, sheet};
+  return {init, saveSoon, cleared, openAccount, openLeague, openFriends, stopChat, sheet, webPay, buyWeb};
 })();
 $('accountBtn').onclick = () => Online.openAccount();
 $('leagueBtn').onclick = () => Online.openLeague();

@@ -290,5 +290,11 @@
  "o_eTRANSLATE_UNAVAILABLE": "Translation isn't available right now.",
  "o_eNET": "Couldn't connect, try again.",
  "adApp": "Rewarded ads are in the mobile app",
- "lgEnds": "ends {d}"
+ "lgEnds": "ends {d}",
+ "payLogin": "Sign in to your TusneldaX account first to buy.",
+ "payNote": "Payments are processed securely by iyzico. Coins go to your account and show up on every device you sign in on.",
+ "payOk": "Payment received, your coins were added!",
+ "payFail": "Payment was not completed. You were not charged.",
+ "o_ePAY_UNAVAILABLE": "Payments are unavailable right now, please try again later.",
+ "o_eINVALID_PACK": "Payments are unavailable right now, please try again later."
 }

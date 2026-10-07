@@ -198,5 +198,11 @@
   "noCoins": "Pas assez de pièces. Tu peux en obtenir dans la boutique.",
   "undoNoCoins": "Annuler coûte {p} pièces. Tu n'en as pas assez.",
   "loginApp": "Se connecter dans le navigateur",
-  "coinsN": "{n} pièces"
+  "coinsN": "{n} pièces",
+  "payLogin": "Connecte-toi d'abord à ton compte TusneldaX pour acheter.",
+  "payNote": "Les paiements sont traités en toute sécurité par iyzico. Les pièces vont sur ton compte et apparaissent sur tous tes appareils.",
+  "payOk": "Paiement reçu, tes pièces ont été ajoutées !",
+  "payFail": "Le paiement n'a pas abouti. Tu n'as pas été débité.",
+  "ePAY_UNAVAILABLE": "Les paiements sont indisponibles pour le moment, réessaie plus tard.",
+  "eINVALID_PACK": "Les paiements sont indisponibles pour le moment, réessaie plus tard."
 }

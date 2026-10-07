@@ -3,6 +3,7 @@
    Patterns (nonce-bound Google ID tokens, email OTP via Resend, CAS saves, quotas) follow the
    audited Bus Rush backend. */
 import {replay, MAX_LEVEL} from './engine.mjs';
+import {PAY_SCHEMA, payEnabled, payStart, payCallback, payClaim} from './pay.mjs';
 
 const ROOT = '/api/em', COOKIE = '__Host-em-session', NONCE = '__Host-em-nonce';
 const enc = new TextEncoder();
@@ -143,6 +144,7 @@ const SCHEMA = [
   'CREATE TABLE IF NOT EXISTS eh_saves(player TEXT PRIMARY KEY, body TEXT NOT NULL, revision INTEGER NOT NULL, updated INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS eh_scores(id TEXT PRIMARY KEY, player TEXT NOT NULL, week TEXT NOT NULL, island INTEGER NOT NULL, power INTEGER NOT NULL, updated INTEGER NOT NULL)',
   'CREATE INDEX IF NOT EXISTS eh_scores_week ON eh_scores(week, island, power)',
+  ...PAY_SCHEMA,
 ];
 /* Electric Hunter cloud save: an opaque game object, size-capped; the client merges by revision */
 export function safeHunter(v){
@@ -183,8 +185,10 @@ export async function emAPI(req, env, deps = {}){
   try {
     if (!db) fail('SERVICE_UNAVAILABLE', 503);
     if (!['GET', 'POST'].includes(req.method)) fail('METHOD', 405);
+    // iyzico's server posts the payment result here as a form, so it cannot pass the same-origin JSON check below
+    if (path === '/pay/callback' && req.method === 'POST'){ await ensureSchema(db); return await payCallback({db, env, req, url, fetcher}); }
     if (req.method === 'POST' && (req.headers.get('origin') !== url.origin || !req.headers.get('content-type')?.includes('application/json'))) fail('ORIGIN', 403);
-    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, email: emailEnabled(env), purchases: false, maxLevel: MAX_LEVEL});
+    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, email: emailEnabled(env), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
     const body = req.method === 'POST' ? await bounded(req) : {};
 
     if (path === '/auth/nonce' && req.method === 'POST'){
@@ -231,6 +235,12 @@ export async function emAPI(req, env, deps = {}){
     if (!(req.method === 'GET' && (path === '/chat' || path === '/badges'))) await quota(db, 'user:' + me.id, 180, 60000);
     await ensureSchema(db);
 
+    if (path === '/pay/start' && req.method === 'POST'){
+      if (!payEnabled(env)) fail('PAY_UNAVAILABLE', 503);
+      await quota(db, 'pay:' + me.id, 12, 3600000);
+      return reply(await payStart({db, env, me, body, origin: url.origin, ip, fetcher}));
+    }
+    if (path === '/pay/claim' && req.method === 'POST') return reply(await payClaim({db, me, body}));
     if (path === '/native/ticket' && req.method === 'POST'){
       if (typeof body.challenge !== 'string' || !/^[a-f0-9]{64}$/.test(body.challenge)) fail('INVALID_CHALLENGE');
       const ticket = random();

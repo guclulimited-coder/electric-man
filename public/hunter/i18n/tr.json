@@ -290,5 +290,11 @@
  "o_eTRANSLATE_UNAVAILABLE": "Çeviri şu an kullanılamıyor.",
  "o_eNET": "Bağlantı kurulamadı, tekrar dene.",
  "adApp": "Ödüllü reklam mobil uygulamada",
- "lgEnds": "{d} tarihinde biter"
+ "lgEnds": "{d} tarihinde biter",
+ "payLogin": "Satın almak için önce TusneldaX hesabınla giriş yap.",
+ "payNote": "Ödeme iyzico güvencesiyle alınır. Jetonlar hesabına eklenir; giriş yaptığın her cihazda görünür.",
+ "payOk": "Ödeme alındı, jetonların hesabına eklendi!",
+ "payFail": "Ödeme tamamlanmadı. Kartından para çekilmedi.",
+ "o_ePAY_UNAVAILABLE": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
+ "o_eINVALID_PACK": "Ödeme şu an alınamıyor, biraz sonra tekrar dene."
 }

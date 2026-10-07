@@ -198,5 +198,11 @@
   "noCoins": "Not enough coins. You can get more in the shop.",
   "undoNoCoins": "Undo costs {p} coins. You don't have enough.",
   "loginApp": "Sign in in the browser",
-  "coinsN": "{n} coins"
+  "coinsN": "{n} coins",
+  "payLogin": "Sign in to your TusneldaX account first to buy.",
+  "payNote": "Payments are processed securely by iyzico. Coins go to your account; ads are in the mobile app.",
+  "payOk": "Payment received, your coins were added!",
+  "payFail": "Payment was not completed. You were not charged.",
+  "ePAY_UNAVAILABLE": "Payments are unavailable right now, please try again later.",
+  "eINVALID_PACK": "Payments are unavailable right now, please try again later."
 }

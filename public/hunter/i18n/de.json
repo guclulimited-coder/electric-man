@@ -290,5 +290,11 @@
  "o_eTRANSLATE_UNAVAILABLE": "Übersetzung ist gerade nicht verfügbar.",
  "o_eNET": "Keine Verbindung, versuch es noch mal.",
  "adApp": "Belohnte Werbung gibt es in der App",
- "lgEnds": "endet am {d}"
+ "lgEnds": "endet am {d}",
+ "payLogin": "Melde dich zuerst mit deinem TusneldaX-Konto an, um zu kaufen.",
+ "payNote": "Zahlungen werden sicher über iyzico abgewickelt. Die Münzen landen in deinem Konto und erscheinen auf jedem Gerät, auf dem du angemeldet bist.",
+ "payOk": "Zahlung erhalten, deine Münzen wurden gutgeschrieben!",
+ "payFail": "Zahlung nicht abgeschlossen. Es wurde nichts abgebucht.",
+ "o_ePAY_UNAVAILABLE": "Zahlungen sind gerade nicht möglich, versuche es später erneut.",
+ "o_eINVALID_PACK": "Zahlungen sind gerade nicht möglich, versuche es später erneut."
 }

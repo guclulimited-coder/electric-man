@@ -198,5 +198,11 @@
   "noCoins": "Moedas insuficientes. Você pode pegar mais na loja.",
   "undoNoCoins": "Desfazer custa {p} moedas. Você não tem o suficiente.",
   "loginApp": "Entrar pelo navegador",
-  "coinsN": "{n} moedas"
+  "coinsN": "{n} moedas",
+  "payLogin": "Entre na sua conta TusneldaX para comprar.",
+  "payNote": "Os pagamentos são processados com segurança pela iyzico. As moedas vão para sua conta e aparecem em todos os seus dispositivos.",
+  "payOk": "Pagamento recebido, suas moedas foram adicionadas!",
+  "payFail": "O pagamento não foi concluído. Nada foi cobrado.",
+  "ePAY_UNAVAILABLE": "Pagamentos indisponíveis no momento, tente mais tarde.",
+  "eINVALID_PACK": "Pagamentos indisponíveis no momento, tente mais tarde."
 }

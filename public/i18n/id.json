@@ -198,5 +198,11 @@
   "noCoins": "Koin tidak cukup. Kamu bisa beli di toko.",
   "undoNoCoins": "Urungkan butuh {p} koin. Koinmu tidak cukup.",
   "loginApp": "Masuk lewat browser",
-  "coinsN": "{n} koin"
+  "coinsN": "{n} koin",
+  "payLogin": "Masuk ke akun TusneldaX dulu untuk membeli.",
+  "payNote": "Pembayaran diproses dengan aman oleh iyzico. Koin masuk ke akunmu dan muncul di semua perangkatmu.",
+  "payOk": "Pembayaran diterima, koinmu sudah ditambahkan!",
+  "payFail": "Pembayaran tidak selesai. Kamu tidak ditagih.",
+  "ePAY_UNAVAILABLE": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
+  "eINVALID_PACK": "Pembayaran sedang tidak tersedia, coba lagi nanti."
 }

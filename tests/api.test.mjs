@@ -20,12 +20,18 @@ function d1(){
 }
 
 const ORIGIN = 'https://electricman.tusneldax.com';
-let sentMail = [];
+let sentMail = [], iyziCalls = [];
 const keys = await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5', modulusLength:2048, publicExponent:new Uint8Array([1,0,1]), hash:'SHA-256'}, true, ['sign', 'verify']);
 const jwk = {...await crypto.subtle.exportKey('jwk', keys.publicKey), kid:'k1'};
 const fakeFetch = async (url, init) => {
   if (String(url).startsWith('https://api.resend.com')){ sentMail.push(JSON.parse(init.body)); return new Response('{}', {status:200}); }
   if (String(url).startsWith('https://www.googleapis.com/oauth2/v3/certs')) return Response.json({keys:[jwk]});
+  if (String(url).startsWith('https://sandbox-api.iyzipay.com')){
+    const b = JSON.parse(init.body); iyziCalls.push({url: String(url), body: b, auth: init.headers.Authorization, rnd: init.headers['x-iyzi-rnd']});
+    if (String(url).endsWith('/initialize/auth/ecom')) return Response.json({status:'success', token:'t', paymentPageUrl:'https://sandbox-cpp.iyzipay.com?token=t'});
+    if (b.token.startsWith('tok-ok')) return Response.json({status:'success', paymentStatus:'SUCCESS', basketId:b.conversationId, currency:'TRY', paidPrice:'149.99', paymentId:'777'});
+    return Response.json({status:'success', paymentStatus:'FAILURE', basketId:b.conversationId});
+  }
   throw new Error('unexpected fetch ' + url);
 };
 const b64u = o => Buffer.from(typeof o === 'string' ? o : JSON.stringify(o)).toString('base64url');
@@ -52,7 +58,7 @@ let passed = 0; const ok = (name) => { passed++; console.log('ok', name); };
 
 // config + guards
 const anon = new Client('1.1.1.1');
-assert.deepEqual((await anon.call('/config')).body, {googleClientId:'client-123', email:true, purchases:false, maxLevel:300}); ok('config');
+assert.deepEqual((await anon.call('/config')).body, {googleClientId:'client-123', email:true, purchases:false, webPay:false, maxLevel:300}); ok('config');
 assert.equal((await anon.call('/progress')).status, 401); ok('progress needs login');
 assert.equal((await anon.call('/auth/nonce', {}, {origin:'https://evil.example'})).status, 403); ok('cross-origin POST refused');
 
@@ -154,6 +160,32 @@ const hl = (await a.call('/eh/league')).body.rows; assert.equal(hl[0].code, meB.
 assert.equal((await a.call('/eh/friends')).body.friends.find(f => f.code === meB.code).island, 3); ok('hunter friend list shows island');
 { const portal = await worker.fetch(new Request('https://portal.tusneldax.com/i18n/tr.json'), {...env, ASSETS: {fetch: async r => new Response('page:' + new URL(r.url).pathname)}});
   assert.equal(await portal.text(), 'page:/hunter/i18n/tr.json'); ok('portal host serves /hunter'); }
+
+// web purchases (iyzico): disabled without keys; server-side price; callback verified with iyzico; claim is one-shot
+assert.equal((await b.call('/pay/start', {game:'eh', pack:'eh_coins_1200'})).status, 503); ok('web pay off without keys');
+env.IYZICO_API_KEY = 'sandbox-key'; env.IYZICO_SECRET_KEY = 'secret';
+assert.equal((await b.call('/config')).body.webPay, true);
+assert.equal((await b.call('/pay/start', {game:'eh', pack:'eh_coins_999999'})).status, 400); ok('unknown pack refused');
+const st = await b.call('/pay/start', {game:'eh', pack:'eh_coins_1200', back:'/hunter/', price:'0.01'});
+assert.equal(st.status, 200); assert.match(st.body.url, /^https:\/\/sandbox-cpp/);
+const init0 = iyziCalls.at(-1); assert.equal(init0.body.paidPrice, '149.99'); assert.equal(init0.body.basketItems[0].itemType, 'VIRTUAL');
+{ const {IyziCheck} = {IyziCheck: null};
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('secret'), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+  const sig = Buffer.from(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(init0.rnd + '/payment/iyzipos/checkoutform/initialize/auth/ecom' + JSON.stringify(init0.body)))).toString('hex');
+  assert.equal(init0.auth, 'IYZWSv2 ' + Buffer.from('apiKey:sandbox-key&randomKey:' + init0.rnd + '&signature:' + sig).toString('base64')); }
+ok('iyzico request priced on the server and signed IYZWSv2');
+const orderId = new URL(init0.body.callbackUrl).searchParams.get('o');
+const cb = async (o, token) => emAPI(new Request(ORIGIN + '/api/em/pay/callback?o=' + o, {method:'POST', headers:{'content-type':'application/x-www-form-urlencoded', origin:'https://sandbox-cpp.iyzipay.com'}, body:'token=' + token}), env, {fetch: fakeFetch});
+assert.equal((await b.call('/pay/claim', {game:'eh'})).body.coins, 0); ok('nothing to claim before payment');
+const r1 = await cb(orderId, 'tok-ok-2b7f0c1e'); assert.equal(r1.status, 303); assert.equal(r1.headers.get('location'), ORIGIN + '/hunter/?pay=ok');
+assert.equal((await b.call('/pay/claim', {game:'em'})).body.coins, 0);
+assert.equal((await b.call('/pay/claim', {game:'eh'})).body.coins, 1200);
+assert.equal((await b.call('/pay/claim', {game:'eh'})).body.coins, 0); ok('paid order claimed once, per game');
+await cb(orderId, 'tok-ok-2b7f0c1e'); assert.equal((await b.call('/pay/claim', {game:'eh'})).body.coins, 0); ok('callback replay grants nothing');
+const st2 = await b.call('/pay/start', {game:'em', pack:'em_coins_500'}); const o2 = new URL(iyziCalls.at(-1).body.callbackUrl).searchParams.get('o');
+assert.equal(st2.status, 200); const r2 = await cb(o2, 'tok-bad-9a3e11'); assert.equal(r2.headers.get('location'), ORIGIN + '/?pay=fail');
+assert.equal((await b.call('/pay/claim', {game:'em'})).body.coins, 0); ok('failed payment grants nothing');
+delete env.IYZICO_API_KEY; delete env.IYZICO_SECRET_KEY;
 
 // profile, logout, delete
 assert.equal((await a.call('/profile', {name:'Ömer <script>'})).body.name, 'Ömer script'); ok('name cleaned');

@@ -290,5 +290,11 @@
  "o_eTRANSLATE_UNAVAILABLE": "La traducción no está disponible ahora.",
  "o_eNET": "No se pudo conectar, inténtalo de nuevo.",
  "adApp": "Los anuncios con recompensa están en la app móvil",
- "lgEnds": "termina el {d}"
+ "lgEnds": "termina el {d}",
+ "payLogin": "Inicia sesión con tu cuenta TusneldaX para comprar.",
+ "payNote": "Los pagos se procesan de forma segura con iyzico. Las monedas van a tu cuenta y aparecen en todos tus dispositivos.",
+ "payOk": "¡Pago recibido, tus monedas se han añadido!",
+ "payFail": "El pago no se completó. No se te ha cobrado.",
+ "o_ePAY_UNAVAILABLE": "Los pagos no están disponibles ahora, inténtalo más tarde.",
+ "o_eINVALID_PACK": "Los pagos no están disponibles ahora, inténtalo más tarde."
 }

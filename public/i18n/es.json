@@ -198,5 +198,11 @@
   "noCoins": "No tienes suficientes monedas. Puedes conseguir más en la tienda.",
   "undoNoCoins": "Deshacer cuesta {p} monedas. No tienes suficientes.",
   "loginApp": "Inicia sesión en el navegador",
-  "coinsN": "{n} monedas"
+  "coinsN": "{n} monedas",
+  "payLogin": "Inicia sesión con tu cuenta TusneldaX para comprar.",
+  "payNote": "Los pagos se procesan de forma segura con iyzico. Las monedas van a tu cuenta y aparecen en todos tus dispositivos.",
+  "payOk": "¡Pago recibido, tus monedas se han añadido!",
+  "payFail": "El pago no se completó. No se te ha cobrado.",
+  "ePAY_UNAVAILABLE": "Los pagos no están disponibles ahora, inténtalo más tarde.",
+  "eINVALID_PACK": "Los pagos no están disponibles ahora, inténtalo más tarde."
 }

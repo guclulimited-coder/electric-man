@@ -198,5 +198,11 @@
   "noCoins": "Jetonun yetmiyor. Mağazadan jeton alabilirsin.",
   "undoNoCoins": "Geri almak {p} jeton. Jetonun yetmiyor.",
   "loginApp": "Tarayıcıda giriş yap",
-  "coinsN": "{n} jeton"
+  "coinsN": "{n} jeton",
+  "payLogin": "Satın almak için önce TusneldaX hesabınla giriş yap.",
+  "payNote": "Ödeme iyzico güvencesiyle alınır. Jetonlar hesabına eklenir; reklam izleme mobil uygulamada.",
+  "payOk": "Ödeme alındı, jetonların hesabına eklendi!",
+  "payFail": "Ödeme tamamlanmadı. Kartından para çekilmedi.",
+  "ePAY_UNAVAILABLE": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
+  "eINVALID_PACK": "Ödeme şu an alınamıyor, biraz sonra tekrar dene."
 }

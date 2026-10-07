@@ -290,5 +290,11 @@
  "o_eTRANSLATE_UNAVAILABLE": "Terjemahan sedang tidak tersedia.",
  "o_eNET": "Tidak bisa terhubung, coba lagi.",
  "adApp": "Iklan berhadiah ada di aplikasi seluler",
- "lgEnds": "berakhir {d}"
+ "lgEnds": "berakhir {d}",
+ "payLogin": "Masuk ke akun TusneldaX dulu untuk membeli.",
+ "payNote": "Pembayaran diproses dengan aman oleh iyzico. Koin masuk ke akunmu dan muncul di semua perangkatmu.",
+ "payOk": "Pembayaran diterima, koinmu sudah ditambahkan!",
+ "payFail": "Pembayaran tidak selesai. Kamu tidak ditagih.",
+ "o_ePAY_UNAVAILABLE": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
+ "o_eINVALID_PACK": "Pembayaran sedang tidak tersedia, coba lagi nanti."
 }
