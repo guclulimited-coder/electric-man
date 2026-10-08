@@ -300,5 +300,21 @@
  "tiktok": "使用 TikTok 继续",
  "ttFail": "TikTok 登录未完成，请重试。",
  "apple": "通过 Apple 继续",
- "weakBoss": "力量不足！这个母体需要 ⚡{p} 战力。"
+ "weakBoss": "力量不足！这个母体需要 ⚡{p} 战力。",
+ "pl_pluto": "冥王星",
+ "pl_pluto_sub": "氮冰川",
+ "pl_kepler": "开普勒-452b",
+ "pl_kepler_sub": "紫色森林",
+ "pl_enceladus": "土卫二",
+ "pl_enceladus_sub": "冰间歇泉",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "红矮星之下",
+ "pl_ceres": "谷神星",
+ "pl_ceres_sub": "盐之闪光",
+ "pl_gliese": "格利泽581",
+ "pl_gliese_sub": "水晶世界",
+ "pl_cancri": "巨蟹座55 e",
+ "pl_cancri_sub": "钻石与岩浆",
+ "hookBtn": "钩子",
+ "loadingWorld": "正在准备世界…"
 }

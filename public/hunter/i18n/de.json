@@ -300,5 +300,21 @@
  "tiktok": "Mit TikTok fortfahren",
  "ttFail": "Die Anmeldung mit TikTok wurde nicht abgeschlossen. Bitte versuche es erneut.",
  "apple": "Mit Apple fortfahren",
- "weakBoss": "Nicht stark genug! Diese Mutter erfordert ⚡{p} Kraft."
+ "weakBoss": "Nicht stark genug! Diese Mutter erfordert ⚡{p} Kraft.",
+ "pl_pluto": "Pluto",
+ "pl_pluto_sub": "Stickstoffgletscher",
+ "pl_kepler": "Kepler-452b",
+ "pl_kepler_sub": "Violette Wälder",
+ "pl_enceladus": "Enceladus",
+ "pl_enceladus_sub": "Eisgeysire",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "Unter einem Roten Zwerg",
+ "pl_ceres": "Ceres",
+ "pl_ceres_sub": "Salzglitzern",
+ "pl_gliese": "Gliese 581",
+ "pl_gliese_sub": "Kristallwelt",
+ "pl_cancri": "55 Cancri e",
+ "pl_cancri_sub": "Diamant und Magma",
+ "hookBtn": "HAKEN",
+ "loadingWorld": "Welt wird vorbereitet…"
 }

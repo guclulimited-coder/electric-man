@@ -300,5 +300,21 @@
  "tiktok": "TikTok দিয়ে চালিয়ে যান",
  "ttFail": "TikTok সাইন-ইন সম্পূর্ণ হয়নি, আবার চেষ্টা করুন।",
  "apple": "Apple দিয়ে চালিয়ে যান",
- "weakBoss": "শক্তি যথেষ্ট নয়! এই মাতার জন্য ⚡{p} শক্তি দরকার।"
+ "weakBoss": "শক্তি যথেষ্ট নয়! এই মাতার জন্য ⚡{p} শক্তি দরকার।",
+ "pl_pluto": "প্লুটো",
+ "pl_pluto_sub": "নাইট্রোজেন হিমবাহ",
+ "pl_kepler": "কেপলার-452b",
+ "pl_kepler_sub": "বেগুনি বন",
+ "pl_enceladus": "এনসেলাডাস",
+ "pl_enceladus_sub": "বরফের গিজার",
+ "pl_trappist": "ট্র্যাপিস্ট-1e",
+ "pl_trappist_sub": "লাল বামন তারার নিচে",
+ "pl_ceres": "সেরেস",
+ "pl_ceres_sub": "লবণের ঝিলিক",
+ "pl_gliese": "গ্লিজ 581",
+ "pl_gliese_sub": "স্ফটিকের জগৎ",
+ "pl_cancri": "৫৫ ক্যানক্রি e",
+ "pl_cancri_sub": "হীরা আর ম্যাগমা",
+ "hookBtn": "হুক",
+ "loadingWorld": "জগৎ প্রস্তুত হচ্ছে…"
 }

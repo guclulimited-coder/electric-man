@@ -300,5 +300,21 @@
  "tiktok": "TikTokで続ける",
  "ttFail": "TikTokでのログインを完了できませんでした。もう一度お試しください。",
  "apple": "Appleで続ける",
- "weakBoss": "パワー不足！このマザーには⚡{p}のパワーが必要です。"
+ "weakBoss": "パワー不足！このマザーには⚡{p}のパワーが必要です。",
+ "pl_pluto": "冥王星",
+ "pl_pluto_sub": "窒素の氷河",
+ "pl_kepler": "ケプラー452b",
+ "pl_kepler_sub": "紫の森",
+ "pl_enceladus": "エンケラドス",
+ "pl_enceladus_sub": "氷の間欠泉",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "赤色矮星の下で",
+ "pl_ceres": "ケレス",
+ "pl_ceres_sub": "塩のきらめき",
+ "pl_gliese": "グリーゼ581",
+ "pl_gliese_sub": "水晶の世界",
+ "pl_cancri": "かに座55番星e",
+ "pl_cancri_sub": "ダイヤとマグマ",
+ "hookBtn": "フック",
+ "loadingWorld": "世界を準備中…"
 }

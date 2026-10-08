@@ -300,5 +300,21 @@
  "tiktok": "Продолжить с TikTok",
  "ttFail": "Не удалось войти через TikTok. Попробуйте ещё раз.",
  "apple": "Продолжить с Apple",
- "weakBoss": "Не хватает силы! Для этой Матки нужно ⚡{p} мощи."
+ "weakBoss": "Не хватает силы! Для этой Матки нужно ⚡{p} мощи.",
+ "pl_pluto": "Плутон",
+ "pl_pluto_sub": "Азотные ледники",
+ "pl_kepler": "Кеплер-452b",
+ "pl_kepler_sub": "Фиолетовые леса",
+ "pl_enceladus": "Энцелад",
+ "pl_enceladus_sub": "Ледяные гейзеры",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "Под красным карликом",
+ "pl_ceres": "Церера",
+ "pl_ceres_sub": "Соляные блики",
+ "pl_gliese": "Глизе 581",
+ "pl_gliese_sub": "Хрустальный мир",
+ "pl_cancri": "55 Рака e",
+ "pl_cancri_sub": "Алмазы и магма",
+ "hookBtn": "КРЮК",
+ "loadingWorld": "Готовим мир…"
 }

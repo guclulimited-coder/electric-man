@@ -300,5 +300,21 @@
  "tiktok": "Continuar com o TikTok",
  "ttFail": "Não foi possível concluir o login com o TikTok. Tente novamente.",
  "apple": "Continuar com Apple",
- "weakBoss": "Força insuficiente! Esta Mãe exige ⚡{p} de poder."
+ "weakBoss": "Força insuficiente! Esta Mãe exige ⚡{p} de poder.",
+ "pl_pluto": "Plutão",
+ "pl_pluto_sub": "Geleiras de nitrogênio",
+ "pl_kepler": "Kepler-452b",
+ "pl_kepler_sub": "Florestas violeta",
+ "pl_enceladus": "Encélado",
+ "pl_enceladus_sub": "Gêiseres de gelo",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "Sob uma anã vermelha",
+ "pl_ceres": "Ceres",
+ "pl_ceres_sub": "Brilhos de sal",
+ "pl_gliese": "Gliese 581",
+ "pl_gliese_sub": "Mundo de cristal",
+ "pl_cancri": "55 Cancri e",
+ "pl_cancri_sub": "Diamante e magma",
+ "hookBtn": "GANCHO",
+ "loadingWorld": "Preparando o mundo…"
 }

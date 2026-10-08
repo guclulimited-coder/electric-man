@@ -300,5 +300,21 @@
  "tiktok": "TikTok ile devam et",
  "ttFail": "TikTok ile giriş tamamlanamadı, yeniden dene.",
  "apple": "Apple ile devam et",
- "weakBoss": "Gücün yetmiyor! Bu Ana için ⚡{p} güç gerekli."
+ "weakBoss": "Gücün yetmiyor! Bu Ana için ⚡{p} güç gerekli.",
+ "pl_pluto": "Plüton",
+ "pl_pluto_sub": "Azot buzulları",
+ "pl_kepler": "Kepler-452b",
+ "pl_kepler_sub": "Mor ormanlar",
+ "pl_enceladus": "Enceladus",
+ "pl_enceladus_sub": "Buz gayzerleri",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "Kızıl cücenin altında",
+ "pl_ceres": "Ceres",
+ "pl_ceres_sub": "Tuz parıltıları",
+ "pl_gliese": "Gliese 581",
+ "pl_gliese_sub": "Kristal dünya",
+ "pl_cancri": "55 Cancri e",
+ "pl_cancri_sub": "Elmas ve magma",
+ "hookBtn": "KANCA",
+ "loadingWorld": "Dünya hazırlanıyor…"
 }

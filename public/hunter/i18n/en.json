@@ -300,5 +300,21 @@
  "tiktok": "Continue with TikTok",
  "ttFail": "TikTok sign-in could not be completed. Please try again.",
  "apple": "Continue with Apple",
- "weakBoss": "Not strong enough! This Mother needs ⚡{p} power."
+ "weakBoss": "Not strong enough! This Mother needs ⚡{p} power.",
+ "pl_pluto": "Pluto",
+ "pl_pluto_sub": "Nitrogen glaciers",
+ "pl_kepler": "Kepler-452b",
+ "pl_kepler_sub": "Violet forests",
+ "pl_enceladus": "Enceladus",
+ "pl_enceladus_sub": "Ice geysers",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "Under a red dwarf",
+ "pl_ceres": "Ceres",
+ "pl_ceres_sub": "Salt glints",
+ "pl_gliese": "Gliese 581",
+ "pl_gliese_sub": "Crystal world",
+ "pl_cancri": "55 Cancri e",
+ "pl_cancri_sub": "Diamond and magma",
+ "hookBtn": "HOOK",
+ "loadingWorld": "Preparing the world…"
 }
