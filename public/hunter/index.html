@@ -306,10 +306,28 @@ function applyStatic(){
 applyStatic();
 const rand = (a, b) => a + Math.random() * (b - a);
 // opaque lit meshes cast (and optionally receive) real shadows; glows, sprites and transparent effects never do
+// merge every static mesh under root that shares a material into one draw call (trees, ruins: hundreds of calls -> a handful)
+const _bm = new THREE.Matrix4();
+function bakeStatic(root){
+  root.updateMatrixWorld(true); const inv = root.matrixWorld.clone().invert(), groups = new Map();
+  root.traverse(m => { if (!m.isMesh || m.isInstancedMesh || m.isSkinnedMesh || Array.isArray(m.material)) return;
+    const k = m.material.uuid + '|' + m.renderOrder; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(m); });
+  for (const list of groups.values()){
+    if (list.length < 2) continue;
+    const uv = list.every(m => m.geometry.attributes.uv);
+    const geos = list.map(m => { const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+      for (const a of Object.keys(g.attributes)) if (a !== 'position' && a !== 'normal' && !(uv && a === 'uv')) g.deleteAttribute(a);
+      g.morphAttributes = {}; g.applyMatrix4(_bm.multiplyMatrices(inv, m.matrixWorld)); return g; });
+    const merged = mergeGeometries(geos); if (!merged) continue;
+    const mm = new THREE.Mesh(merged, list[0].material); mm.renderOrder = list[0].renderOrder; root.add(mm);
+    for (const m of list) m.removeFromParent();
+  }
+  return root;
+}
 function shadeTree(o, cast = true, receive = false){
   if (!GFX.shadows) return o;
   o.traverse(m => { if (!m.isMesh || m.isSprite) return; const mt = Array.isArray(m.material) ? m.material[0] : m.material;
-    if (!mt || mt.transparent || mt.isMeshBasicMaterial || mt.isShaderMaterial) return; m.castShadow = cast; m.receiveShadow = receive; });
+    if (!mt || mt.transparent || mt.isMeshBasicMaterial || mt.isShaderMaterial) return; m.castShadow = cast && !m.userData.noCast; m.receiveShadow = receive; });
   return o;
 }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -319,12 +337,12 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
    mid (most phones): the same look at lower resolution and smaller shadow map. low: no post-processing or shadows.
    Picked from the device, saved per device, and stepped down automatically if the frame rate stays low. */
 const GFX = (() => {
-  const saved = (() => { try { return localStorage.getItem('pa-gfx'); } catch(e){ return null; } })();
+  const saved = (() => { try { localStorage.removeItem('pa-gfx'); const v = JSON.parse(localStorage.getItem('pa-gfx2') || 'null'); return v && v.until > Date.now() ? v.tier : null; } catch(e){ return null; } })();
   const touch = matchMedia('(pointer: coarse)').matches, mem = navigator.deviceMemory || 4, cores = navigator.hardwareConcurrency || 4;
   const auto = !touch && mem >= 4 ? 'high' : mem <= 2 || cores <= 2 ? 'low' : 'mid';
   const tier = ['high', 'mid', 'low'].includes(saved) ? saved : auto;
   return {tier, auto: !saved, post: tier !== 'low', shadows: tier !== 'low', shadowSize: tier === 'high' ? 2048 : 1024,
-    pr: tier === 'high' ? Math.min(2, devicePixelRatio || 1) : tier === 'mid' ? Math.min(1.5, devicePixelRatio || 1) : 1, cover: tier === 'high' ? 1 : tier === 'mid' ? .55 : 0};
+    pr: tier === 'high' ? Math.min(2, devicePixelRatio || 1) : tier === 'mid' ? Math.min(1.5, devicePixelRatio || 1) : 1, cover: tier === 'high' ? 1 : tier === 'mid' ? .4 : 0};
 })();
 let composer = null, renderPass = null, bloom = null;
 const Grade = {pass: null, th: null, theme(th){ this.th = th; if (!this.pass) return; const u = this.pass.uniforms; u.tint.value.set(th.sun[0]).lerp(new THREE.Color(1, 1, 1), .65); u.shadowTint.value.set(th.fog).lerp(new THREE.Color(0, 0, 0), .55); }};
@@ -573,7 +591,7 @@ function updateDust(dt, t){
   dustGeo.attributes.position.needsUpdate = true;
 }
 // rocks with lumpy, displaced surfaces
-const rockGeos = [0, 1, 2, 3].map(seed => { const g = new THREE.IcosahedronGeometry(1, GFX.post ? 4 : 2); const p = g.attributes.position; const v = new THREE.Vector3();
+const rockGeos = [0, 1, 2, 3].map(seed => { const g = new THREE.IcosahedronGeometry(1, seed === 3 ? 1 : GFX.post ? 3 : 2); const p = g.attributes.position; const v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++){ v.fromBufferAttribute(p, i); const n = .72 + fbm(v.x * 1.6 + seed * 7, v.y * 1.6 + v.z, 3) * .55 + (GFX.post ? (fbm(v.x * 5 + seed, v.y * 5 - v.z * 3, 3) - .5) * .12 : 0); v.multiplyScalar(n); v.y *= .7; p.setXYZ(i, v.x, v.y, v.z); }
   if (GFX.post){ g.deleteAttribute('normal'); g.deleteAttribute('uv'); const m = mergeVertices(g, 1e-3); m.computeVertexNormals(); return m; }
   g.computeVertexNormals(); return g; });
@@ -603,6 +621,7 @@ function islandSurface(isl, th){
   for (let i = 0; i < 70; i++){ ridge.getMatrixAt(i, m4); pos.setFromMatrixPosition(m4); if (Math.abs(pos.x - c.x) < 4.5){ m4.makeScale(.001, .001, .001); ridge.setMatrixAt(i, m4); } }
   // scattered boulders and pebbles inside
   for (let s = 0; s < 3; s++){ const b = new THREE.InstancedMesh(rockGeos[s + 1], rockMat(s ? th.rock : th.rock2, .95), s === 2 ? 60 : 16);
+    if (s === 2) b.userData.noCast = true;
     for (let i = 0; i < b.count; i++){ const a = Math.random() * 7, r = rand(5, R - 2); dummy.position.set(c.x + Math.cos(a) * r, 0, c.z + Math.sin(a) * r); const sc = s === 2 ? rand(.12, .3) : rand(.4, .9); dummy.scale.set(sc, sc * rand(.6, 1.2), sc); dummy.rotation.set(0, rand(0, 7), 0); dummy.updateMatrix(); b.setMatrixAt(i, dummy.matrix); }
     g.add(b); }
   // planet specials
@@ -639,7 +658,7 @@ function islandProps(isl, th){
       for (let i = 0; i < 3; i++){ const pl = new THREE.Mesh(PROP_GEO.pillar, ruin); pl.position.set((i - 1) * 2.4, 0, rand(-.3, .3)); pl.scale.y = i === 1 ? 1 : rand(.35, .8); pl.rotation.set(rand(-.06, .06), rand(0, 3), rand(-.08, .08)); grp.add(pl); }
       const lintel = new THREE.Mesh(new THREE.BoxGeometry(3.4, .55, 1.1), ruin); lintel.position.set(-1.1, 4.9, 0); lintel.rotation.z = -.12; grp.add(lintel);
       for (let i = 0; i < 4; i++){ const bl = new THREE.Mesh(PROP_GEO.block, ruin); bl.position.set(rand(-3, 3), 0, rand(-2, 2)); bl.rotation.set(rand(-.3, .3), rand(0, 3), rand(-.3, .3)); bl.scale.setScalar(rand(.6, 1.1)); grp.add(bl); } }
-    g.add(grp); n++;
+    bakeStatic(grp); g.add(grp); n++;
   }
 }
 // worn paths: from the portal to every camp, the commanders, the boss arena and the bridge
@@ -735,7 +754,7 @@ function alienTree(th){
   } else if (th.flora === 'sulfur'){
     const stalk = new THREE.Mesh(new THREE.CylinderGeometry(.18, .32, 2.8, 8), stem); stalk.position.y = 1.4; t.add(stalk);
     const cap = new THREE.Mesh(new THREE.SphereGeometry(1.3, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), glowM); cap.position.y = 2.7; cap.scale.y = .55; t.add(cap);
-    for (let i = 0; i < 8; i++){ const sp = new THREE.Mesh(new THREE.SphereGeometry(.12, 8, 6), new THREE.MeshBasicMaterial({color: 0xfff2a0})); const a = i / 8 * 7; sp.position.set(Math.cos(a) * .8, 3.05, Math.sin(a) * .8); t.add(sp); }
+    for (let i = 0; i < 8; i++){ const sp = new THREE.Mesh(new THREE.SphereGeometry(.12, 8, 6), glowMat(0xfff2a0)); const a = i / 8 * 7; sp.position.set(Math.cos(a) * .8, 3.05, Math.sin(a) * .8); t.add(sp); }
   } else {
     const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(.3, 1.2, .1), new THREE.Vector3(-.2, 2.4, -.1), new THREE.Vector3(.1, 3.4, 0)]);
     t.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 16, .16, 7), stem));
@@ -924,7 +943,7 @@ function buildSpecies(type){
 const ISL_R = 30, ISL_GAP = 86, BRIDGE_W = 2.3;
 const islands = [];
 // only the current island and the next one are drawn; older ones sit behind the fog and only cost frame time
-function islandVis(){ const back = player.pos.z > islandCenter(curIsl).z + ISL_R - 6; islands.forEach((isl, k) => { if (isl) isl.g.visible = k >= curIsl - (back ? 1 : 0) && k <= curIsl + 1; }); for (const e of enemies) if (e.camp) e.g.visible = e.camp.isl.g.visible; }
+function islandVis(){ islands.forEach((isl, k) => { if (isl) isl.g.visible = Math.hypot(player.pos.x - isl.c.x, player.pos.z - isl.c.z) - ISL_R < 48; }); for (const e of enemies) if (e.camp) e.g.visible = e.camp.isl.g.visible; }
 function islandCenter(k){ return new THREE.Vector3(0, 0, -k * ISL_GAP); }
 function buildIsland(k){
   const c = islandCenter(k), g = new THREE.Group(); scene.add(g);
@@ -977,7 +996,7 @@ function addCamp(isl, x, z, r, roster, isBoss = false){
 }
 function addTree(isl, x, z, kind){
   const t = new THREE.Group(); t.position.set(x, 0, z);
-  t.add(alienTree(isl.th)); t.rotation.y = rand(0, 7);
+  t.add(alienTree(isl.th)); t.rotation.y = rand(0, 7); bakeStatic(t);
   isl.g.add(t);
   const camp = {isl, c: new THREE.Vector3(x, 0, z), r: 0, roster: [{type: kind}], members: [], respawn: 0, isBoss: false, tree: true};
   isl.camps.push(camp); restoreCamp(camp);
@@ -1475,7 +1494,7 @@ function buildEnemy(type){
 }
 const enemies = [];
 function spawn(type, at, opt = {}){
-  const spec = TYPES[type], m = buildEnemy(type); shadeTree(m.g);
+  const spec = TYPES[type], m = buildEnemy(type); shadeTree(m.g); if (GFX.tier !== 'high'){ let big = null, bt = 0; m.g.traverse(o => { if (o.castShadow){ const g = o.geometry, n = g.index ? g.index.count : g.attributes.position.count; if (n > bt){ bt = n; big = o; } o.castShadow = false; } }); if (big) big.castShadow = true; }
   const lv = opt.camp ? opt.camp.isl.k : 0, mul = Math.pow(1.75, lv), elite = !!opt.elite;
   const e = {type, spec, ...m, pos: at.clone(), home: at.clone(), camp: opt.camp || null, elite, state: 'patrol', wp: null, idle: rand(0, 2),
     hp: spec.hp * mul * (elite ? 4 : 1), maxHp: 0, dmgMul: Math.pow(1.45, lv) * (elite ? 1.5 : 1), flash: 0, stun: 0, hooked: false, cd: rand(.5, 2), knock: new THREE.Vector3(), atk: 0, phase: Math.random() * 7, dead: false};
@@ -2501,20 +2520,21 @@ function draw(sc, cam){
 }
 // keep it smooth: if the frame rate stays low, step down resolution, then bloom, then shadows (remembered on this device)
 const Perf = {acc: 0, n: 0, step: 0, check(dt){
-  if (!GFX.auto || this.step > 2) return; this.acc += dt; this.n++;
+  if (!GFX.auto || this.step > 2) return; this.warm = (this.warm || 0) + dt; if (this.warm < 6 || dt > .1) return; // ignore loading time and one-off hitches
+  this.acc += dt; this.n++;
   if (this.acc < 4) return; const fps = this.n / this.acc; this.acc = 0; this.n = 0;
   if (fps > 40) return;
   this.step++;
   if (this.step === 1 && renderer.getPixelRatio() > 1){ renderer.setPixelRatio(1); if (composer){ composer.setPixelRatio(1); composer.setSize(innerWidth, innerHeight); } }
   else if (this.step <= 2 && bloom && bloom.enabled){ bloom.enabled = false; }
   else if (renderer.shadowMap.enabled){ renderer.shadowMap.enabled = false; sun.castShadow = false; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); }); this.step = 3;
-    try { localStorage.setItem('pa-gfx', 'low'); } catch(e){} }
+    try { localStorage.setItem('pa-gfx2', JSON.stringify({tier: 'low', until: Date.now() + 3 * 864e5})); } catch(e){} }
 }};
-const clock = new THREE.Clock();
+const clock = new THREE.Clock(); let visT = 0;
 function loop(){
   requestAnimationFrame(loop);
   if (introSt){ updateIntro(Math.min(.05, clock.getDelta())); draw(iScene, iCam); return; }
-  const dt = Math.min(.05, clock.getDelta()), t = clock.elapsedTime;
+  const raw = clock.getDelta(), dt = Math.min(.05, raw), t = clock.elapsedTime;
   portalMat.uniforms.t.value = t; gateMat.uniforms.t.value = t; lavaMat.uniforms.t.value = t; updateDust(dt, t); skyDome.position.copy(camera.position); skyObjs.position.set(camera.position.x, 0, camera.position.z); portal.rotation.y = Math.sin(t * .6) * .2; portalRing.rotation.z += dt * .8;
   if (panelOpen){}
   else if (mapOpen){ mapT -= dt; if (mapT <= 0){ drawMap($('bigC'), true); mapT = .2; } }
@@ -2522,6 +2542,7 @@ function loop(){
     const P = window.__prof, pm = P ? performance.now() : 0;
     mapT -= dt; if (mapT <= 0){ drawMap($('miniC'), false); mapT = .15; }
     const p0 = P ? performance.now() : 0;
+    visT -= dt; if (visT <= 0){ visT = .3; islandVis(); }
     updatePlayer(dt, t); updateHook(dt); Throw.update(dt); Evo.update(dt, t); useWeapons(dt); updateEnemies(dt, t); updateFx(dt, t);
     const p1 = P ? performance.now() : 0; let hud = 0;
     hudT -= dt; if (hudT <= 0){ hudTick(); refreshPowers(); hudT = .08; hud = 1; if (saveSoon){ saveSoon = false; saveGame(); hud = 2; } }
@@ -2540,7 +2561,7 @@ function loop(){
   camera.lookAt(focus.x, onTitle ? focus.y : 1.1 * camK, onTitle ? focus.z : focus.z - 3.2 * camK);
   if (GFX.shadows){ const q = 48 / GFX.shadowSize, fx = Math.round(player.pos.x / q) * q, fz = Math.round(player.pos.z / q) * q; sun.target.position.set(fx, 0, fz); sun.position.set(fx + SUN_OFF.x, SUN_OFF.y, fz + SUN_OFF.z); }
   windU.value = t; if (Grade.pass) Grade.pass.uniforms.t.value = t % 10;
-  if (running && !paused) Perf.check(dt);
+  if (running && !paused) Perf.check(raw);
   const P = window.__prof, d0 = P ? performance.now() : 0;
   draw(scene, camera);
   if (P && P.cur){ const i = renderer.info; P.push(Object.assign(P.cur, {draw: performance.now() - d0, progs: i.programs.length, calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures, en: enemies.length, at: performance.now()})); P.cur = null; if (P.length > 3000) P.shift(); }
