@@ -2797,7 +2797,7 @@ gear = [{id: 'pense', lv: 1, t: 0}];
 const Evo = {veins: {value: 0}, t: {value: 0}, bones: {}, parts: null, stage: -1,
   setup(model){
     model.updateMatrixWorld(true);
-    for (const n of ['Head', 'Spine02', 'LeftArm', 'RightArm', 'LeftShoulder', 'RightShoulder']) this.bones[n] = model.getObjectByName(n);
+    for (const n of ['Head', 'Spine02', 'LeftArm', 'RightArm', 'LeftShoulder', 'RightShoulder', 'LeftHand', 'RightHand']) this.bones[n] = model.getObjectByName(n);
     const box = new THREE.Box3().setFromObject(model), hgt = Math.max(.5, box.max.y - box.min.y);
     model.traverse(o => { if (!o.isMesh) return; const mats = Array.isArray(o.material) ? o.material : [o.material];
       mats.forEach(m => { if (!m.isMeshStandardMaterial) return; m.onBeforeCompile = sh => { sh.uniforms.evoV = this.veins; sh.uniforms.evoT = this.t;
@@ -2828,16 +2828,31 @@ const Evo = {veins: {value: 0}, t: {value: 0}, bones: {}, parts: null, stage: -1
         float ribs = pow(abs(sin(p.y * 18. - p.x * 4. + sin(t * 3. + p.x * 6.) * .6)), 18.); float flow = .35 + .65 * pow(sin(p.x * 12. - t * 6.) * .5 + .5, 3.);
         gl_FragColor = vec4(vec3(.3, .9, 1.) * (ribs * 2.2 + .55) * flow, (ribs * .9 + .38) * edge); }`});
     const wings = []; for (const sx of [-1, 1]){ const w = new THREE.Mesh(new THREE.PlaneGeometry(1.1, .9, 1, 1).translate(.55, .1, 0), wingMat); const pv = new THREE.Group(); pv.add(w); pv.scale.x = sx; wings.push(pv); }
-    this.parts = {pl: pauldron(), pr: pauldron(), back, crown, wings};
+    // the eyes go first: two hot cyan points (they bloom) from the first evolution on
+    const eyes = new THREE.Group(), eyeM = new THREE.MeshBasicMaterial({color: new THREE.Color(0x7ff4ff).multiplyScalar(GFX.post ? 4 : 1.5)});
+    for (const sx of [-1, 1]){ const e = new THREE.Mesh(new THREE.SphereGeometry(.018, 10, 8), eyeM); e.scale.set(1.4, .7, .6); e.position.set(sx * .034, 0, 0); eyes.add(e); }
+    const eh = new THREE.Sprite(haloMat(0x39e6ff)); eh.scale.setScalar(.22); eyes.add(eh);
+    this.parts = {pl: pauldron(), pr: pauldron(), back, crown, wings, eyes};
     this.parts.pr.scale.x = -1;
-    for (const o of [this.parts.pl, this.parts.pr, back, crown, ...wings]){ o.visible = false; scene.add(o); shadeTree(o); }
+    for (const o of [this.parts.pl, this.parts.pr, back, crown, ...wings, eyes]){ o.visible = false; scene.add(o); shadeTree(o); }
+    this.arcT = 0;
   },
   update(dt, t){
     if (!this.parts || !player.model) return;
     this.t.value = t; const sz = player.size, st = sz >= 2.05 ? 3 : sz >= 1.6 ? 2 : sz >= 1.25 ? 1 : 0;
     this.veins.value += ((st >= 1 ? .55 + (sz - 1.25) * .45 : 0) - this.veins.value) * Math.min(1, dt * 2);
     const P = this.parts, show = (o, v) => { o.visible = v && player.model.visible; };
-    show(P.pl, st >= 2); show(P.pr, st >= 2); show(P.back, st >= 2); show(P.crown, st >= 3); P.wings.forEach(w => show(w, st >= 3));
+    show(P.pl, st >= 2); show(P.pr, st >= 2); show(P.back, st >= 2); show(P.crown, st >= 3); P.wings.forEach(w => show(w, st >= 3)); show(P.eyes, st >= 1);
+    if (st < 1) return;
+    { const yaw0 = player.model.rotation.y, q0 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw0), hb = this.bones.Head;
+      if (hb){ hb.getWorldPosition(P.eyes.position); P.eyes.position.add(new THREE.Vector3(0, .075, .1).applyQuaternion(q0).multiplyScalar(sz)); P.eyes.quaternion.copy(q0); P.eyes.scale.setScalar(sz); } }
+    // electricity crackles between his hands, more often the bigger he gets
+    this.arcT -= dt;
+    if (st >= 2 && this.arcT <= 0 && player.model.visible && this.bones.LeftHand && this.bones.RightHand){
+      this.arcT = st >= 3 ? rand(.08, .22) : rand(.25, .6);
+      const a = this.bones.LeftHand.getWorldPosition(new THREE.Vector3()), b = Math.random() < .6 ? this.bones.RightHand.getWorldPosition(new THREE.Vector3()) : a.clone().add(new THREE.Vector3(rand(-.5, .5), rand(-.6, .1), rand(-.5, .5)).multiplyScalar(sz));
+      bolt(a, b, Math.random() < .5 ? 0x9ff6ff : 0x39e6ff, .09);
+    }
     if (st < 2) return;
     const yaw = player.model.rotation.y, q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw), v = new THREE.Vector3(), sc = sz;
     const at = (o, bone, up = 0, fwd = 0, side = 0) => { if (!bone) return; bone.getWorldPosition(v); o.position.copy(v).add(new THREE.Vector3(side, up, fwd).applyQuaternion(q).multiplyScalar(sc)); o.quaternion.copy(q); o.scale.set(Math.sign(o.scale.x) * sc, sc, sc); };
