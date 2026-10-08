@@ -1407,12 +1407,12 @@ function labelEnemy(e){
 // ---------------------------------------------------------------- evolved bosses: the Usta Şehri cast, mutated
 const CAST = [
   {id: 'huseyin', name: 'Hüseyin', skin: 0x6fbf73, eye: 0xb6ff3b, wing: 'bat',     wingCol: 0x2e7d32, horn: 0xd7ccc8},
-  {id: 'siyar',   name: 'Şiyar',   skin: 0x7e57c2, eye: 0xff3d81, wing: 'insect',  wingCol: 0x9ff6ff, horn: 0x311b92},
-  {id: 'samet',   name: 'Samet',   skin: 0xd84315, eye: 0xffd600, wing: 'bat',     wingCol: 0x8d1c00, horn: 0x212121},
+  {id: 'siyar',   name: 'Azad',   skin: 0x7e57c2, eye: 0xff3d81, wing: 'insect',  wingCol: 0x9ff6ff, horn: 0x311b92},
+  {id: 'samet',   name: 'Eser',   skin: 0xd84315, eye: 0xffd600, wing: 'bat',     wingCol: 0x8d1c00, horn: 0x212121},
   {id: 'rasim',   name: 'Rasim',   skin: 0x4fc3f7, eye: 0xffffff, wing: 'crystal', wingCol: 0x39e6ff, horn: 0xe1f5fe},
   {id: 'fahri',   name: 'Fahri',   skin: 0x9e9d24, eye: 0xff1744, wing: 'insect',  wingCol: 0xc0ca33, horn: 0x3e2723},
-  {id: 'cebrail', name: 'Cebrail', skin: 0x8e24aa, eye: 0x00e5ff, wing: 'crystal', wingCol: 0xe040fb, horn: 0xfff59d},
-  {id: 'dilan',   name: 'Dilan',   skin: 0x26a69a, eye: 0xff9100, wing: 'bat',     wingCol: 0x004d40, horn: 0xffab91},
+  {id: 'cebrail', name: 'Ahmet', skin: 0x8e24aa, eye: 0x00e5ff, wing: 'crystal', wingCol: 0xe040fb, horn: 0xfff59d},
+  {id: 'dilan',   name: 'Hicret Hanım',   skin: 0x26a69a, eye: 0xff9100, wing: 'bat',     wingCol: 0x004d40, horn: 0xffab91},
   {id: 'zulfu',   name: 'Zülfü',   skin: 0x8d6e63, eye: 0xff3d00, wing: 'bat',     wingCol: 0x3e2723, horn: 0xfafafa},
   {id: 'zeynep',  name: 'Zeynep',  skin: 0xf06292, eye: 0x76ff03, wing: 'crystal', wingCol: 0xff80ab, horn: 0xffffff}
 ];
@@ -1782,9 +1782,9 @@ const VAMP = {skin: 0xcfc6d8, eye: 0xff1a1a, wing: 'bat', wingCol: 0x4a0010, hor
   FAT = {skin: 0xc0703a, eye: 0xffd600, wing: 'bat', wingCol: 0x5a2a00, fat: 1.4}, NEC = {skin: 0x5a3a8a, eye: 0xff3d81, wing: 'crystal', wingCol: 0x9a6aff}, ABK = {skin: 0xb0a8a0, eye: 0xff3d00, wing: 'bat', wingCol: 0x3a2a2a, big: 1.2};
 const SAGA = [
   ['Hüseyin', C_('huseyin'), 'BSBS', 'BBS'], ['Fuat', C_('siyar', VAMP), 'SBBS', 'BBS'], ['Zülfü', C_('zulfu'), 'BSBB', 'BSB'], ['Özcan', C_('rasim', OZC), 'SBBS', 'BSB'],
-  ['Fatih', C_('samet', FAT), 'BSBB', 'BSB'], ['Fahri', C_('fahri'), 'BSB', 'BSB'], ['Cebrail', C_('cebrail'), 'BSB', 'BBS'], ['Necmettin', C_('huseyin', NEC), 'IBIS', 'IIS'],
+  ['Fatih', C_('samet', FAT), 'BSBB', 'BSB'], ['Fahri', C_('fahri'), 'BSB', 'BSB'], ['Ahmet', C_('cebrail'), 'BSB', 'BBS'], ['Necmettin', C_('huseyin', NEC), 'IBIS', 'IIS'],
   ['Abdülkadir', C_('fahri', ABK), 'BSBOS', 'OSOOS'],
-  ['Şiyar', C_('siyar'), 'BOS', 'BOS'], ['Samet', C_('samet'), 'BSO', 'BS'], ['Rasim', C_('rasim'), 'BSB', 'BO'], ['Dilan', C_('dilan'), 'BOS', 'BB'], ['Zeynep', C_('zeynep'), 'BSO', 'BBS'],
+  ['Azad', C_('siyar'), 'BOS', 'BOS'], ['Eser', C_('samet'), 'BSO', 'BS'], ['Rasim', C_('rasim'), 'BSB', 'BO'], ['Hicret Hanım', C_('dilan'), 'BOS', 'BB'], ['Zeynep', C_('zeynep'), 'BSO', 'BBS'],
   ['@bnm14', C_('cebrail', {skin: 0x1a1a1a, eye: 0xff8a00, wing: 'crystal', wingCol: 0xff6a00, big: 1.15}), 'BOS', 'BO'], ['Zülfü', C_('zulfu', {skin: 0x1a3a5a, eye: 0x39e6ff, wing: 'crystal', wingCol: 0x39e6ff, big: 1.3}), 'BBSO', 'BOSOS'],
   ['Hüseyin', C_('huseyin'), 'BSO', 'BS'], ['Fuat', C_('siyar', VAMP), 'BSO', 'BS'], ['Özcan', C_('rasim', OZC), 'BSB', 'BS'], ['Fatih', C_('samet', FAT), 'BOS', 'BS'],
   ['Fahri', C_('fahri'), 'BOS', 'BS'], ['Necmettin', C_('huseyin', NEC), 'IBS', 'II'], ['Abdülkadir', C_('fahri', ABK), 'BBS', 'BOS'],
