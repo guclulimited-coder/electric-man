@@ -315,5 +315,6 @@
  "pl_gliese_sub": "Mundo de cristal",
  "pl_cancri": "55 Cancri e",
  "pl_cancri_sub": "Diamante y magma",
- "hookBtn": "GANCHO"
+ "hookBtn": "GANCHO",
+ "loadingWorld": "Preparando el mundo…"
 }

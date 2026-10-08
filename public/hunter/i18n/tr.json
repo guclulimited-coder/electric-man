@@ -315,5 +315,6 @@
  "pl_gliese_sub": "Kristal dünya",
  "pl_cancri": "55 Cancri e",
  "pl_cancri_sub": "Elmas ve magma",
- "hookBtn": "KANCA"
+ "hookBtn": "KANCA",
+ "loadingWorld": "Dünya hazırlanıyor…"
 }

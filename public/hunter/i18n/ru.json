@@ -315,5 +315,6 @@
  "pl_gliese_sub": "Хрустальный мир",
  "pl_cancri": "55 Рака e",
  "pl_cancri_sub": "Алмазы и магма",
- "hookBtn": "КРЮК"
+ "hookBtn": "КРЮК",
+ "loadingWorld": "Готовим мир…"
 }

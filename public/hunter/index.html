@@ -1764,18 +1764,22 @@ function resetGame(){
   renderSlots(); renderStats(); renderWave();
 }
 // compile every shader once behind the title (hidden, far away and effect materials included) so no frame stalls on first sight in play
+let warmed = false;
 function warmUp(){
-  const shown = [], culled = [], nr = rings.length, np = parts.length;
-  ring(player.pos, 1, 0x39e6ff, .05); arcFx(player.pos, 0, 2, 0xffffff); burst(player.pos, 1, 0xffffff);
+  const shown = [], culled = [], nr = rings.length, np = parts.length, nb = bolts.length;
+  ring(player.pos, 1, 0x39e6ff, .05); arcFx(player.pos, 0, 2, 0xffffff); burst(player.pos, 1, 0xffffff); bolt(player.pos, player.pos.clone().setY(2));
   scene.traverse(o => { if (!o.visible){ o.visible = true; shown.push(o); } if ((o.isMesh || o.isSprite || o.isPoints || o.isLine) && o.frustumCulled){ o.frustumCulled = false; culled.push(o); } });
   try { draw(scene, camera); } catch(e){}
   for (const o of shown) o.visible = false; for (const o of culled) o.frustumCulled = true;
-  for (const r of rings.splice(nr)){ scene.remove(r.m); r.m.geometry.dispose(); r.m.material.dispose(); }
+  // keep one never-disposed copy of each throw-away effect material: three.js frees a shader when its last user is
+  // disposed and would recompile it (a visible freeze) the next time a ring, slash or bolt appears
+  for (const r of rings.splice(nr)) r.m.visible = false;
   for (const q of parts.splice(np)) scene.remove(q.m);
+  for (const b of bolts.splice(nb)) b.l.visible = false;
 }
 async function startGame(){
   if (!CREA){ $('startBtn').disabled = true; await creaOrTimeout(); $('startBtn').disabled = false; }
-  audio(); resetGame(); warmUp(); running = true; paused = false; onTitle = false; meBar.visible = true;
+  audio(); resetGame(); if (!warmed){ warmed = true; $('startBtn').disabled = true; const bt = $('startBtn').textContent; $('startBtn').textContent = T('loadingWorld'); await new Promise(r => setTimeout(r, 30)); warmUp(); $('startBtn').disabled = false; $('startBtn').textContent = bt; } running = true; paused = false; onTitle = false; meBar.visible = true;
   for (const id of ['title', 'over', 'paused']) $(id).hidden = true;
   for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = false; renderAdBtn(); $('coinTxt').textContent = '◉ ' + fmtPow(coins);
   intro = 1.4; play('Walk');
