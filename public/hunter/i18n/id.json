@@ -96,9 +96,9 @@
  "k_kalkan": "Perisai Dielektrik",
  "newKit": "Perlengkapan baru: {name}",
  "u_hp": "Nyawa",
- "u_hp_ds": "+10 nyawa maks",
+ "u_hp_ds": "+12 nyawa maks",
  "u_dmg": "Kekuatan senjata",
- "u_dmg_ds": "+10% damage untuk semua alat",
+ "u_dmg_ds": "+4% damage untuk semua alat",
  "u_regen": "Regenerasi",
  "u_regen_ds": "+0.3 nyawa / detik (di luar pertarungan)",
  "u_shield": "Kekuatan perisai",
@@ -299,5 +299,6 @@
  "o_eINVALID_PACK": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
  "tiktok": "Lanjutkan dengan TikTok",
  "ttFail": "Masuk dengan TikTok gagal. Coba lagi.",
-"apple":"Lanjutkan dengan Apple"
+ "apple": "Lanjutkan dengan Apple",
+ "weakBoss": "Kekuatanmu kurang! Induk ini butuh ⚡{p} kekuatan."
 }

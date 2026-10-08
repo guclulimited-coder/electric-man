@@ -96,9 +96,9 @@
  "k_kalkan": "絶縁シールド",
  "newKit": "新しい装備：{name}",
  "u_hp": "HP",
- "u_hp_ds": "最大 HP +10",
+ "u_hp_ds": "最大 HP +12",
  "u_dmg": "武器パワー",
- "u_dmg_ds": "全道具のダメージ +10%",
+ "u_dmg_ds": "全道具のダメージ +4%",
  "u_regen": "HP 回復",
  "u_regen_ds": "+0.3 HP / 秒（戦闘外）",
  "u_shield": "シールド",
@@ -299,5 +299,6 @@
  "o_eINVALID_PACK": "現在お支払いできません。しばらくしてからお試しください。",
  "tiktok": "TikTokで続ける",
  "ttFail": "TikTokでのログインを完了できませんでした。もう一度お試しください。",
-"apple":"Appleで続ける"
+ "apple": "Appleで続ける",
+ "weakBoss": "パワー不足！このマザーには⚡{p}のパワーが必要です。"
 }

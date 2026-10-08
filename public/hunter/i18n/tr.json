@@ -96,9 +96,9 @@
  "k_kalkan": "Dielektrik Kalkan",
  "newKit": "Yeni ekipman: {name}",
  "u_hp": "Can",
- "u_hp_ds": "+10 en yüksek can",
+ "u_hp_ds": "+12 en yüksek can",
  "u_dmg": "Silah gücü",
- "u_dmg_ds": "+10% bütün aletlerin hasarı",
+ "u_dmg_ds": "+4% bütün aletlerin hasarı",
  "u_regen": "Can yenileme",
  "u_regen_ds": "+0.3 can / saniye (savaş dışında)",
  "u_shield": "Kalkan gücü",
@@ -299,5 +299,6 @@
  "o_eINVALID_PACK": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
  "tiktok": "TikTok ile devam et",
  "ttFail": "TikTok ile giriş tamamlanamadı, yeniden dene.",
-"apple":"Apple ile devam et"
+ "apple": "Apple ile devam et",
+ "weakBoss": "Gücün yetmiyor! Bu Ana için ⚡{p} güç gerekli."
 }

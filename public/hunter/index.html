@@ -939,13 +939,13 @@ const DROP_OF = {surungen: 'falcata', tukurucu: 'zimba', tank: 'keser', goz: 'ka
 // commanders hand out the tools in this order, two per island
 const TOOL_ORDER = ['tornavida', 'falcata', 'zimba', 'keser', 'testere', 'kablo'];
 let gear = [], active = 0;
-function weaponDmg(w){ return WEAPONS[w.id].base * (1 + .28 * (w.lv - 1)) * player.dmg; }
-function weaponCd(w){ return WEAPONS[w.id].cd * Math.pow(.92, w.lv - 1) * player.rate; }
+function weaponDmg(w){ return WEAPONS[w.id].base * (1 + .12 * (w.lv - 1)) * player.dmg; }
+function weaponCd(w){ return WEAPONS[w.id].cd * Math.pow(.97, w.lv - 1) * player.rate; }
 function addWeapon(id){
   const have = gear.find(w => w.id === id);
   if (have){ have.lv++; floatText(T('lvName', {name: WEAPONS[id].name, lv: have.lv}), player.pos, '#ffc94a'); }
   else if (gear.length < 4){ gear.push({id, lv: 1, t: 0}); floatText(T('newTool', {name: WEAPONS[id].name}), player.pos, '#ffc94a'); }
-  else { player.dmg += .06; floatText(T('absorbed'), player.pos, '#ffc94a'); }
+  else { player.dmg += .02; floatText(T('absorbed'), player.pos, '#ffc94a'); }
   syncFlails(); renderSlots(); renderStats(); saveGame();
 }
 
@@ -980,15 +980,15 @@ let persistTimer = null;
 function persistNative(){ if (!Native.app) return; clearTimeout(persistTimer); persistTimer = setTimeout(() => { try { const all = {}; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k.startsWith('pa-')) all[k] = localStorage.getItem(k); } Native.call({action: 'persist', data: JSON.stringify(all)}).catch(() => {}); } catch(e){} }, 400); }
 let coins = store.get('coins', 0);
 const UPS = [
-  {id: 'hp', name: T('u_hp'), ds: T('u_hp_ds'),         base: 100, apply: () => { player.maxHp += 10; player.hp += 10; }},
-  {id: 'dmg', name: T('u_dmg'), ds: T('u_dmg_ds'), base: 100, apply: () => { player.dmg += .1; }},
+  {id: 'hp', name: T('u_hp'), ds: T('u_hp_ds'),         base: 100, apply: () => { player.maxHp += 12; player.hp += 12; }},
+  {id: 'dmg', name: T('u_dmg'), ds: T('u_dmg_ds'), base: 100, apply: () => { player.dmg *= 1.04; }},
   {id: 'regen', name: T('u_regen'), ds: T('u_regen_ds'), base: 120, apply: () => { player.regen += .3; }},
   {id: 'shield', name: T('u_shield'), ds: T('u_shield_ds'), base: 150, apply: () => {}},
   {id: 'rate', name: T('u_rate'), ds: T('u_rate_ds'), base: 180, apply: () => { player.rate *= .97; }},
   {id: 'speed', name: T('u_speed'), ds: T('u_speed_ds'),          base: 120, apply: () => { player.speed += .2; }}
 ];
 let ups = store.get('ups', {});
-const upCost = u => Math.round(u.base * Math.pow(1.18, ups[u.id] || 0) / 5) * 5;
+const upCost = u => Math.round(u.base * Math.pow(1.1, ups[u.id] || 0) / 5) * 5;
 function applyUpgrades(){ for (const u of UPS) for (let i = 0; i < (ups[u.id] || 0); i++) u.apply(); rebuildShield(); }
 function rebuildShield(){
   const st = kitStats(); const lv = ups.shield || 0;
@@ -1027,6 +1027,12 @@ function playerPower(){
   let dps = 0; for (const w of gear) dps += weaponDmg(w) / weaponCd(w) * (WEAPONS[w.id].kind === 'spin' || WEAPONS[w.id].kind === 'slam' ? 1.6 : WEAPONS[w.id].kind === 'chain' ? 2 : 1);
   return Math.round(dps * 4 + player.maxHp * 1.2 + (shield ? shield.max : 0) + player.armor * 300 + player.regen * 20);
 }
+/* Pacing (agreed): without coins the first boss takes about a day of play, with all daily ads about 12 hours,
+   with the biggest pack about an hour (see tools/balance). Each boss needs a power level; below it Serhat's hits barely
+   scratch it and its hits land harder, so the fight is only winnable once the ⚡ number is close. */
+function bossGate(k){ return Math.round(1950 * Math.pow(2, Math.min(k, 5)) * Math.pow(1.5, Math.max(0, k - 5)) / 10) * 10; }
+function gateRatio(e){ return e.gate ? playerPower() / e.gate : 1; }
+const gateHit = r => r >= 1 ? 1 : Math.max(.03, r * r * r), gateHurt = r => r >= 1 ? 1 : Math.min(5, Math.pow(r, -1.5));
 function enemyPower(e){ return Math.round(e.maxHp * .8 + (e.spec.dmg || 0) * e.dmgMul * 10); }
 function powerLabel(text, color){
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
@@ -1122,12 +1128,12 @@ function dressBoss(e, cast){
 
 // ---------------------------------------------------------------- enemies
 const TYPES = {
-  surungen: {name: 'Sürüngen', hp: 24, speed: 4.3, dmg: 7, r: .55, gain: p => { player.dmg += .006; player.maxHp += .6; player.hp += .6; player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); }},
-  tukurucu: {name: 'Tükürücü', hp: 32, speed: 2.6, dmg: 9, r: .6, keep: 7.5, gain: p => { player.dmg += .006; player.maxHp += .6; player.hp += .6; player.dmg += .002; return T('gDmg'); }},
-  tank:     {name: 'Kaya Dev', hp: 130, speed: 1.75, dmg: 18, r: 1.05, gain: p => { player.dmg += .006; player.maxHp += .6; player.hp += .6; player.maxHp += .4; return T('gHp'); }},
-  goz:      {name: 'Uçan Göz', hp: 20, speed: 3.2, dmg: 6, r: .5, fly: true, gain: p => { player.dmg += .006; player.maxHp += .6; player.hp += .6; player.rate = Math.max(.5, player.rate * .999); return T('gRate'); }},
+  surungen: {name: 'Sürüngen', hp: 24, speed: 4.3, dmg: 7, r: .55, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); }},
+  tukurucu: {name: 'Tükürücü', hp: 32, speed: 2.6, dmg: 9, r: .6, keep: 7.5, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.dmg += .0007; return T('gDmg'); }},
+  tank:     {name: 'Kaya Dev', hp: 130, speed: 1.75, dmg: 18, r: 1.05, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.maxHp += .4; return T('gHp'); }},
+  goz:      {name: 'Uçan Göz', hp: 20, speed: 3.2, dmg: 6, r: .5, fly: true, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.rate = Math.max(.5, player.rate * .999); return T('gRate'); }},
   sifa:     {name: 'Şifa Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.maxHp += 1.2; player.hp += 1.2; player.regen += .05; return T('gRegen'); }},
-  ofke:     {name: 'Öfke Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.dmg += .012; return T('gHit'); }},
+  ofke:     {name: 'Öfke Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.dmg += .004; return T('gHit'); }},
   boss:     {name: 'Kaçırıcı Ana', hp: 10000, speed: 2.1, dmg: 22, r: 2.2, boss: true, gain: p => { player.maxHp += 40; player.hp = player.maxHp; player.dmg += .25; return T('gBoss'); }}
 };
 const M = (c, e = 0, ei = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({color: c, emissive: e || 0x000000, emissiveIntensity: ei, roughness: .55, metalness: .05}, extra));
@@ -1207,9 +1213,9 @@ function spawn(type, at, opt = {}){
   if (spec.tree){ e.body.position.y = 3.35; e.perch = 3.35; }
   if (!spec.boss) e.mat.color.set(themeOf(lv).monTint);
   e.bar = makeBar(spec.boss ? 3 : elite ? 1.6 : spec.tree ? .7 : 1.1, spec.boss ? .2 : .11, spec.boss ? 'boss' : elite ? 'elite' : spec.tree ? 'bug' : 'foe', (BAR_Y[type] || 2) * (elite ? 1.4 : 1)); e.g.add(e.bar);
-  if (spec.boss){ e.hp = e.maxHp = spec.hp * Math.pow(1.9, lv); }
+  if (spec.boss){ e.gate = bossGate(lv); e.hp = e.maxHp = e.gate * 12; e.baseDmgMul = e.dmgMul; }
   e.r = spec.r * (elite ? 1.45 : 1);
-  e.power = enemyPower(e); labelEnemy(e);
+  e.power = e.gate || enemyPower(e); labelEnemy(e);
   e.g.position.copy(e.pos); e.g.scale.setScalar(.01); e.spawnT = .35;
   if (e.camp && !e.camp.isl.g.visible) e.g.visible = false;
   scene.add(e.g); enemies.push(e); return e;
@@ -1218,6 +1224,7 @@ let hitColor = 0xffffff;
 function damage(e, amt, color = '#efe9ff'){
   if (e.dead) return;
   burst(e.pos, 5, hitColor);
+  if (e.gate){ const r = gateRatio(e); amt *= gateHit(r); if (r < .9 && clock.elapsedTime - (e.warnT || -99) > 6){ e.warnT = clock.elapsedTime; toast(T('weakBoss', {p: fmtPow(e.gate)})); } }
   e.hp -= amt; e.flash = .12; e.calm = 4; floatText(Math.round(amt), e.pos, color, e.spec.boss ? 3.6 : e.spec.tree ? 4.2 : 1.8);
   if (e.state === 'patrol' && !e.spec.tree) aggroCamp(e.camp);
   if (Math.random() < .5) sfx.hit();
@@ -1231,7 +1238,7 @@ function kill(e){
   e.mat.color.multiplyScalar(.5); e.mat.emissive.setRGB(0, 0, 0); e.mat.emissiveIntensity = 0;
   e.body.rotation.z = Math.PI / 2 * (Math.random() < .5 ? 1 : -1) * .9; e.body.position.y = e.spec.fly ? -1.2 : e.spec.tree ? .3 : 0;
   e.g.scale.setScalar(1); e.cT = 10; corpses.push(e);
-  if (e.camp && !e.camp.isBoss && e.camp.members.every(m => m.dead)){ const c = e.camp; c.clears = (c.clears || 0) + 1; const wait = Math.min(c.tree ? 16200 : 10800, (c.tree ? 120 : 60) * Math.pow(2, c.clears - 1)); c.readyAt = Date.now() + wait * 1000; c.respawn = wait; c.shownSec = -1; saveCamp(c); }
+  if (e.camp && !e.camp.isBoss && e.camp.members.every(m => m.dead)){ const c = e.camp; c.clears = (c.clears || 0) + 1; const cmd = c.roster.some(o => o.elite), wait = Math.min(c.tree ? 16200 : cmd ? 21600 : 10800, (c.tree ? 120 : cmd ? 600 : 60) * Math.pow(2, c.clears - 1)); c.readyAt = Date.now() + wait * 1000; c.respawn = wait; c.shownSec = -1; saveCamp(c); }
   if (e.elite && e.camp && !e.camp.counted){ e.camp.counted = true; e.camp.isl.commandersDown++; }
   if (e.spec.boss) bossDown(e.camp.isl);
 }
@@ -2003,6 +2010,7 @@ function updateEnemies(dt, t){
     e.stun -= dt; e.cd -= dt; e.calm = (e.calm || 0) - dt;
     if (e.calm <= 0 && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * .05 * dt);
     if (e.spec.tree) continue;
+    if (e.gate && e.state === 'chase') e.dmgMul = e.baseDmgMul * gateHurt(gateRatio(e));
     const to = tmp.copy(player.pos).sub(e.pos).setY(0); const dist = to.length(); to.normalize();
     const camp = e.camp, inCamp = camp && player.pos.distanceTo(camp.c) < camp.r + .5;
     if (e.state === 'patrol' && inCamp && running) aggroCamp(camp);

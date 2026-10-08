@@ -96,9 +96,9 @@
  "k_kalkan": "Dielectric Shield",
  "newKit": "New gear: {name}",
  "u_hp": "Health",
- "u_hp_ds": "+10 max health",
+ "u_hp_ds": "+12 max health",
  "u_dmg": "Weapon power",
- "u_dmg_ds": "+10% damage for all tools",
+ "u_dmg_ds": "+4% damage for all tools",
  "u_regen": "Health regen",
  "u_regen_ds": "+0.3 health / second (out of combat)",
  "u_shield": "Shield power",
@@ -299,5 +299,6 @@
  "o_eINVALID_PACK": "Payments are unavailable right now, please try again later.",
  "tiktok": "Continue with TikTok",
  "ttFail": "TikTok sign-in could not be completed. Please try again.",
-"apple":"Continue with Apple"
+ "apple": "Continue with Apple",
+ "weakBoss": "Not strong enough! This Mother needs ⚡{p} power."
 }

@@ -96,9 +96,9 @@
  "k_kalkan": "Dielektrik-Schild",
  "newKit": "Neue Ausrüstung: {name}",
  "u_hp": "Leben",
- "u_hp_ds": "+10 max. Leben",
+ "u_hp_ds": "+12 max. Leben",
  "u_dmg": "Waffenkraft",
- "u_dmg_ds": "+10 % Schaden für alle Werkzeuge",
+ "u_dmg_ds": "+4 % Schaden für alle Werkzeuge",
  "u_regen": "Regeneration",
  "u_regen_ds": "+0.3 Leben / Sekunde (außerhalb des Kampfes)",
  "u_shield": "Schildkraft",
@@ -299,5 +299,6 @@
  "o_eINVALID_PACK": "Zahlungen sind gerade nicht möglich, versuche es später erneut.",
  "tiktok": "Mit TikTok fortfahren",
  "ttFail": "Die Anmeldung mit TikTok wurde nicht abgeschlossen. Bitte versuche es erneut.",
-"apple":"Mit Apple fortfahren"
+ "apple": "Mit Apple fortfahren",
+ "weakBoss": "Nicht stark genug! Diese Mutter erfordert ⚡{p} Kraft."
 }

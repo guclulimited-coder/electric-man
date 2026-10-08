@@ -96,9 +96,9 @@
  "k_kalkan": "Escudo dielétrico",
  "newKit": "Novo equipamento: {name}",
  "u_hp": "Vida",
- "u_hp_ds": "+10 vida máx.",
+ "u_hp_ds": "+12 vida máx.",
  "u_dmg": "Poder das armas",
- "u_dmg_ds": "+10% de dano em todas as ferramentas",
+ "u_dmg_ds": "+4% de dano em todas as ferramentas",
  "u_regen": "Regeneração",
  "u_regen_ds": "+0.3 vida / segundo (fora de combate)",
  "u_shield": "Poder do escudo",
@@ -299,5 +299,6 @@
  "o_eINVALID_PACK": "Pagamentos indisponíveis no momento, tente mais tarde.",
  "tiktok": "Continuar com o TikTok",
  "ttFail": "Não foi possível concluir o login com o TikTok. Tente novamente.",
-"apple":"Continuar com Apple"
+ "apple": "Continuar com Apple",
+ "weakBoss": "Força insuficiente! Esta Mãe exige ⚡{p} de poder."
 }

@@ -96,9 +96,9 @@
  "k_kalkan": "绝缘盾",
  "newKit": "新装备：{name}",
  "u_hp": "生命",
- "u_hp_ds": "+10 生命上限",
+ "u_hp_ds": "+12 生命上限",
  "u_dmg": "武器威力",
- "u_dmg_ds": "所有工具 +10% 伤害",
+ "u_dmg_ds": "所有工具 +4% 伤害",
  "u_regen": "生命恢复",
  "u_regen_ds": "+0.3 生命 / 秒（脱战时）",
  "u_shield": "护盾强度",
@@ -299,5 +299,6 @@
  "o_eINVALID_PACK": "暂时无法付款，请稍后再试。",
  "tiktok": "使用 TikTok 继续",
  "ttFail": "TikTok 登录未完成，请重试。",
-"apple":"通过 Apple 继续"
+ "apple": "通过 Apple 继续",
+ "weakBoss": "力量不足！这个母体需要 ⚡{p} 战力。"
 }
