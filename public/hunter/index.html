@@ -1765,11 +1765,13 @@ function resetGame(){
 }
 // compile every shader once behind the title (hidden, far away and effect materials included) so no frame stalls on first sight in play
 function warmUp(){
-  const shown = [], culled = [];
+  const shown = [], culled = [], nr = rings.length, np = parts.length;
   ring(player.pos, 1, 0x39e6ff, .05); arcFx(player.pos, 0, 2, 0xffffff); burst(player.pos, 1, 0xffffff);
   scene.traverse(o => { if (!o.visible){ o.visible = true; shown.push(o); } if ((o.isMesh || o.isSprite || o.isPoints || o.isLine) && o.frustumCulled){ o.frustumCulled = false; culled.push(o); } });
   try { draw(scene, camera); } catch(e){}
   for (const o of shown) o.visible = false; for (const o of culled) o.frustumCulled = true;
+  for (const r of rings.splice(nr)){ scene.remove(r.m); r.m.geometry.dispose(); r.m.material.dispose(); }
+  for (const q of parts.splice(np)) scene.remove(q.m);
 }
 async function startGame(){
   if (!CREA){ $('startBtn').disabled = true; await creaOrTimeout(); $('startBtn').disabled = false; }
