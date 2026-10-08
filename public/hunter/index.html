@@ -1763,9 +1763,17 @@ function resetGame(){
   hook.state = 'idle'; cable.visible = hookHead.visible = false; $('bossBar').hidden = true;
   renderSlots(); renderStats(); renderWave();
 }
+// compile every shader once behind the title (hidden, far away and effect materials included) so no frame stalls on first sight in play
+function warmUp(){
+  const shown = [], culled = [];
+  ring(player.pos, 1, 0x39e6ff, .05); arcFx(player.pos, 0, 2, 0xffffff); burst(player.pos, 1, 0xffffff);
+  scene.traverse(o => { if (!o.visible){ o.visible = true; shown.push(o); } if ((o.isMesh || o.isSprite || o.isPoints || o.isLine) && o.frustumCulled){ o.frustumCulled = false; culled.push(o); } });
+  try { draw(scene, camera); } catch(e){}
+  for (const o of shown) o.visible = false; for (const o of culled) o.frustumCulled = true;
+}
 async function startGame(){
   if (!CREA){ $('startBtn').disabled = true; await creaOrTimeout(); $('startBtn').disabled = false; }
-  audio(); resetGame(); running = true; paused = false; onTitle = false; meBar.visible = true;
+  audio(); resetGame(); warmUp(); running = true; paused = false; onTitle = false; meBar.visible = true;
   for (const id of ['title', 'over', 'paused']) $(id).hidden = true;
   for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = false; renderAdBtn(); $('coinTxt').textContent = '◉ ' + fmtPow(coins);
   intro = 1.4; play('Walk');
