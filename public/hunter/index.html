@@ -786,6 +786,29 @@ const haloTex = (() => { const c = document.createElement('canvas'); c.width = c
 const haloMats = {};
 const haloMat = col => haloMats[col] || (haloMats[col] = new THREE.SpriteMaterial({map: haloTex, color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .55}));
 const sph = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
+// predator eyes: over-bright (they bloom in the dark), with a black vertical slit, all of a head's eyes in one draw call
+const hotEyes = {}, slitMat = new THREE.MeshBasicMaterial({color: 0x020002});
+const hotEye = col => hotEyes[col] || (hotEyes[col] = new THREE.MeshBasicMaterial({color: new THREE.Color(col).multiplyScalar(GFX.post ? 3.2 : 1.4)}));
+const eyeGeoCache = {};
+function eyeGeos(type, h){
+  const k = type + h.variant; if (eyeGeoCache[k]) return eyeGeoCache[k];
+  const eyes = [], slits = [];
+  for (const [x, y, z, r] of h.eyes){
+    const dir = new THREE.Vector3(x * 2.2, .15, 1).normalize(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+    eyes.push(sph(r, 12, 8).applyQuaternion(q).translate(x, y, z));
+    slits.push(sph(r, 8, 6).scale(.22, .95, .35).applyQuaternion(q).translate(x + dir.x * r * .82, y + dir.y * r * .82, z + dir.z * r * .82));
+  }
+  const strip = g => { g.deleteAttribute('uv'); return g; };
+  return eyeGeoCache[k] = {eye: mergeGeometries(eyes.map(strip)), slit: mergeGeometries(slits.map(strip))};
+}
+// a cold rim of the creature's eye colour around its silhouette: reads as menace against the dark ground
+function rimLight(mat, col){
+  const prev = mat.onBeforeCompile, rc = new THREE.Color(col).multiplyScalar(.16);
+  mat.onBeforeCompile = (sh, r) => { if (prev) prev(sh, r); sh.uniforms.rimC = {value: rc};
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 rimC;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n { float rim = 1. - clamp(abs(dot(normal, normalize(vViewPosition))), 0., 1.); totalEmissiveRadiance += rimC * pow(rim, 4.); }'); };
+  mat.customProgramCacheKey = () => 'sculpt-rim';
+}
 const cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
 const tube = (pts, r, seg = 12) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new V3(...p))), seg, r, 7);
 
@@ -799,13 +822,16 @@ function sculpted(type){
   const body = new THREE.Group(), mat = GFX.post ? addDetail(new THREE.MeshPhysicalMaterial({vertexColors: true, roughness: .62, clearcoat: .18, clearcoatRoughness: .5, sheen: .25, sheenRoughness: .7}), 7, .35, 'sculpt')
     : new THREE.MeshStandardMaterial({vertexColors: true, roughness: .65});
   const geo = pt => CREA.geos[pt.idx], add = (pt, parent) => { const m = new THREE.Mesh(geo(pt), mat); parent.add(m); return m; };
-  const eyeMat = glowMat(M.eyeColor || 0xff5a1a);
+  const eyeCol = M.eyeColor || 0xff5a1a, eyeMat = hotEye(eyeCol);
+  if (GFX.post) rimLight(mat, eyeCol);
   for (const pt of M.parts) if (pt.role === 'body') add(pt, body);
   // a random one of the species' heads, so a pack never shares one face
   const heads = M.parts.filter(pt => pt.role === 'head'), h = heads[Math.floor(Math.random() * heads.length)];
   let head = null, jaw = null;
   if (h){ head = new THREE.Group(); head.position.fromArray(h.pivot); body.add(head); add(h, head);
-    for (const e of h.eyes || []){ const s = new THREE.Mesh(sph(e[3], 12, 8), eyeMat); s.position.set(e[0], e[1], e[2]); head.add(s); }
+    if (h.eyes && h.eyes.length){ const eg = eyeGeos(type, h); head.add(new THREE.Mesh(eg.eye, eyeMat), new THREE.Mesh(eg.slit, slitMat));
+      if (GFX.post){ const c = h.eyes.reduce((a, e) => [a[0] + e[0], a[1] + e[1], a[2] + e[2]], [0, 0, 0]).map(v => v / h.eyes.length);
+        const halo = new THREE.Sprite(haloMat(eyeCol)); halo.position.set(c[0], c[1], c[2] + .05); halo.scale.setScalar(.55 + h.eyes.length * .04); head.add(halo); } }
     const j = M.parts.find(pt => pt.role === 'jaw' && (pt.variant === h.variant || pt.variant === -1));
     if (j){ jaw = new THREE.Group(); jaw.position.set(j.pivot[0] - h.pivot[0], j.pivot[1] - h.pivot[1], j.pivot[2] - h.pivot[2]); head.add(jaw); add(j, jaw); } }
   const legs = [], legPt = M.parts.find(pt => pt.role === 'leg');
@@ -814,7 +840,7 @@ function sculpted(type){
   // paired limbs share one sculpted mesh, mirrored for the left side
   for (const [role, list] of [['arm', M.arms], ['wing', M.wings]]){ const pt = M.parts.find(x => x.role === role); if (pt) (list || []).forEach(L => { const g = new THREE.Group(); g.position.fromArray(L); if (L[0] < 0) g.scale.x = -1; g.userData.role = role; g.userData.side = L[0] < 0 ? -1 : 1; body.add(g); add(pt, g); swing.push(g); }); }
   if (M.pupil){ const [x, y, z, r] = M.pupil, iris = new THREE.Mesh(sph(r, 16, 12), eyeMat); iris.position.set(x, y, z - .03); iris.scale.z = .35; body.add(iris);
-    const pup = new THREE.Mesh(sph(r * .45, 12, 8), new THREE.MeshBasicMaterial({color: 0x050005})); pup.position.set(x, y, z + .005); pup.scale.set(.55, 1.1, .3); body.add(pup); }
+    const pup = new THREE.Mesh(sph(r * .45, 12, 8), slitMat); pup.position.set(x, y, z + .005); pup.scale.set(.32, 1.6, .3); body.add(pup); }
   const sc = (M.scale || 1) * rand(.92, 1.1); body.scale.setScalar(sc);
   const anim = (t, mv, e) => {
     for (const g of legs){ const k = Math.sin(t * 13 + g.userData.ph); g.rotation.x = k * .55 * mv; g.rotation.z = Math.max(0, -k) * .25 * mv * (g.scale.x < 0 ? -1 : 1); }
@@ -2568,6 +2594,7 @@ function loop(){
     updateProp(dt); meBar.visible = false;
   }
   // camera
+  if (window.__camHold){ draw(scene, camera); return; }
   const focus = tmp.copy(player.pos); const camK = .78 + player.size * .22; const want = tmp2.copy(focus).addScaledVector(CAM_OFF, camK);
   if (onTitle){ want.set(player.pos.x + 3.5, 3.2, player.pos.z + 7); focus.set(player.pos.x, 1.6, player.pos.z - 1); }
   camera.position.lerp(want, onTitle ? 1 : Math.min(1, dt * 6));
