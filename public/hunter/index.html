@@ -268,7 +268,12 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
-import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js';
+import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/ShaderPass.js';
+import { OutputPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/OutputPass.js';
 
 const $ = id => document.getElementById(id);
 /* native shell bridge: the Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise} */
@@ -296,14 +301,35 @@ function applyStatic(){
 }
 applyStatic();
 const rand = (a, b) => a + Math.random() * (b - a);
+// opaque lit meshes cast (and optionally receive) real shadows; glows, sprites and transparent effects never do
+function shadeTree(o, cast = true, receive = false){
+  if (!GFX.shadows) return o;
+  o.traverse(m => { if (!m.isMesh || m.isSprite) return; const mt = Array.isArray(m.material) ? m.material[0] : m.material;
+    if (!mt || mt.transparent || mt.isMeshBasicMaterial || mt.isShaderMaterial) return; m.castShadow = cast; m.receiveShadow = receive; });
+  return o;
+}
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // ---------------------------------------------------------------- renderer / scene
-const renderer = new THREE.WebGLRenderer({antialias: true, powerPreference: 'high-performance'});
-renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+/* Graphics quality. high: real-time soft shadows, image-based lighting, bloom, colour grade, dense ground cover.
+   mid (most phones): the same look at lower resolution and smaller shadow map. low: no post-processing or shadows.
+   Picked from the device, saved per device, and stepped down automatically if the frame rate stays low. */
+const GFX = (() => {
+  const saved = (() => { try { return localStorage.getItem('pa-gfx'); } catch(e){ return null; } })();
+  const touch = matchMedia('(pointer: coarse)').matches, mem = navigator.deviceMemory || 4, cores = navigator.hardwareConcurrency || 4;
+  const auto = !touch && mem >= 4 ? 'high' : mem <= 2 || cores <= 2 ? 'low' : 'mid';
+  const tier = ['high', 'mid', 'low'].includes(saved) ? saved : auto;
+  return {tier, auto: !saved, post: tier !== 'low', shadows: tier !== 'low', shadowSize: tier === 'high' ? 2048 : 1024,
+    pr: tier === 'high' ? Math.min(2, devicePixelRatio || 1) : tier === 'mid' ? Math.min(1.5, devicePixelRatio || 1) : 1, cover: tier === 'high' ? 1 : tier === 'mid' ? .55 : 0};
+})();
+let composer = null, renderPass = null, bloom = null;
+const Grade = {pass: null, th: null, theme(th){ this.th = th; if (!this.pass) return; const u = this.pass.uniforms; u.tint.value.set(th.sun[0]).lerp(new THREE.Color(1, 1, 1), .65); u.shadowTint.value.set(th.fog).lerp(new THREE.Color(0, 0, 0), .55); }};
+const renderer = new THREE.WebGLRenderer({antialias: !GFX.post, powerPreference: 'high-performance'});
+renderer.setPixelRatio(GFX.pr);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = GFX.shadows; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 $('stage').appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x120a1f);
@@ -312,12 +338,62 @@ const camera = new THREE.PerspectiveCamera(48, 1, .1, 900);
 const CAM_OFF = new THREE.Vector3(0, 12.5, 8.2);
 function resize(){
   const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h); camera.aspect = w / h;
+  renderer.setSize(w, h); if (composer) composer.setSize(w, h); camera.aspect = w / h;
   camera.fov = w < h ? 58 : 46; camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize); resize();
 
-const sun = new THREE.DirectionalLight(0xffe6ff, 1.6); sun.position.set(-8, 20, 6); scene.add(sun);
+const sun = new THREE.DirectionalLight(0xffe6ff, 1.6); sun.position.set(-8, 20, 6); scene.add(sun); scene.add(sun.target);
+const SUN_OFF = new THREE.Vector3(-14, 26, 10);
+if (GFX.shadows){ sun.castShadow = true; sun.shadow.mapSize.set(GFX.shadowSize, GFX.shadowSize); const sc = sun.shadow.camera; sc.left = sc.bottom = -24; sc.right = sc.top = 24; sc.near = 4; sc.far = 70;
+  sun.shadow.bias = -.0006; sun.shadow.normalBias = .04; sun.shadow.radius = 3; }
+// image-based lighting: a small environment rebuilt from each planet's sky so metal, ice and wet skin reflect the right colours
+const pmrem = new THREE.PMREMGenerator(renderer); let envRT = null;
+function buildEnv(th){
+  if (!GFX.post) return;
+  const es = new THREE.Scene();
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), new THREE.ShaderMaterial({side: THREE.BackSide, uniforms: {top: {value: C3(th.sky[1])}, hor: {value: C3(th.sky[2])}, gnd: {value: C3(th.ground[0])}},
+    vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: 'varying vec3 vP; uniform vec3 top; uniform vec3 hor; uniform vec3 gnd; void main(){ float y = vP.y; vec3 c = y > 0. ? mix(hor, top, pow(y, .6)) : mix(hor, gnd * .5, pow(-y, .4)); gl_FragColor = vec4(c * 1.6, 1.); }'}));
+  es.add(dome);
+  const s = new THREE.Mesh(new THREE.SphereGeometry(1.4, 16, 8), new THREE.MeshBasicMaterial({color: new THREE.Color(th.sun[0]).multiplyScalar(14)})); s.position.copy(SUN_OFF).setLength(8.5); es.add(s);
+  if (envRT) envRT.dispose(); envRT = pmrem.fromScene(es, .02); scene.environment = envRT.texture; scene.environmentIntensity = .55;
+  dome.geometry.dispose(); dome.material.dispose(); s.geometry.dispose();
+}
+// shared surface detail: a tileable bump/roughness texture for rock, cliffs and boulders
+const rockDetail = (() => {
+  const N = GFX.tier === 'high' ? 256 : 128, P = 6, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), img = g.createImageData(N, N);
+  const H = new Float32Array(N * N); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){ const u = x / N * P, v = y / N * P; H[y * N + x] = fbmT(u, v, P, 5) + Math.abs(fbmT(u * 2 + 3, v * 2, P * 2, 3) - .5) * .5; }
+  const at = (x, y) => H[((y + N) % N) * N + ((x + N) % N)];
+  const rc = document.createElement('canvas'); rc.width = rc.height = N; const rg = rc.getContext('2d'), rimg = rg.createImageData(N, N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){ const dx = at(x + 1, y) - at(x - 1, y), dy = at(x, y + 1) - at(x, y - 1), nx = -dx * 9, ny = -dy * 9, l = Math.hypot(nx, ny, 1), i = (y * N + x) * 4;
+    img.data[i] = (nx / l * .5 + .5) * 255; img.data[i + 1] = (ny / l * .5 + .5) * 255; img.data[i + 2] = (1 / l * .5 + .5) * 255; img.data[i + 3] = 255;
+    const r = 170 + (at(x, y) - .5) * 160; rimg.data[i] = rimg.data[i + 1] = rimg.data[i + 2] = Math.max(60, Math.min(255, r)); rimg.data[i + 3] = 255; }
+  g.putImageData(img, 0, 0); rg.putImageData(rimg, 0, 0);
+  const n = new THREE.CanvasTexture(c), r = new THREE.CanvasTexture(rc); for (const t of [n, r]){ t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; }
+  return {normal: n, rough: r};
+})();
+// object-space triplanar bump + roughness variation (works on merged/instanced meshes without UVs)
+function addDetail(m, scale, strength, key){
+  if (!GFX.post) return m;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.rN = {value: rockDetail.normal};
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOP; varying vec3 vON;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvOP = position; vON = normal;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vOP; varying vec3 vON; uniform sampler2D rN;')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { vec3 w = abs(normalize(vON)); w = pow(w, vec3(4.)); w /= w.x + w.y + w.z; vec3 p = vOP * ${scale.toFixed(2)};
+          vec3 b = (texture2D(rN, p.yz).xyz * 2. - 1.) * w.x + (texture2D(rN, p.xz).xyz * 2. - 1.) * w.y + (texture2D(rN, p.xy).xyz * 2. - 1.) * w.z;
+          normal = normalize(normal + vec3(b.xy, 0.) * ${strength.toFixed(2)}); }`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        { float rv = texture2D(rN, vOP.xz * ${(scale * .5).toFixed(2)}).z; roughnessFactor = clamp(roughnessFactor * (.82 + rv * .25), .2, 1.); }`);
+  };
+  m.customProgramCacheKey = () => key;
+  return m;
+}
+// realistic rock: smooth shading with fine bump instead of flat cartoon facets (box-projected so instanced boulders need no UVs)
+function rockMat(color, rough = .92){
+  return addDetail(new THREE.MeshStandardMaterial({color, roughness: rough, metalness: 0, flatShading: !GFX.post}), .9, .9, 'rock');
+}
 const rim = new THREE.DirectionalLight(0x39e6ff, .9); rim.position.set(10, 8, -12); scene.add(rim);
 
 // alien ground: procedural canvas texture with glowing veins
@@ -351,8 +427,8 @@ function scatterAt(cx, cz, geo, mat, n, rMin, rMax, scl, yOff = 0){
 const MAT = {
   crystal: new THREE.MeshStandardMaterial({color: 0x39e6ff, emissive: 0x1aa8c8, emissiveIntensity: .9, roughness: .25, metalness: .2, flatShading: true}),
   crystal2: new THREE.MeshStandardMaterial({color: 0xff5ca8, emissive: 0xb0206a, emissiveIntensity: .8, roughness: .3, flatShading: true}),
-  rock: new THREE.MeshStandardMaterial({color: 0x3a2a58, roughness: .95, flatShading: true}),
-  under: new THREE.MeshStandardMaterial({color: 0x2a1c42, roughness: 1, flatShading: true}),
+  rock: rockMat(0x3a2a58, .95),
+  under: rockMat(0x2a1c42, 1),
   side: new THREE.MeshStandardMaterial({color: 0x3b2760, roughness: .95}),
   top: new THREE.MeshStandardMaterial({map: groundTex, roughness: .92}),
   fungus: new THREE.MeshStandardMaterial({color: 0xb6ff3b, emissive: 0x6faa10, emissiveIntensity: 1.1}),
@@ -471,13 +547,14 @@ function applyTheme(th){
   hemiLight.color.set(th.hemi[0]); hemiLight.groundColor.set(th.hemi[1]); hemiLight.intensity = th.hemi[2];
   sun.color.set(th.sun[0]); sun.intensity = th.sun[1];
   dustMat.color.set(th.dust);
-  skyBody(th.sky1);
+  skyBody(th.sky1); buildEnv(th); Grade.theme(th);
 }
+function haloTexEarly(){ const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); return new THREE.CanvasTexture(c); }
 // floating dust that drifts around Serhat
 const DUST_N = 260, dustGeo = new THREE.BufferGeometry(), dustPos = new Float32Array(DUST_N * 3);
 for (let i = 0; i < DUST_N; i++){ dustPos[i * 3] = rand(-25, 25); dustPos[i * 3 + 1] = rand(.2, 8); dustPos[i * 3 + 2] = rand(-25, 25); }
 dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-const dustMat = new THREE.PointsMaterial({color: 0xffffff, size: .09, transparent: true, opacity: .55, depthWrite: false});
+const dustMat = new THREE.PointsMaterial({color: 0xffffff, size: GFX.post ? .14 : .09, transparent: true, opacity: .5, depthWrite: false, map: GFX.post ? haloTexEarly() : null, blending: GFX.post ? THREE.AdditiveBlending : THREE.NormalBlending});
 const dust = new THREE.Points(dustGeo, dustMat); scene.add(dust);
 function updateDust(dt, t){
   dust.position.set(player.pos.x, 0, player.pos.z);
@@ -485,20 +562,27 @@ function updateDust(dt, t){
   dustGeo.attributes.position.needsUpdate = true;
 }
 // rocks with lumpy, displaced surfaces
-const rockGeos = [0, 1, 2, 3].map(seed => { const g = new THREE.IcosahedronGeometry(1, 2); const p = g.attributes.position; const v = new THREE.Vector3();
-  for (let i = 0; i < p.count; i++){ v.fromBufferAttribute(p, i); const n = .72 + fbm(v.x * 1.6 + seed * 7, v.y * 1.6 + v.z, 3) * .55; v.multiplyScalar(n); v.y *= .7; p.setXYZ(i, v.x, v.y, v.z); }
+const rockGeos = [0, 1, 2, 3].map(seed => { const g = new THREE.IcosahedronGeometry(1, GFX.post ? 4 : 2); const p = g.attributes.position; const v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++){ v.fromBufferAttribute(p, i); const n = .72 + fbm(v.x * 1.6 + seed * 7, v.y * 1.6 + v.z, 3) * .55 + (GFX.post ? (fbm(v.x * 5 + seed, v.y * 5 - v.z * 3, 3) - .5) * .12 : 0); v.multiplyScalar(n); v.y *= .7; p.setXYZ(i, v.x, v.y, v.z); }
+  if (GFX.post){ g.deleteAttribute('normal'); g.deleteAttribute('uv'); const m = mergeVertices(g, 1e-3); m.computeVertexNormals(); return m; }
   g.computeVertexNormals(); return g; });
 function islandSurface(isl, th){
   const c = isl.c, g = isl.g, R = ISL_R;
   const ptx = planetTexture(th); const topMat = new THREE.MeshStandardMaterial({map: ptx.map, normalMap: ptx.normal, normalScale: new THREE.Vector2(1.2, 1.2), roughness: th.id === 'europa' || th.id === 'neptun' ? .45 : .95, metalness: 0});
-  const sideMat = new THREE.MeshStandardMaterial({color: th.rock, roughness: 1, flatShading: true});
-  const top = new THREE.Mesh(new THREE.CircleGeometry(R + 1.5, 96), topMat); top.rotation.x = -Math.PI / 2; top.position.set(c.x, 0, c.z); g.add(top);
+  if (GFX.post){ topMat.onBeforeCompile = sh => { sh.uniforms.dN = {value: rockDetail.normal}; sh.uniforms.dR = {value: rockDetail.rough};
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D dN; uniform sampler2D dR;')
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n { vec3 d = texture2D(dN, vNormalMapUv * 7.3).xyz * 2. - 1.; vec3 d2 = texture2D(dN, vNormalMapUv * 23.1 + .37).xyz * 2. - 1.; normal = normalize(normal + vec3(d.xy * .55 + d2.xy * .35, 0.)); }')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = clamp(roughnessFactor * (.75 + texture2D(dR, vNormalMapUv * 5.1).r * .35), .25, 1.);')
+      .replace('#include <map_fragment>', '#include <map_fragment>\n diffuseColor.rgb *= .88 + texture2D(dR, vNormalMapUv * 11.7).r * .2;'); };
+    topMat.customProgramCacheKey = () => 'ground'; }
+  const sideMat = rockMat(th.rock, 1);
+  const top = new THREE.Mesh(new THREE.CircleGeometry(R + 1.5, 96), topMat); top.rotation.x = -Math.PI / 2; top.position.set(c.x, 0, c.z); g.add(top); isl.top = top;
   // cliff + underside: a lumpy rock cone
   const ug = new THREE.CylinderGeometry(R + 1.5, R * .2, 26, 64, 8, true); const up = ug.attributes.position; const v = new THREE.Vector3();
   for (let i = 0; i < up.count; i++){ v.fromBufferAttribute(up, i); const a = Math.atan2(v.z, v.x); const n = fbm(a * 3 + 5, v.y * .15, 4); const k = 1 + (n - .5) * .35 * (1 - (v.y + 13) / 26 * .3); v.x *= k; v.z *= k; up.setXYZ(i, v.x, v.y, v.z); }
   ug.computeVertexNormals(); const under = new THREE.Mesh(ug, sideMat); under.position.set(c.x, -13, c.z); g.add(under);
   // rim ridge: broken mountains around the edge (outside the walkable disc)
-  const ridge = new THREE.InstancedMesh(rockGeos[0], new THREE.MeshStandardMaterial({color: th.rock2, roughness: .95, flatShading: true}), 70);
+  const ridge = new THREE.InstancedMesh(rockGeos[0], rockMat(th.rock2, .95), 70);
   for (let i = 0; i < 70; i++){ const a = i / 70 * Math.PI * 2 + rand(-.03, .03); const r = R + rand(.2, 1.6); if (Math.abs(Math.sin(a)) < .11 && Math.sin(a) < 0 && Math.cos(a) > -.2 && Math.cos(a) < .2) { dummy.scale.setScalar(.001); }
     else dummy.scale.set(rand(1.3, 2.6), rand(1, 3.4), rand(1.3, 2.4));
     dummy.position.set(c.x + Math.cos(a) * r, 0, c.z + Math.sin(a) * r); dummy.rotation.set(rand(-.2, .2), rand(0, 7), rand(-.2, .2)); dummy.updateMatrix(); ridge.setMatrixAt(i, dummy.matrix); }
@@ -507,7 +591,7 @@ function islandSurface(isl, th){
   const m4 = new THREE.Matrix4(), pos = new THREE.Vector3();
   for (let i = 0; i < 70; i++){ ridge.getMatrixAt(i, m4); pos.setFromMatrixPosition(m4); if (Math.abs(pos.x - c.x) < 4.5){ m4.makeScale(.001, .001, .001); ridge.setMatrixAt(i, m4); } }
   // scattered boulders and pebbles inside
-  for (let s = 0; s < 3; s++){ const b = new THREE.InstancedMesh(rockGeos[s + 1], new THREE.MeshStandardMaterial({color: s ? th.rock : th.rock2, roughness: .95, flatShading: true}), s === 2 ? 60 : 16);
+  for (let s = 0; s < 3; s++){ const b = new THREE.InstancedMesh(rockGeos[s + 1], rockMat(s ? th.rock : th.rock2, .95), s === 2 ? 60 : 16);
     for (let i = 0; i < b.count; i++){ const a = Math.random() * 7, r = rand(5, R - 2); dummy.position.set(c.x + Math.cos(a) * r, 0, c.z + Math.sin(a) * r); const sc = s === 2 ? rand(.12, .3) : rand(.4, .9); dummy.scale.set(sc, sc * rand(.6, 1.2), sc); dummy.rotation.set(0, rand(0, 7), 0); dummy.updateMatrix(); b.setMatrixAt(i, dummy.matrix); }
     g.add(b); }
   // planet specials
@@ -516,6 +600,37 @@ function islandSurface(isl, th){
   if (th.lakes){ for (let i = 0; i < 3; i++){ const a = Math.random() * 7, r = rand(12, R - 5); const lake = new THREE.Mesh(new THREE.CircleGeometry(rand(2, 3.5), 32), new THREE.MeshStandardMaterial({color: 0x120a04, roughness: .05, metalness: .6})); lake.rotation.x = -Math.PI / 2; lake.position.set(c.x + Math.cos(a) * r, .03, c.z + Math.sin(a) * r); lake.scale.set(1.4, 1, 1); g.add(lake); } }
   if (th.id === 'europa' || th.id === 'saturn' || th.id === 'neptun'){ const sp = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 3, 6), new THREE.MeshStandardMaterial({color: th.floraCol[0], roughness: .2, metalness: .1, transparent: true, opacity: .85, emissive: th.floraCol[0], emissiveIntensity: .15}), 30);
     for (let i = 0; i < 30; i++){ const a = Math.random() * 7, r = rand(R - 4, R - .5); dummy.position.set(c.x + Math.cos(a) * r, 1, c.z + Math.sin(a) * r); if (Math.abs(dummy.position.x - c.x) < 4) dummy.position.x += 6; dummy.rotation.set(rand(-.3, .3), 0, rand(-.3, .3)); const sc = rand(.5, 1.6); dummy.scale.set(sc, sc * rand(.8, 1.8), sc); dummy.updateMatrix(); sp.setMatrixAt(i, dummy.matrix); } g.add(sp); }
+}
+// ground cover: thousands of instanced alien moss/grass tufts that sway in the wind (skipped on the low tier)
+const windU = {value: 0};
+const tuftGeo = (() => { const parts = [];
+  for (let i = 0; i < 7; i++){ const hgt = rand(.28, .5), b = new THREE.PlaneGeometry(.11, hgt, 1, 3); b.translate(0, hgt / 2, 0); const p = b.attributes.position;
+    for (let j = 0; j < p.count; j++){ const y = p.getY(j); p.setX(j, p.getX(j) * (1 - y / (hgt * 1.05))); p.setZ(j, Math.pow(y / hgt, 2) * .14); }
+    b.rotateY(i / 7 * Math.PI * 2 + rand(-.3, .3)); b.rotateZ(rand(-.35, .35)); b.translate(rand(-.08, .08), 0, rand(-.08, .08)); parts.push(b); }
+  const g = mergeGeometries(parts); g.computeVertexNormals(); return g; })();
+function groundCover(isl, th){
+  if (!GFX.cover) return;
+  const n = Math.round(3800 * GFX.cover), c = isl.c;
+  const base = new THREE.Color(th.floraCol[0]).lerp(C3(th.ground[1]), .45), tip = new THREE.Color(th.floraCol[1]).lerp(C3(th.ground[2]), .3);
+  const mat = new THREE.MeshStandardMaterial({color: 0xffffff, side: THREE.DoubleSide, roughness: .85, metalness: 0});
+  mat.onBeforeCompile = sh => { sh.uniforms.wT = windU; sh.uniforms.cB = {value: base}; sh.uniforms.cT = {value: tip};
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float wT; varying float vH;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vH = clamp(position.y / .45, 0., 1.);
+        vec4 ip = instanceMatrix * vec4(0., 0., 0., 1.);
+        float sw = sin(wT * 1.7 + ip.x * .35 + ip.z * .22) * .6 + sin(wT * 3.1 + ip.x * .9) * .25;
+        transformed.x += sw * .16 * vH * vH; transformed.z += cos(wT * 1.3 + ip.z * .4) * .08 * vH * vH;`);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 cB; uniform vec3 cT; varying float vH;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= mix(cB * .35, cT * .9, smoothstep(0., 1., vH));'); };
+  mat.customProgramCacheKey = () => 'tuft';
+  const m = new THREE.InstancedMesh(tuftGeo, mat, n); let k = 0;
+  for (let i = 0; i < n * 3 && k < n; i++){
+    // clumped: noise decides where moss grows, paths and camp centres stay mostly bare
+    const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * (ISL_R - 1.2), x = Math.cos(a) * r, z = Math.sin(a) * r;
+    if (fbm(x * .09 + isl.k * 3, z * .09, 3) < .48 || (Math.abs(x) < 2.6 && z < -6)) continue;
+    dummy.position.set(c.x + x, 0, c.z + z); dummy.rotation.set(0, Math.random() * 7, 0); const sc = rand(.55, 1.35); dummy.scale.set(sc, sc * rand(.7, 1.4), sc); dummy.updateMatrix(); m.setMatrixAt(k++, dummy.matrix);
+  }
+  m.count = k; m.receiveShadow = GFX.shadows; isl.g.add(m);
 }
 const lavaMat = new THREE.ShaderMaterial({uniforms: {t: {value: 0}}, fog: false,
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
@@ -560,7 +675,7 @@ const inkMat = new THREE.MeshBasicMaterial({color: 0x0b0610, side: THREE.BackSid
 inkMat.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed += normalize(normal) * 0.028;'); };
 const GEO_CACHE = {};
 function cached(key, make){ return GEO_CACHE[key] || (GEO_CACHE[key] = make()); }
-function inked(geo, mat){ const g = new THREE.Group(); g.add(new THREE.Mesh(geo, mat)); g.add(new THREE.Mesh(geo, inkMat)); return g; }
+function inked(geo, mat){ const g = new THREE.Group(); g.add(new THREE.Mesh(geo, mat)); if (!GFX.post) g.add(new THREE.Mesh(geo, inkMat)); return g; }
 const glowMats = {};
 const glowMat = col => glowMats[col] || (glowMats[col] = new THREE.MeshBasicMaterial({color: col}));
 const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -572,7 +687,7 @@ const cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
 const tube = (pts, r, seg = 12) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new V3(...p))), seg, r, 7);
 
 function buildSpecies(type){
-  const body = new THREE.Group(); const mat = new THREE.MeshStandardMaterial({vertexColors: true, roughness: .55, metalness: .05});
+  const body = new THREE.Group(); const mat = GFX.post ? addDetail(new THREE.MeshPhysicalMaterial({vertexColors: true, roughness: .5, metalness: 0, clearcoat: .45, clearcoatRoughness: .4, sheen: .4, sheenRoughness: .6, sheenColor: new THREE.Color(0xffffff)}), 3.2, .55, 'skin') : new THREE.MeshStandardMaterial({vertexColors: true, roughness: .55, metalness: .05});
   const limbs = []; let anim = null;
   if (type === 'surungen'){
     // armoured six-eyed crawler: low, long, fast
@@ -694,6 +809,8 @@ function buildIsland(k){
   isl.arena = {c: ac, r: 9};
   const bossCamp = addCamp(isl, ac.x, ac.z, 9, [{type: 'boss'}], true);
   isl.boss = bossCamp.members[0]; dressBoss(isl.boss, CAST[k % CAST.length]);
+  shadeTree(g, true, true); if (isl.top) isl.top.castShadow = false;
+  groundCover(isl, th);
   islands[k] = isl; return isl;
 }
 function addCamp(isl, x, z, r, roster, isBoss = false){
@@ -780,7 +897,7 @@ const player = {
   hp: 100, maxHp: 100, dmg: 1, speed: 5.2, armor: 0, rate: 1, inv: 0, swing: 0, eaten: 0, kills: 0, attacking: 0, aimFace: 0
 };
 scene.add(player.root);
-const blob = (r, o = .45) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 20), new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: o, depthWrite: false})); m.rotation.x = -Math.PI / 2; m.position.y = .02; return m; };
+const blob = (r, o = .45) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 20), new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: o, depthWrite: false})); m.rotation.x = -Math.PI / 2; m.position.y = .02; m.visible = !GFX.shadows; return m; };
 player.root.add(blob(.6));
 // electric aura under Serhat
 const aura = new THREE.Mesh(new THREE.RingGeometry(.7, .85, 40), new THREE.MeshBasicMaterial({color: 0x39e6ff, transparent: true, opacity: .55, depthWrite: false}));
@@ -805,7 +922,7 @@ function parseChar(buf){
     try {
       new GLTFLoader().parse(buf.slice(0), '', gltf => {
         const sc = gltf.scene;
-        sc.traverse(o => { if (o.isMesh){ o.frustumCulled = false; } });
+        sc.traverse(o => { if (o.isMesh){ o.frustumCulled = false; if (GFX.shadows) o.castShadow = true; } });
         // remove yaw from the hips tracks so the run cycle faces where we steer him
         const q = new THREE.Quaternion(), tw = new THREE.Quaternion(), hips = sc.getObjectByName('Hips');
         const rest = hips ? new THREE.Quaternion(0, hips.quaternion.y, 0, hips.quaternion.w).normalize() : new THREE.Quaternion();
@@ -1099,7 +1216,7 @@ function dressBoss(e, cast){
   e.cast = cast;
   loadCast(cast.id).then(gltf => {
     if (e.dead) return;
-    const sc = gltf.scene; sc.traverse(o => { if (o.isMesh){ o.frustumCulled = false; } });
+    const sc = gltf.scene; sc.traverse(o => { if (o.isMesh){ o.frustumCulled = false; if (GFX.shadows) o.castShadow = true; } });
     const box = new THREE.Box3().setFromObject(sc); const h = box.max.y - box.min.y || 1.8; const S = 4.3 / h; sc.scale.setScalar(S);
     // mutate: alien skin, glowing eyes
     let skinMat = null;
@@ -1198,7 +1315,7 @@ function buildEnemy(type){
 }
 const enemies = [];
 function spawn(type, at, opt = {}){
-  const spec = TYPES[type], m = buildEnemy(type);
+  const spec = TYPES[type], m = buildEnemy(type); shadeTree(m.g);
   const lv = opt.camp ? opt.camp.isl.k : 0, mul = Math.pow(1.75, lv), elite = !!opt.elite;
   const e = {type, spec, ...m, pos: at.clone(), home: at.clone(), camp: opt.camp || null, elite, state: 'patrol', wp: null, idle: rand(0, 2),
     hp: spec.hp * mul * (elite ? 4 : 1), maxHp: 0, dmgMul: Math.pow(1.45, lv) * (elite ? 1.5 : 1), flash: 0, stun: 0, hooked: false, cd: rand(.5, 2), knock: new THREE.Vector3(), atk: 0, phase: Math.random() * 7, dead: false};
@@ -2077,7 +2194,7 @@ function updateEnemies(dt, t){
       e.mixer.update(dt); e.body.scale.y = 1;
       if (e.wings) for (const w of e.wings) w.rotation.y = w.userData.side * (-.35 - Math.sin(t * (e.state === 'chase' ? 9 : 3)) * .35);
     }
-    if (e.flash > 0){ e.flash -= dt; e.mat.emissive.setRGB(1, 1, 1); e.mat.emissiveIntensity = 1; }
+    if (e.flash > 0){ e.flash -= dt; e.mat.emissive.setRGB(1, .92, .85); e.mat.emissiveIntensity = GFX.post ? .22 : .5; }
     else { e.mat.emissive.copy(e.baseEm); e.mat.emissiveIntensity = e.spec.tree ? .9 : e.mixer ? .18 : e.spec.boss ? .5 : .4; }
     setBar(e.bar, e.hp / e.maxHp); qInv.copy(e.g.quaternion).invert(); e.bar.quaternion.copy(qInv).multiply(camera.quaternion);
     if (e.stun > 0 && !e.hooked) e.body.rotation.z = Math.sin(t * 30) * .08; else e.body.rotation.z = 0;
@@ -2143,10 +2260,46 @@ function updatePlayer(dt, t){
   handLight.intensity = 5 + Math.sin(t * 22) * 1.5;
   if (player.model) player.model.visible = !(player.inv > 0 && Math.floor(t * 20) % 2 === 0 && hook.state !== 'reel-self');
 }
+// ---------------------------------------------------------------- post-processing: bloom on glowing veins, lava and eyes, filmic grade
+if (GFX.post){
+  const rt = new THREE.WebGLRenderTarget(innerWidth * GFX.pr, innerHeight * GFX.pr, {type: THREE.HalfFloatType, samples: GFX.tier === 'high' ? 4 : 2});
+  composer = new EffectComposer(renderer, rt); composer.setPixelRatio(GFX.pr); composer.setSize(innerWidth, innerHeight);
+  renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
+  bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), .42, .4, .86); composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+  Grade.pass = new ShaderPass({uniforms: {tDiffuse: {value: null}, t: {value: 0}, tint: {value: new THREE.Color(1, 1, 1)}, shadowTint: {value: new THREE.Color(0, 0, 0)}, vig: {value: .32}},
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float t; uniform vec3 tint; uniform vec3 shadowTint; uniform float vig; varying vec2 vUv;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+      void main(){ vec3 c = texture2D(tDiffuse, vUv).rgb;
+        float l = dot(c, vec3(.2126, .7152, .0722));
+        c = mix(vec3(l), c, 1.08);                                   // a touch more saturation
+        c = c * tint + shadowTint * (1. - smoothstep(0., .45, l)) * .12; // split-tone: warm lights, tinted shadows
+        c = (c - .5) * 1.06 + .5;                                    // gentle contrast
+        vec2 d = vUv - .5; c *= 1. - dot(d, d) * vig * 2.;           // vignette
+        c += (h(vUv * 911. + t) - .5) * .018;                        // fine film grain
+        gl_FragColor = vec4(clamp(c, 0., 1.), 1.); }`});
+  composer.addPass(Grade.pass); if (Grade.th) Grade.theme(Grade.th);
+}
+function draw(sc, cam){
+  if (!composer){ renderer.render(sc, cam); return; }
+  renderPass.scene = sc; renderPass.camera = cam; composer.render();
+}
+// keep it smooth: if the frame rate stays low, step down resolution, then bloom, then shadows (remembered on this device)
+const Perf = {acc: 0, n: 0, step: 0, check(dt){
+  if (!GFX.auto || this.step > 2) return; this.acc += dt; this.n++;
+  if (this.acc < 4) return; const fps = this.n / this.acc; this.acc = 0; this.n = 0;
+  if (fps > 40) return;
+  this.step++;
+  if (this.step === 1 && renderer.getPixelRatio() > 1){ renderer.setPixelRatio(1); if (composer){ composer.setPixelRatio(1); composer.setSize(innerWidth, innerHeight); } }
+  else if (this.step <= 2 && bloom && bloom.enabled){ bloom.enabled = false; }
+  else if (renderer.shadowMap.enabled){ renderer.shadowMap.enabled = false; sun.castShadow = false; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); }); this.step = 3;
+    try { localStorage.setItem('pa-gfx', 'low'); } catch(e){} }
+}};
 const clock = new THREE.Clock();
 function loop(){
   requestAnimationFrame(loop);
-  if (introSt){ updateIntro(Math.min(.05, clock.getDelta())); renderer.render(iScene, iCam); return; }
+  if (introSt){ updateIntro(Math.min(.05, clock.getDelta())); draw(iScene, iCam); return; }
   const dt = Math.min(.05, clock.getDelta()), t = clock.elapsedTime;
   portalMat.uniforms.t.value = t; gateMat.uniforms.t.value = t; lavaMat.uniforms.t.value = t; updateDust(dt, t); skyDome.position.copy(camera.position); skyObjs.position.set(camera.position.x, 0, camera.position.z); portal.rotation.y = Math.sin(t * .6) * .2; portalRing.rotation.z += dt * .8;
   if (panelOpen){}
@@ -2167,7 +2320,10 @@ function loop(){
   camera.position.lerp(want, onTitle ? 1 : Math.min(1, dt * 6));
   if (shakeT > 0){ shakeT -= dt; camera.position.x += rand(-1, 1) * shakeA; camera.position.y += rand(-1, 1) * shakeA * .5; } else shakeA = 0;
   camera.lookAt(focus.x, onTitle ? focus.y : 0, focus.z);
-  renderer.render(scene, camera);
+  if (GFX.shadows){ const q = 48 / GFX.shadowSize, fx = Math.round(player.pos.x / q) * q, fz = Math.round(player.pos.z / q) * q; sun.target.position.set(fx, 0, fz); sun.position.set(fx + SUN_OFF.x, SUN_OFF.y, fz + SUN_OFF.z); }
+  windU.value = t; if (Grade.pass) Grade.pass.uniforms.t.value = t % 10;
+  if (running && !paused) Perf.check(dt);
+  draw(scene, camera);
 }
 
 

@@ -6,7 +6,9 @@ import {dirname, join} from 'node:path';
 const root = new URL('..', import.meta.url).pathname, out = process.argv[2], HUNTER = process.argv[3] === 'hunter', SRC = HUNTER ? 'public/hunter' : 'public';
 if (!out) { console.error('usage: bundle-native.mjs <outDir>'); process.exit(1); }
 const CDN = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
-const VENDOR = ['build/three.module.js', 'examples/jsm/loaders/GLTFLoader.js', 'examples/jsm/utils/SkeletonUtils.js', 'examples/jsm/utils/BufferGeometryUtils.js'];
+const VENDOR = ['build/three.module.js', 'examples/jsm/loaders/GLTFLoader.js', 'examples/jsm/utils/SkeletonUtils.js', 'examples/jsm/utils/BufferGeometryUtils.js',
+  ...['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'ShaderPass', 'OutputPass', 'Pass', 'MaskPass'].map(n => 'examples/jsm/postprocessing/' + n + '.js'),
+  ...['CopyShader', 'LuminosityHighPassShader', 'OutputShader'].map(n => 'examples/jsm/shaders/' + n + '.js')];
 if (existsSync(out)) rmSync(out, {recursive: true});
 mkdirSync(out, {recursive: true});
 const FILES = HUNTER ? ['serhat.txt', 'logo.png', 'favicon.png', 'icon-1024.png', ...['zeynep', 'dilan', 'fahri', 'rasim', 'samet', 'cebrail', 'zulfu', 'huseyin', 'siyar'].map(n => 'boss-' + n + '.txt')] : ['engine.js', 'serhat.txt', 'zeynep.txt', 'icon-192.png', 'icon-512.png'];
