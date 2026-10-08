@@ -136,6 +136,15 @@ select.lang option{background:#1d1233;color:#efe9ff}
 .banner{position:fixed;left:0;right:0;top:34%;text-align:center;pointer-events:none;font-family:var(--f-display);font-size:clamp(22px,6vw,44px);letter-spacing:.04em;color:var(--ink);text-shadow:0 0 24px rgba(57,230,255,.6);opacity:0;transition:opacity .35s}
 .banner small{display:block;font:600 14px var(--f-ui);letter-spacing:.08em;color:var(--volt);margin-top:6px}
 .banner.on{opacity:1}
+.dlg{position:fixed;inset:0;z-index:55;display:flex;align-items:flex-end;justify-content:center;padding:0 12px calc(env(safe-area-inset-bottom,0px) + 18px);background:linear-gradient(transparent 55%,rgba(4,2,10,.75));cursor:pointer}
+.dlg .box{width:min(560px,100%);background:rgba(10,6,22,.88);border:1px solid rgba(57,230,255,.35);border-radius:16px;padding:12px 16px 10px;box-shadow:0 0 30px rgba(57,230,255,.15)}
+.dlg .who{display:block;font:700 13px var(--f-ui);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.dlg .who.s{color:#39e6ff}.dlg .who.o{color:#ffd27a}.dlg .who.b{color:#ff3d81}.dlg .who.i{color:#b6ff3b}
+.dlg p{margin:0;font:600 17px/1.45 var(--f-ui);color:#efe9ff;min-height:3em}
+.dlg small{display:block;text-align:right;color:#8a7fb0;font-size:11px;margin-top:4px}
+.dlg .skip{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;background:rgba(10,6,22,.7);color:#efe9ff;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 14px;font:600 13px var(--f-ui)}
+.story-screen{z-index:60;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(57,230,255,.12),rgba(5,3,12,.92) 70%)}
+.story-screen .story{font-size:17px;line-height:1.55}
 body.intro>*:not(#stage):not(#introUI){visibility:hidden!important}
 #introUI{position:fixed;inset:0;z-index:20;pointer-events:none}
 #introUI .sub{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 9vh);transform:translateX(-50%);width:min(92vw,620px);text-align:center;font:600 clamp(16px,4.4vw,22px)/1.4 var(--f-ui);color:#fff;text-shadow:0 2px 10px #000,0 0 2px #000;opacity:0;transition:opacity .45s}
@@ -228,6 +237,8 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 <div class="hint" id="hint" hidden data-t="hint">Ekranın herhangi bir yerine dokunup sürükle: yürü. Canavara yaklaşınca silahların kendi vurur, ölenleri kablon çeker ve Serhat yutar.</div>
 <div class="joy" id="joy" hidden><i id="knob"></i></div>
 <div class="banner" id="banner"></div>
+<div class="dlg" id="dlg" hidden><div class="box"><b class="who" id="dlgName"></b><p id="dlgText"></p><small data-t="tapNext">Devam için dokun</small></div><button type="button" class="skip" id="dlgSkip" data-t="skip">Atla</button></div>
+<div class="screen story-screen" id="storyCard" hidden><div class="card"><div class="eyebrow" id="storyEye"></div><h2 id="storyTitle"></h2><p class="story" id="storyText"></p><div class="btns"><button class="go" id="storyGo" type="button" data-t="storyGo">Devam</button></div></div></div>
 <div id="floats"></div>
 <div id="introUI" hidden><div class="bars"></div><div class="sub" id="introSub"></div><div class="flash" id="introFlash"></div><button class="skip" type="button" id="introSkip" data-t="skip">Geç</button></div>
 
@@ -487,7 +498,15 @@ const THEMES = [
   {id: 'trappist', name: T('pl_trappist'), sub: T('pl_trappist_sub'),    ground: ['#2a1a2a', '#4a2e3a', '#7a4a52'], crack: '#ff4a6a',       craters: 8,  sky: ['#05010a', '#2a0a1a', '#8a2a3a'], fog: 0x5a1a2a, fogNear: 22, fogFar: 64, hemi: [0xffb0b0, 0x2a0a14, 1.1], sun: [0xff8a6a, 1.6], rock: 0x3a2228, rock2: 0x6a3a44, flora: 'spindle', floraCol: [0x4a1a3a, 0xff4a8a], monTint: 0xffe0e8, dust: 0xff8aa0, sky1: 'bigsun', edge: 0xff4a6a},
   {id: 'ceres', name: T('pl_ceres'), sub: T('pl_ceres_sub'),             ground: ['#2e2c2a', '#4e4a46', '#76706a'], crack: '#e8f0ff',       craters: 34, sky: ['#000000', '#040404', '#141414'], fog: 0x101010, fogNear: 30, fogFar: 80, hemi: [0xfffaf0, 0x121212, 1.0], sun: [0xffffff, 2.2], rock: 0x3a3836, rock2: 0x6a6662, flora: 'diamond', floraCol: [0xe8f4ff, 0xffffff], monTint: 0xf0f0f0, dust: 0xdcdcdc, sky1: 'moons', edge: 0xe8f4ff},
   {id: 'gliese', name: T('pl_gliese'), sub: T('pl_gliese_sub'),          ground: ['#1a2a3a', '#2a5a6a', '#4a9aa8'], crack: '#b0ffff',       craters: 3,  sky: ['#020814', '#0a2a3a', '#3a8a9a'], fog: 0x1a4a5a, fogNear: 24, fogFar: 70, hemi: [0xc0ffff, 0x0a1a2a, 1.3], sun: [0xe0ffff, 1.6], rock: 0x1a3a4a, rock2: 0x6ad8e8, flora: 'diamond', floraCol: [0x6affff, 0xffffff], monTint: 0xe0ffff, dust: 0x9affff, sky1: 'neptune', edge: 0x6affff},
-  {id: 'cancri', name: T('pl_cancri'), sub: T('pl_cancri_sub'),          ground: ['#120808', '#2a1410', '#4a2418'], crack: '#ff7a1a',       craters: 1,  sky: ['#0a0000', '#3a0a04', '#c04010'], fog: 0x5a1408, fogNear: 16, fogFar: 52, hemi: [0xffa070, 0x200400, 1.1], sun: [0xffb070, 1.5], rock: 0x1a0e0c, rock2: 0x3a1e18, flora: 'diamond', floraCol: [0xffffff, 0xffa040], monTint: 0xffd8c0, dust: 0xff7a2a, sky1: 'bigsun', edge: 0xff5a10, lava: true}
+  {id: 'cancri', name: T('pl_cancri'), sub: T('pl_cancri_sub'),          ground: ['#120808', '#2a1410', '#4a2418'], crack: '#ff7a1a',       craters: 1,  sky: ['#0a0000', '#3a0a04', '#c04010'], fog: 0x5a1408, fogNear: 16, fogFar: 52, hemi: [0xffa070, 0x200400, 1.1], sun: [0xffb070, 1.5], rock: 0x1a0e0c, rock2: 0x3a1e18, flora: 'diamond', floraCol: [0xffffff, 0xffa040], monTint: 0xffd8c0, dust: 0xff7a2a, sky1: 'bigsun', edge: 0xff5a10, lava: true},
+  {id: 'callisto', name: T('pl_callisto'), sub: T('pl_callisto_sub'),    ground: ['#2a2622', '#4a423a', '#6e665c'], crack: '#c8c0b0',       craters: 48, sky: ['#000000', '#06050a', '#1a1828'], fog: 0x1a1820, fogNear: 28, fogFar: 78, hemi: [0xf0ece8, 0x141210, 1.05], sun: [0xfff8f0, 2.0], rock: 0x3a3632, rock2: 0x8a8278, flora: 'ice', floraCol: [0xc8c0b0, 0xffffff], monTint: 0xf0ece8, dust: 0xc8c0b0, sky1: 'jupiter', edge: 0xd8d0c0},
+  {id: 'ganimed', name: T('pl_ganimed'), sub: T('pl_ganimed_sub'),      ground: ['#3a3a42', '#6a6a72', '#a8a4a0'], crack: '#9ad8ff',       craters: 14, sky: ['#01020a', '#0a0e20', '#2a3a5a'], fog: 0x26304a, fogNear: 26, fogFar: 74, hemi: [0xe0eaff, 0x1a1e2a, 1.15], sun: [0xf8fbff, 1.8], rock: 0x4a4a52, rock2: 0xb0b4bc, flora: 'diamond', floraCol: [0x9ad8ff, 0xe8f6ff], monTint: 0xe8eeff, dust: 0xc8d8ff, sky1: 'redspot', edge: 0x9ad8ff},
+  {id: 'triton', name: T('pl_triton'), sub: T('pl_triton_sub'),        ground: ['#7a6a72', '#b8a0a8', '#f0e0e6'], crack: '#2a1a2a',       craters: 6,  sky: ['#00010a', '#040a24', '#1a3a7a'], fog: 0x1a2a5a, fogNear: 24, fogFar: 70, hemi: [0xffe8f0, 0x101a3a, 1.2], sun: [0xf0f4ff, 1.4], rock: 0x6a5a62, rock2: 0xe8d8de, flora: 'ice', floraCol: [0xffc8d8, 0xffffff], monTint: 0xfff0f4, dust: 0xffe0ea, sky1: 'neptune', edge: 0xffb0c8},
+  {id: 'haumea', name: T('pl_haumea'), sub: T('pl_haumea_sub'),        ground: ['#d8d0c8', '#eee8e2', '#ffffff'], crack: '#a83a2a',       craters: 9,  sky: ['#000000', '#08040c', '#2a1830'], fog: 0x2a2030, fogNear: 26, fogFar: 74, hemi: [0xfff4f0, 0x201820, 1.2], sun: [0xffffff, 1.3], rock: 0xb8b0a8, rock2: 0xffffff, flora: 'coral', floraCol: [0xa83a2a, 0xff8a6a], monTint: 0xfff4f0, dust: 0xffffff, sky1: 'moons', edge: 0xff8a6a},
+  {id: 'eris', name: T('pl_eris'), sub: T('pl_eris_sub'),              ground: ['#14141c', '#2a2a36', '#4a4a5a'], crack: '#39e6ff',       craters: 10, sky: ['#000000', '#020208', '#0a0a1a'], fog: 0x08080e, fogNear: 18, fogFar: 54, hemi: [0x9aa8ff, 0x050508, .85], sun: [0xc8d0ff, .9], rock: 0x1e1e28, rock2: 0x3a3a4a, flora: 'spindle', floraCol: [0x1a2a4a, 0x39e6ff], monTint: 0xd0d8ff, dust: 0x6a7aaa, sky1: 'moons', edge: 0x39e6ff},
+  {id: 'proxima', name: T('pl_proxima'), sub: T('pl_proxima_sub'),      ground: ['#2a0e0a', '#5a2214', '#8a3a1e'], crack: '#ff3a1a',       craters: 5,  sky: ['#0a0000', '#2a0602', '#a02a0a'], fog: 0x4a0e06, fogNear: 20, fogFar: 60, hemi: [0xff9a7a, 0x1a0402, 1.1], sun: [0xff6a3a, 2.0], rock: 0x3a140c, rock2: 0x6a2a18, flora: 'coral', floraCol: [0x2a0a0a, 0xff3a1a], monTint: 0xffd0c0, dust: 0xff6a3a, sky1: 'bigsun', edge: 0xff3a1a},
+  {id: 'ufuk', name: T('pl_ufuk'), sub: T('pl_ufuk_sub'),              ground: ['#0a0612', '#1e1230', '#3a2458'], crack: '#ffb030',       craters: 2,  sky: ['#000000', '#0a0414', '#3a1a5a'], fog: 0x1a0a2e, fogNear: 20, fogFar: 62, hemi: [0xd0a0ff, 0x08020e, 1.05], sun: [0xffc070, 1.6], rock: 0x140c20, rock2: 0x3a2458, flora: 'diamond', floraCol: [0x8a4aff, 0xffb030], monTint: 0xf0e0ff, dust: 0xb07aff, sky1: 'bigsun', edge: 0xffb030},
+  {id: 'kovan', name: T('pl_kovan'), sub: T('pl_kovan_sub'),            ground: ['#1a1404', '#3a2a08', '#6a4a10'], crack: '#b6ff3b',       craters: 0,  sky: ['#020100', '#140c02', '#4a3a06'], fog: 0x2a2006, fogNear: 18, fogFar: 56, hemi: [0xfff0a0, 0x140c02, 1.1], sun: [0xffe070, 1.6], rock: 0x2a1e08, rock2: 0x5a4210, flora: 'sulfur', floraCol: [0x6a5a10, 0xb6ff3b], monTint: 0xfff4c0, dust: 0xd8ff6a, sky1: 'clouds', edge: 0xb6ff3b}
 ];
 const themeOf = k => THEMES[k % THEMES.length];
 const texCache = {};
@@ -1009,7 +1028,10 @@ function buildIsland(k){
   const ac = new THREE.Vector3(c.x, 0, c.z - 21);
   isl.arena = {c: ac, r: 9};
   const bossCamp = addCamp(isl, ac.x, ac.z, 9, [{type: 'boss'}], true);
-  isl.boss = bossCamp.members[0]; dressBoss(isl.boss, CAST[k % CAST.length]);
+  const cast = sagaCast(k); isl.boss = bossCamp.members[0]; dressBoss(isl.boss, cast);
+  if (k >= 9) isl.boss.body.traverse(o => { if (o.userData.cage) o.visible = false; }); // the son was freed on island 9
+  if (cast.big) isl.boss.g.scale.multiplyScalar(cast.big);
+  if (cast.fat) isl.boss.body.scale.set(cast.fat, 1, cast.fat * .9);
   islandProps(isl, th);
   shadeTree(g, true, true); if (isl.top) isl.top.castShadow = false;
   islandPaths(isl, th);
@@ -1295,7 +1317,10 @@ function giveGear(k){
 }
 
 // ---------------------------------------------------------------- coins and permanent upgrades
+const SAVE_V = 2;
 const store = {get(k, d){ try { const v = localStorage.getItem('pa-' + k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem('pa-' + k, JSON.stringify(v)); } catch(e){} persistNative(); }};
+// the saga update starts every adventure over from Mars (coins and purchases are kept)
+(() => { const sv = store.get('save', null); if (sv && sv.v !== SAVE_V){ for (const k of ['save', 'camps', 'story', 'kid']) try { localStorage.removeItem('pa-' + k); } catch(e){} store.set('resetNote', 1); } })();
 let persistTimer = null;
 function persistNative(){ if (!Native.app) return; clearTimeout(persistTimer); persistTimer = setTimeout(() => { try { const all = {}; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k.startsWith('pa-')) all[k] = localStorage.getItem(k); } Native.call({action: 'persist', data: JSON.stringify(all)}).catch(() => {}); } catch(e){} }, 400); }
 let coins = store.get('coins', 0);
@@ -1320,7 +1345,7 @@ function toast(msg){ const t = $('toast'); t.textContent = msg; t.hidden = false
 
 // ---------------------------------------------------------------- saved progress (this browser)
 function saveGame(){
-  store.set('save', {isl: curIsl, gear: gear.map(w => ({id: w.id, lv: w.lv})), kit: kit.map(k => ({id: k.id, lv: k.lv})),
+  store.set('save', {v: 2, isl: curIsl, gear: gear.map(w => ({id: w.id, lv: w.lv})), kit: kit.map(k => ({id: k.id, lv: k.lv})),
     stats: {maxHp: player.maxHp, dmg: player.dmg, speed: player.speed, rate: player.rate, regen: player.regen}, eaten: player.eaten, kills: player.kills});
   if (typeof Online !== 'undefined') Online.saveSoon();
 }
@@ -1382,12 +1407,12 @@ function labelEnemy(e){
 // ---------------------------------------------------------------- evolved bosses: the Usta Şehri cast, mutated
 const CAST = [
   {id: 'huseyin', name: 'Hüseyin', skin: 0x6fbf73, eye: 0xb6ff3b, wing: 'bat',     wingCol: 0x2e7d32, horn: 0xd7ccc8},
-  {id: 'siyar',   name: 'Şiyar',   skin: 0x7e57c2, eye: 0xff3d81, wing: 'insect',  wingCol: 0x9ff6ff, horn: 0x311b92},
-  {id: 'samet',   name: 'Samet',   skin: 0xd84315, eye: 0xffd600, wing: 'bat',     wingCol: 0x8d1c00, horn: 0x212121},
+  {id: 'siyar',   name: 'Azad',   skin: 0x7e57c2, eye: 0xff3d81, wing: 'insect',  wingCol: 0x9ff6ff, horn: 0x311b92},
+  {id: 'samet',   name: 'Eser',   skin: 0xd84315, eye: 0xffd600, wing: 'bat',     wingCol: 0x8d1c00, horn: 0x212121},
   {id: 'rasim',   name: 'Rasim',   skin: 0x4fc3f7, eye: 0xffffff, wing: 'crystal', wingCol: 0x39e6ff, horn: 0xe1f5fe},
   {id: 'fahri',   name: 'Fahri',   skin: 0x9e9d24, eye: 0xff1744, wing: 'insect',  wingCol: 0xc0ca33, horn: 0x3e2723},
-  {id: 'cebrail', name: 'Cebrail', skin: 0x8e24aa, eye: 0x00e5ff, wing: 'crystal', wingCol: 0xe040fb, horn: 0xfff59d},
-  {id: 'dilan',   name: 'Dilan',   skin: 0x26a69a, eye: 0xff9100, wing: 'bat',     wingCol: 0x004d40, horn: 0xffab91},
+  {id: 'cebrail', name: 'Ahmet', skin: 0x8e24aa, eye: 0x00e5ff, wing: 'crystal', wingCol: 0xe040fb, horn: 0xfff59d},
+  {id: 'dilan',   name: 'Hicret Hanım',   skin: 0x26a69a, eye: 0xff9100, wing: 'bat',     wingCol: 0x004d40, horn: 0xffab91},
   {id: 'zulfu',   name: 'Zülfü',   skin: 0x8d6e63, eye: 0xff3d00, wing: 'bat',     wingCol: 0x3e2723, horn: 0xfafafa},
   {id: 'zeynep',  name: 'Zeynep',  skin: 0xf06292, eye: 0x76ff03, wing: 'crystal', wingCol: 0xff80ab, horn: 0xffffff}
 ];
@@ -1502,7 +1527,7 @@ function buildEnemy(type){
     for (let i = 0; i < 9; i++){ const s = new THREE.Mesh(new THREE.ConeGeometry(.22, 1.1, 6), M(0xff3d81, 0xff3d81, 1)); const a = -1.2 + i * .3; s.position.set(Math.sin(a) * 1.4, 3.4 + Math.cos(a) * .3, -.2); s.rotation.z = -a * .6; body.add(s); }
     for (const s of [-1, 1]){ const leg = new THREE.Mesh(new THREE.CylinderGeometry(.35, .45, 1.2, 8), mat); leg.position.set(s * .9, .6, 0); body.add(leg); }
     // the cage on its back: a small glowing figure inside — the son
-    const cage = new THREE.Group(); cage.position.set(0, 3.1, -1.7); cage.userData.keep = true;
+    const cage = new THREE.Group(); cage.position.set(0, 3.1, -1.7); cage.userData.keep = true; cage.userData.cage = true;
     for (let i = 0; i < 8; i++){ const bar = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 1.1, 5), M(0x39e6ff, 0x39e6ff, 1.2)); const a = i / 8 * Math.PI * 2; bar.position.set(Math.cos(a) * .45, 0, Math.sin(a) * .45); cage.add(bar); }
     const kid = new THREE.Mesh(new THREE.CapsuleGeometry(.14, .35, 4, 8), M(0xffd27a, 0xffb020, .6)); cage.add(kid); body.add(cage);
     eyes(body, 4, 2.6, 1.55, .38, .2);
@@ -1750,22 +1775,130 @@ let running = false, paused = false, boss = null, shakeT = 0, shakeA = 0, curIsl
 function shake(a){ shakeA = Math.max(shakeA, a); shakeT = .25; }
 function banner(main, sub = '', ms = 1800){ const b = $('banner'); b.innerHTML = main + (sub ? `<small>${sub}</small>` : ''); b.classList.add('on'); clearTimeout(banner.t); banner.t = setTimeout(() => b.classList.remove('on'), ms); }
 function spawnPoint(k){ const c = islandCenter(k); return new THREE.Vector3(c.x, 0, c.z + ISL_R - 5); }
+// ---------------------------------------------------------------- the saga: 24 planets in three chapters, each boss someone from Serhat's life
+const STORY_N = 24, chapterOf = k => k < 9 ? 1 : k < 16 ? 2 : k < 24 ? 3 : 4;
+const C_ = (id, o = {}) => Object.assign({}, CAST.find(c => c.id === id), o);
+const VAMP = {skin: 0xcfc6d8, eye: 0xff1a1a, wing: 'bat', wingCol: 0x4a0010, horn: 0x1a1a1a}, OZC = {skin: 0x6d5a4a, eye: 0xffd600, wing: 'insect', wingCol: 0x8a6a1a, horn: 0x2a1a0a},
+  FAT = {skin: 0xc0703a, eye: 0xffd600, wing: 'bat', wingCol: 0x5a2a00, fat: 1.4}, NEC = {skin: 0x5a3a8a, eye: 0xff3d81, wing: 'crystal', wingCol: 0x9a6aff}, ABK = {skin: 0xb0a8a0, eye: 0xff3d00, wing: 'bat', wingCol: 0x3a2a2a, big: 1.2};
+const SAGA = [
+  ['Hüseyin', C_('huseyin'), 'BSBS', 'BBS'], ['Fuat', C_('siyar', VAMP), 'SBBS', 'BBS'], ['Zülfü', C_('zulfu'), 'BSBB', 'BSB'], ['Özcan', C_('rasim', OZC), 'SBBS', 'BSB'],
+  ['Fatih', C_('samet', FAT), 'BSBB', 'BSB'], ['Fahri', C_('fahri'), 'BSB', 'BSB'], ['Ahmet', C_('cebrail'), 'BSB', 'BBS'], ['Necmettin', C_('huseyin', NEC), 'IBIS', 'IIS'],
+  ['Abdülkadir', C_('fahri', ABK), 'BSBOS', 'OSOOS'],
+  ['Azad', C_('siyar'), 'BOS', 'BOS'], ['Eser', C_('samet'), 'BSO', 'BS'], ['Rasim', C_('rasim'), 'BSB', 'BO'], ['Hicret Hanım', C_('dilan'), 'BOS', 'BB'], ['Zeynep', C_('zeynep'), 'BSO', 'BBS'],
+  ['@bnm14', C_('cebrail', {skin: 0x1a1a1a, eye: 0xff8a00, wing: 'crystal', wingCol: 0xff6a00, big: 1.15}), 'BOS', 'BO'], ['Zülfü', C_('zulfu', {skin: 0x1a3a5a, eye: 0x39e6ff, wing: 'crystal', wingCol: 0x39e6ff, big: 1.3}), 'BBSO', 'BOSOS'],
+  ['Hüseyin', C_('huseyin'), 'BSO', 'BS'], ['Fuat', C_('siyar', VAMP), 'BSO', 'BS'], ['Özcan', C_('rasim', OZC), 'BSB', 'BS'], ['Fatih', C_('samet', FAT), 'BOS', 'BS'],
+  ['Fahri', C_('fahri'), 'BOS', 'BS'], ['Necmettin', C_('huseyin', NEC), 'IBS', 'II'], ['Abdülkadir', C_('fahri', ABK), 'BBS', 'BOS'],
+  ['@bnm23', C_('dilan', {skin: 0x8a7a10, eye: 0xb6ff3b, wing: 'insect', wingCol: 0xd8ff6a, horn: 0xffd700, big: 1.45}), 'BBOS', 'BOSOS']
+];
+const sagaName = k => { const n = SAGA[k][0]; return n[0] === '@' ? T(n.slice(1)) : n; };
+function sagaCast(k){ if (k >= STORY_N) return CAST[k % CAST.length]; return Object.assign({}, SAGA[k][1], {name: sagaName(k)}); }
+const seenSt = () => store.get('story', {}) || {};
+function markSt(key){ const s = seenSt(); if (s[key]) return false; s[key] = 1; store.set('story', s); return true; }
+let storyAfter = null, storyPaused = false;
+function showStory(eye, title, text, after){
+  $('storyEye').textContent = eye; $('storyTitle').textContent = title; $('storyText').textContent = text; $('storyCard').hidden = false;
+  storyAfter = after || null; if (running && !paused){ paused = true; storyPaused = true; }
+}
+$('dlg').addEventListener('click', ev => { if (ev.target.id !== 'dlgSkip') Cine.next(); });
+$('dlgSkip').addEventListener('click', ev => { ev.stopPropagation(); Cine.shown = Cine.full.length; Cine.i = Cine.lines.length; Cine.end(); });
+$('storyGo').addEventListener('click', () => { $('storyCard').hidden = true; if (storyPaused){ storyPaused = false; paused = false; clock.getDelta(); } const f = storyAfter; storyAfter = null; if (f) f(); });
+function storyArrive(k){
+  if (k >= STORY_N || !markSt('a' + k)) return false;
+  const ch = chapterOf(k), first = k === 0 || k === 9 || k === 16, isl = T('islandName', {n: k + 1, planet: themeOf(k).name});
+  showStory(first ? T('ch' + ch) : isl, first ? isl : T('ch' + ch), T('st' + k)); return true;
+}
+// cut-scenes: the camera walks up to whoever speaks, comic-style lines with a typewriter, tap to go on
+const Cine = {on: false, lines: [], i: 0, e: null, cb: null, shown: 0, full: '', t: 0,
+  start(k, part, e, cb){
+    const code = SAGA[k][part === 'i' ? 2 : 3]; this.lines = [...code].map((sp, j) => [sp, T('b' + part + k + '_' + j)]);
+    this.k = k; this.e = e; this.cb = cb; this.i = -1; this.on = true; this.H = 3;
+    if (e){ const bb = new THREE.Box3().setFromObject(e.g); if (isFinite(bb.max.y)) this.H = clamp(bb.max.y - bb.min.y, 1.5, 9); } this.wasPaused = paused; paused = true;
+    for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns', 'hookBtn', 'joy']) { const el = $(id); if (el) el.style.visibility = 'hidden'; }
+    $('dlg').hidden = false; meBar.visible = false; this.next();
+  },
+  next(){
+    if (this.shown < this.full.length){ this.shown = this.full.length; $('dlgText').textContent = this.full; return; }
+    this.i++; if (this.i >= this.lines.length) return this.end();
+    const [sp, txt] = this.lines[this.i]; this.full = txt; this.shown = 0; this.t = 0; this.sp = sp;
+    const nm = sp === 'S' ? 'Serhat' : sp === 'O' ? T('son') : sp === 'I' ? 'Necmettin' : sagaName(this.k);
+    $('dlgName').textContent = nm; $('dlgName').className = 'who ' + (sp === 'S' ? 's' : sp === 'O' ? 'o' : sp === 'I' ? 'i' : 'b'); $('dlgText').textContent = '';
+    if (sp === 'B' && Math.random() < .6) sfx.roar(); else sfx.zap();
+  },
+  end(){
+    this.on = false; $('dlg').hidden = true; paused = this.wasPaused; clock.getDelta(); meBar.visible = true;
+    for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns', 'hookBtn', 'joy']) { const el = $(id); if (el) el.style.visibility = ''; }
+    const f = this.cb; this.cb = null; if (f) f();
+  },
+  update(dt, raw = dt){
+    this.t += raw; if (this.shown < this.full.length){ this.shown = Math.min(this.full.length, Math.floor(this.t * 42)); $('dlgText').textContent = this.full.slice(0, this.shown); }
+    if (player.mixer) player.mixer.update(dt); if (this.e && this.e.mixer) this.e.mixer.update(dt); if (Kid.c) Kid.c.mixer.update(dt);
+    // frame the speaker: the boss from below (menacing), Serhat or the son over the shoulder
+    const e = this.e, bp = e ? e.pos : player.pos, H = this.H;
+    const toP = tmpC.set(player.pos.x - bp.x, 0, player.pos.z - bp.z); const dist = Math.max(.001, toP.length()); toP.divideScalar(dist);
+    const side = tmpC2.set(-toP.z, 0, toP.x);
+    let pos, look;
+    if (this.sp === 'B' && e){ pos = tmpC3.copy(bp).addScaledVector(toP, H * 1.15 + 1.5).addScaledVector(side, H * .35).setY(H * .42); look = tmpC4.copy(bp).setY(H * .72); }
+    else { const who = this.sp === 'O' && Kid.c ? Kid.pos : player.pos, sz = this.sp === 'O' && Kid.c ? .6 : player.size;
+      pos = tmpC3.copy(who).addScaledVector(toP, 2.6 * sz + 1).addScaledVector(side, -1.3 * sz).setY(1.7 * sz + .5); look = tmpC4.copy(who).setY(1.45 * sz); }
+    const k = Math.min(1, raw * 3); camera.position.lerp(pos, k); Cine.look.lerp(look, k); camera.lookAt(Cine.look);
+  },
+  look: new THREE.Vector3()
+};
+const tmpC = new THREE.Vector3(), tmpC2 = new THREE.Vector3(), tmpC3 = new THREE.Vector3(), tmpC4 = new THREE.Vector3();
 function bossAwake(e){
   if (boss === e) return; boss = e; sfx.roar(); shake(.4);
-  const nm = e.cast ? e.cast.name : T('bossDefault');
-  $('bossBar').hidden = false; $('bossName').textContent = UP(T('evolvedTag', {name: nm}));
-  banner(T('evolved', {name: nm}), curIsl === 0 ? T('bossSub1') : T('bossSubN', {n: curIsl + 1}));
+  const k = curIsl, saga = k < STORY_N, nm = saga ? sagaName(k) : e.cast ? e.cast.name : T('bossDefault');
+  $('bossBar').hidden = false; $('bossName').textContent = UP(saga ? nm + ' · ' + T('bt' + k) : T('evolvedTag', {name: nm}));
+  const show = () => banner(saga ? nm : T('evolved', {name: nm}), saga ? T('bt' + k) : T('bossSubN', {n: k + 1}));
+  if (saga && markSt('i' + k)){ Cine.look.copy(camera.position).add(new THREE.Vector3(0, -2, -5)); Cine.start(k, 'i', e, show); } else show();
 }
 function bossDown(isl){
-  $('bossBar').hidden = true; boss = null; sfx.boom(); shake(.5); isl.bossDead = true;
-  banner(T('cageBroken'), T('cageBrokenSub'), 2800);
-  setTimeout(() => {
+  $('bossBar').hidden = true; const e = boss; boss = null; sfx.boom(); shake(.5); isl.bossDead = true;
+  const k = isl.k, openGate = () => setTimeout(() => {
     isl.gateOpen = true; isl.gate.visible = false;
-    if (!islands[isl.k + 1]) buildIsland(isl.k + 1);
+    if (!islands[k + 1]) buildIsland(k + 1);
     islandVis();
     banner(T('gateOpen'), T('gateOpenSub'), 2200);
-  }, 2400);
+  }, 1600);
+  const after = () => {
+    if (k === 8){ store.set('kid', 1); banner(T('rescueT'), T('kidJoin'), 2800); }
+    else if (k === 15) banner(T('gridT'), T('ch3'), 2800);
+    else if (k === 23) banner(T('endT'), T('endSub'), 3400);
+    else if (k >= 16 && k < 23) banner(T('freed', {name: sagaName(k)}), T('freedSub'), 2600);
+    else banner(T('cageBroken'), k < 8 ? T('cageBrokenSub') : '', 2600);
+    openGate();
+  };
+  if (k < STORY_N && markSt('o' + k)){
+    if (k === 8) Kid.join(true);
+    setTimeout(() => { Cine.look.copy(e ? e.pos : player.pos).setY(2); Cine.start(k, 'o', e, after); }, 1100);
+  } else after();
 }
+// the son, once rescued: runs at Serhat's heel and throws sparks at the nearest monster
+const Kid = {c: null, pos: new THREE.Vector3(), t: 0, loading: false,
+  async join(){
+    if (this.c || this.loading || !serhatBuf) return; this.loading = true;
+    try { const c = await parseChar(serhatBuf); c.sc.scale.multiplyScalar(.56);
+      c.sc.traverse(o => { if (o.isMesh){ o.material = o.material.clone(); o.material.color = new THREE.Color(0xbfe0ff); o.material.emissive = new THREE.Color(0x0a3a4a); } });
+      this.c = c; this.pos.copy(player.pos).add(new THREE.Vector3(1, 0, 1)); c.sc.position.copy(this.pos); scene.add(c.sc); switchAct(c, 'Idle');
+      if (GFX.shadows) shadeTree(c.sc);
+    } catch(e){} this.loading = false;
+  },
+  update(dt){
+    const c = this.c; if (!c) return;
+    const yaw = player.model ? player.model.rotation.y : 0, want = tmpK.set(player.pos.x - Math.sin(yaw) * 1.4 * player.size + Math.cos(yaw) * 1.1 * player.size, 0, player.pos.z - Math.cos(yaw) * 1.4 * player.size - Math.sin(yaw) * 1.1 * player.size);
+    const d = want.distanceTo(this.pos);
+    if (d > 25) this.pos.copy(want);
+    const step = Math.min(d, (d > .35 ? player.speed * 1.15 : 0) * dt); if (d > .01) this.pos.addScaledVector(want.sub(this.pos).normalize(), step);
+    switchAct(c, step > .002 ? 'Run' : 'Idle'); c.mixer.update(dt);
+    const tgt = nearest(8, this.pos);
+    const face = tgt ? Math.atan2(tgt.pos.x - this.pos.x, tgt.pos.z - this.pos.z) : yaw;
+    c.sc.rotation.y = face; c.sc.position.copy(this.pos); c.sc.visible = !!player.model && player.model.visible;
+    this.t -= dt;
+    if (tgt && this.t <= 0){ this.t = 1.2; const from = this.pos.clone().setY(1.05), to = tgt.pos.clone().setY(tgt.spec.fly ? 1.7 : 1); bolt(from, to, 0xffd27a, .12); damage(tgt, hookHit() * .12, '#ffd27a'); }
+  },
+  reset(){ if (this.c) this.c.sc.visible = false; }
+};
+const tmpK = new THREE.Vector3();
 function clearWorld(){
   for (const e of enemies) scene.remove(e.g); enemies.length = 0;
   for (const c of corpses) scene.remove(c.g); corpses.length = 0;
@@ -1809,7 +1942,8 @@ async function startGame(){
   for (const id of ['title', 'over', 'paused']) $(id).hidden = true;
   for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = false; renderAdBtn(); $('coinTxt').textContent = '◉ ' + fmtPow(coins);
   intro = 1.4; play('Walk');
-  banner(T('islandName', {n: curIsl + 1, planet: themeOf(curIsl).name}), curIsl ? T('resumeHere') : T('startSub'), 2600); saveGame();
+  banner(curIsl >= STORY_N ? T('endlessIsl', {n: curIsl + 1}) : T('islandName', {n: curIsl + 1, planet: themeOf(curIsl).name}), curIsl ? T('resumeHere') : T('startSub'), 2600); saveGame();
+  if (curIsl >= 9 || store.get('kid', 0)) Kid.join(); setTimeout(() => { if (running) storyArrive(curIsl); }, 2700);
   setTimeout(() => { portal.visible = false; }, 1600);
 }
 // falling: back to the start of the current island, stats and weapons kept
@@ -1854,7 +1988,7 @@ const Online = (() => {
     if (!r.ok) throw Object.assign(new Error(j.error || 'NET'), {status: r.status});
     return j;
   }
-  const progressOf = s => s ? (s.isl || 0) * 1e7 + (s.eaten || 0) : -1;
+  const progressOf = s => s && s.v === 2 ? (s.isl || 0) * 1e7 + (s.eaten || 0) : -1;
   const localSave = () => ({save: store.get('save', null), coins, ups, claims: store.get('claims', {}), tx: store.get('grantedTx', [])});
   function applySave(r){
     if (!r) return false;
@@ -2516,7 +2650,7 @@ function updatePlayer(dt, t){
   setBar(meBar, player.hp / player.maxHp); meBar.quaternion.copy(camera.quaternion); meShBar.visible = !!shield; if (shield){ setBar(meShBar, shield.cur / shield.max); meShBar.quaternion.copy(camera.quaternion); }
   updateProp(dt);
   if (shield){ if (shield.wait > 0) shield.wait -= dt; else shield.cur = Math.min(shield.max, shield.cur + shield.max * .2 * dt); shieldMesh.material.opacity = Math.max(shield.cur > 0 ? .08 + .06 * Math.sin(t * 4) : 0, shieldMesh.material.opacity - dt * 1.5); shieldMesh.rotation.y += dt; }
-  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ curIsl = k; saveGame(); applyTheme(themeOf(k)); banner(T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); if (!islands[k + 1]) buildIsland(k + 1); islandVis(); renderWave(); Online.score(); }  if (++visTick % 20 === 0) islandVis(); player.root.position.copy(player.pos);
+  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ curIsl = k; saveGame(); applyTheme(themeOf(k)); banner(k >= STORY_N ? T('endlessIsl', {n: k + 1}) : T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); storyArrive(k); if (!islands[k + 1]) buildIsland(k + 1); islandVis(); renderWave(); Online.score(); }  if (++visTick % 20 === 0) islandVis(); player.root.position.copy(player.pos);
   // face toward heading, with a twist during a swing
   let target = player.face; if (player.swing > 0){ player.swing -= dt; target += Math.sin((player.swing / .22) * Math.PI) * .9; }
   const cur = player.model ? player.model.rotation.y : 0; let d = target - cur; d = Math.atan2(Math.sin(d), Math.cos(d));
@@ -2576,6 +2710,7 @@ function loop(){
   if (introSt){ updateIntro(Math.min(.05, clock.getDelta())); draw(iScene, iCam); return; }
   const raw = clock.getDelta(), dt = Math.min(.05, raw), t = clock.elapsedTime;
   portalMat.uniforms.t.value = t; gateMat.uniforms.t.value = t; lavaMat.uniforms.t.value = t; updateDust(dt, t); skyDome.position.copy(camera.position); skyObjs.position.set(camera.position.x, 0, camera.position.z); portal.rotation.y = Math.sin(t * .6) * .2; portalRing.rotation.z += dt * .8;
+  if (Cine.on){ Cine.update(dt, Math.min(.5, raw)); skyDome.position.copy(camera.position); windU.value = t; draw(scene, camera); return; }
   if (panelOpen){}
   else if (mapOpen){ mapT -= dt; if (mapT <= 0){ drawMap($('bigC'), true); mapT = .2; } }
   else if (running && !paused){
@@ -2583,7 +2718,7 @@ function loop(){
     mapT -= dt; if (mapT <= 0){ drawMap($('miniC'), false); mapT = .15; }
     const p0 = P ? performance.now() : 0;
     visT -= dt; if (visT <= 0){ visT = .3; islandVis(); }
-    updatePlayer(dt, t); updateHook(dt); Throw.update(dt); Evo.update(dt, t); useWeapons(dt); updateEnemies(dt, t); updateFx(dt, t);
+    updatePlayer(dt, t); updateHook(dt); Kid.update(dt); Throw.update(dt); Evo.update(dt, t); useWeapons(dt); updateEnemies(dt, t); updateFx(dt, t);
     const p1 = P ? performance.now() : 0; let hud = 0;
     hudT -= dt; if (hudT <= 0){ hudTick(); refreshPowers(); hudT = .08; hud = 1; if (saveSoon){ saveSoon = false; saveGame(); hud = 2; } }
     if (P) P.cur = {map: p0 - pm, upd: p1 - p0, hud: performance.now() - p1, h: hud};
@@ -2865,11 +3000,12 @@ function attach(model){
   player.model = model; player.root.add(model); Evo.setup(model);
   setProp('pense'); wearGear(); play('Idle', 0);
   const b = $('startBtn'); b.disabled = false; const sv = store.get('save', null); b.textContent = sv && sv.isl ? T('continueIsl', {n: sv.isl + 1}) : T('enterPortal'); $('loadTxt').hidden = true;
+  if (store.get('resetNote', 0)){ store.set('resetNote', 0); setTimeout(() => showStory('Electric Hunter', T('ch1'), T('resetNote')), 600); }
 }
 player.regen = .6; buildIsland(0); applyTheme(themeOf(0)); player.pos.copy(spawnPoint(0)); portal.position.set(player.pos.x, 1.8, player.pos.z - 2.5);
 renderSlots(); renderStats();
 // store screenshots: ?shot=1 exposes a small handle so the capture script can stage scenes
-if (new URLSearchParams(location.search).has('shot')) window.__eh = {renderer, Perf, GFX, scene, camera, get composer(){ return composer; }, get bloom(){ return bloom; }, draw, player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, Evo, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
+if (new URLSearchParams(location.search).has('shot')) window.__eh = {Kid, Cine, storyArrive, get curIslN(){ return curIsl; }, renderer, Perf, GFX, scene, camera, get composer(){ return composer; }, get bloom(){ return bloom; }, draw, player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, Evo, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
 window.__dbg = () => ({alive: enemies.filter(e => !e.dead).length, chasing: enemies.filter(e => !e.dead && e.state === 'chase').length, corpses: corpses.length, isl: curIsl, pos: player.pos.toArray().map(v => +v.toFixed(1)), hp: Math.round(player.hp), kills: player.kills, eaten: player.eaten, hook: hook.state, gear: gear.map(g => g.id + g.lv).join(','), active});
 loop();
 Online.init(); Shop.pending(); renderAdBtn();
