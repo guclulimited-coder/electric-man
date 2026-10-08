@@ -11,7 +11,7 @@ const VENDOR = ['build/three.module.js', 'examples/jsm/loaders/GLTFLoader.js', '
   ...['CopyShader', 'LuminosityHighPassShader', 'OutputShader'].map(n => 'examples/jsm/shaders/' + n + '.js')];
 if (existsSync(out)) rmSync(out, {recursive: true});
 mkdirSync(out, {recursive: true});
-const FILES = HUNTER ? ['serhat.txt', 'logo.png', 'favicon.png', 'icon-1024.png', ...['zeynep', 'dilan', 'fahri', 'rasim', 'samet', 'cebrail', 'zulfu', 'huseyin', 'siyar'].map(n => 'boss-' + n + '.txt')] : ['engine.js', 'serhat.txt', 'zeynep.txt', 'icon-192.png', 'icon-512.png'];
+const FILES = HUNTER ? ['serhat.txt', 'creatures.bin', 'creatures.js', 'logo.png', 'favicon.png', 'icon-1024.png', ...['zeynep', 'dilan', 'fahri', 'rasim', 'samet', 'cebrail', 'zulfu', 'huseyin', 'siyar'].map(n => 'boss-' + n + '.txt')] : ['engine.js', 'serhat.txt', 'zeynep.txt', 'icon-192.png', 'icon-512.png'];
 for (const f of FILES) cpSync(join(root, SRC, f), join(out, f));
 for (const d of HUNTER ? ['i18n'] : ['i18n', 'avatars']) cpSync(join(root, SRC, d), join(out, d), {recursive: true});
 for (const f of VENDOR){

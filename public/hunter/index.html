@@ -277,6 +277,7 @@ import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/
 import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/OutputPass.js';
+import { loadCreatures } from './creatures.js';
 
 const $ = id => document.getElementById(id);
 /* native shell bridge: the Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise} */
@@ -769,7 +770,46 @@ const sph = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
 const tube = (pts, r, seg = 12) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new V3(...p))), seg, r, 7);
 
+// sculpted creatures (tools/creatures): loaded once; until then (or if it fails) the simple procedural bodies are used
+let CREA = null;
+const creaReady = loadCreatures(THREE, 'creatures.bin').then(c => { CREA = c; }).catch(err => console.warn('canavar modelleri yüklenemedi', err));
+// the world is only built once the creatures are in (or after 10 s, falling back to the simple bodies)
+const creaOrTimeout = () => Promise.race([creaReady, new Promise(r => setTimeout(r, 10000))]);
+function sculpted(type){
+  const M = CREA && CREA.meta[type]; if (!M) return null;
+  const body = new THREE.Group(), mat = GFX.post ? addDetail(new THREE.MeshPhysicalMaterial({vertexColors: true, roughness: .62, clearcoat: .18, clearcoatRoughness: .5, sheen: .25, sheenRoughness: .7}), 7, .35, 'sculpt')
+    : new THREE.MeshStandardMaterial({vertexColors: true, roughness: .65});
+  const geo = pt => CREA.geos[pt.idx], add = (pt, parent) => { const m = new THREE.Mesh(geo(pt), mat); parent.add(m); return m; };
+  const eyeMat = glowMat(M.eyeColor || 0xff5a1a);
+  for (const pt of M.parts) if (pt.role === 'body') add(pt, body);
+  // a random one of the species' heads, so a pack never shares one face
+  const heads = M.parts.filter(pt => pt.role === 'head'), h = heads[Math.floor(Math.random() * heads.length)];
+  let head = null, jaw = null;
+  if (h){ head = new THREE.Group(); head.position.fromArray(h.pivot); body.add(head); add(h, head);
+    for (const e of h.eyes || []){ const s = new THREE.Mesh(sph(e[3], 12, 8), eyeMat); s.position.set(e[0], e[1], e[2]); head.add(s); }
+    const j = M.parts.find(pt => pt.role === 'jaw' && (pt.variant === h.variant || pt.variant === -1));
+    if (j){ jaw = new THREE.Group(); jaw.position.set(j.pivot[0] - h.pivot[0], j.pivot[1] - h.pivot[1], j.pivot[2] - h.pivot[2]); head.add(jaw); add(j, jaw); } }
+  const legs = [], legPt = M.parts.find(pt => pt.role === 'leg');
+  if (legPt) (M.legs || []).forEach((L, i) => { const g = new THREE.Group(); g.position.fromArray(L); if (L[0] < 0) g.scale.x = -1; g.userData.ph = (i % 2 === (L[2] > 0 ? 0 : 1)) ? 0 : Math.PI; body.add(g); add(legPt, g); legs.push(g); });
+  const swing = M.parts.filter(pt => pt.role === 'tail' || pt.role === 'tentacle').map(pt => { const g = new THREE.Group(); g.position.fromArray(pt.pivot); g.userData.role = pt.role; g.userData.side = 1; body.add(g); add(pt, g); return g; });
+  // paired limbs share one sculpted mesh, mirrored for the left side
+  for (const [role, list] of [['arm', M.arms], ['wing', M.wings]]){ const pt = M.parts.find(x => x.role === role); if (pt) (list || []).forEach(L => { const g = new THREE.Group(); g.position.fromArray(L); if (L[0] < 0) g.scale.x = -1; g.userData.role = role; g.userData.side = L[0] < 0 ? -1 : 1; body.add(g); add(pt, g); swing.push(g); }); }
+  if (M.pupil){ const [x, y, z, r] = M.pupil, iris = new THREE.Mesh(sph(r, 16, 12), eyeMat); iris.position.set(x, y, z - .03); iris.scale.z = .35; body.add(iris);
+    const pup = new THREE.Mesh(sph(r * .45, 12, 8), new THREE.MeshBasicMaterial({color: 0x050005})); pup.position.set(x, y, z + .005); pup.scale.set(.55, 1.1, .3); body.add(pup); }
+  const sc = (M.scale || 1) * rand(.92, 1.1); body.scale.setScalar(sc);
+  const anim = (t, mv, e) => {
+    for (const g of legs){ const k = Math.sin(t * 13 + g.userData.ph); g.rotation.x = k * .55 * mv; g.rotation.z = Math.max(0, -k) * .25 * mv * (g.scale.x < 0 ? -1 : 1); }
+    if (head){ head.rotation.x = Math.sin(t * 2.3) * .06 - (e && e.state === 'chase' ? .08 : 0); head.rotation.y = Math.sin(t * 1.1 + 1) * .12; }
+    if (jaw){ const bite = e && e.slamT > 0 ? Math.sin((1 - e.slamT / .5) * Math.PI) : 0, angry = e && e.state === 'chase' ? .18 + Math.sin(t * 7) * .1 : .06 + Math.sin(t * 1.7) * .04; jaw.rotation.x = angry + bite * .55; }
+    for (const g of swing){ const r = g.userData.role; if (r === 'tail'){ g.rotation.y = Math.sin(t * 3.2) * .35 * (.4 + mv); g.rotation.x = Math.sin(t * 2) * .05; }
+      else if (r === 'wing') g.rotation.z = Math.sin(t * 11) * .7 * g.userData.side;
+      else if (r === 'arm'){ const slam = e && e.slamT > 0 ? Math.sin((1 - e.slamT / .5) * Math.PI) : 0; g.rotation.x = Math.sin(t * 6.5 + (g.userData.side > 0 ? 0 : Math.PI)) * .35 * mv - slam * 1.1; g.rotation.y = Math.sin(t * 2 + g.userData.side) * .08; }
+      else { g.rotation.x = Math.sin(t * 2.6 + g.position.x * 3) * .3; g.rotation.z = Math.cos(t * 2.1 + g.position.z * 3) * .25; } }
+  };
+  return {body, mat, anim};
+}
 function buildSpecies(type){
+  if (GFX.post || GFX.tier === 'low'){ const sc = sculpted(type); if (sc) return sc; }
   const body = new THREE.Group(); const mat = GFX.post ? addDetail(new THREE.MeshPhysicalMaterial({vertexColors: true, roughness: .5, metalness: 0, clearcoat: .45, clearcoatRoughness: .4, sheen: .4, sheenRoughness: .6, sheenColor: new THREE.Color(0xffffff)}), 3.2, .55, 'skin') : new THREE.MeshStandardMaterial({vertexColors: true, roughness: .55, metalness: .05});
   const limbs = []; let anim = null;
   if (type === 'surungen'){
@@ -1704,7 +1744,8 @@ function resetGame(){
   hook.state = 'idle'; cable.visible = hookHead.visible = false; $('bossBar').hidden = true;
   renderSlots(); renderStats(); renderWave();
 }
-function startGame(){
+async function startGame(){
+  if (!CREA){ $('startBtn').disabled = true; await creaOrTimeout(); $('startBtn').disabled = false; }
   audio(); resetGame(); running = true; paused = false; onTitle = false; meBar.visible = true;
   for (const id of ['title', 'over', 'paused']) $(id).hidden = true;
   for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = false; renderAdBtn(); $('coinTxt').textContent = '◉ ' + fmtPow(coins);
@@ -2350,7 +2391,7 @@ function updateEnemies(dt, t){
   // visuals
   for (const e of enemies){
     if (e.dead) continue;
-    e.g.visible = Math.abs(e.pos.z - player.pos.z) < 48;
+    { const dx = e.pos.x - player.pos.x, dz = e.pos.z - player.pos.z; e.g.visible = dx * dx + dz * dz < 42 * 42; }   // beyond the fog: not drawn
     e.g.position.set(e.pos.x, 0, e.pos.z);
     if (e.look !== undefined){ let d = e.look - e.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); e.g.rotation.y += d * Math.min(1, dt * 6); }
     const bob = e.spec.tree ? e.perch + Math.sin(t * 4 + e.phase) * .12 : e.spec.fly ? Math.sin(t * 3 + e.phase) * .25 : Math.abs(Math.sin(t * (e.type === 'surungen' ? 12 : 5) + e.phase)) * (e.type === 'tank' ? .12 : .08);
