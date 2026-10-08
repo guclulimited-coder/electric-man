@@ -122,7 +122,7 @@ select.lang option{background:#1d1233;color:#efe9ff}
 .slot.on{background:rgba(57,230,255,.22);box-shadow:inset 0 0 0 2px var(--volt),0 0 16px rgba(57,230,255,.35)}
 .slot:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .slot .key{display:block;font-size:9px;color:var(--muted);margin-top:2px}
-.hook{position:fixed;right:calc(max(16px,env(safe-area-inset-right,0px)) + 6px);bottom:calc(env(safe-area-inset-bottom,0px) + 70px);width:92px;height:92px;border-radius:50%;border:0;background:radial-gradient(circle at 40% 35%,#5ff0ff,#0b7d99 70%);color:#06121a;font:400 15px var(--f-display);letter-spacing:.04em;box-shadow:0 0 0 3px rgba(57,230,255,.35),0 0 28px rgba(57,230,255,.45);touch-action:none}
+.hook{--cd:0%;z-index:6;position:fixed;right:calc(max(16px,env(safe-area-inset-right,0px)) + 6px);bottom:calc(env(safe-area-inset-bottom,0px) + 70px);width:92px;height:92px;border-radius:50%;border:0;background:radial-gradient(circle at 40% 35%,#5ff0ff,#0b7d99 70%);color:#06121a;font:400 15px var(--f-display);letter-spacing:.04em;box-shadow:0 0 0 3px rgba(57,230,255,.35),0 0 28px rgba(57,230,255,.45);touch-action:none}
 .hook:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
 .hook svg{position:absolute;inset:-6px;width:104px;height:104px;transform:rotate(-90deg);pointer-events:none}
 .hook.cool{filter:grayscale(.75) brightness(.7)}
@@ -168,6 +168,8 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 @media (prefers-reduced-motion:reduce){.banner{transition:none}}
 
 [data-lg-code]{flex-shrink:0;max-width:120px;overflow-wrap:anywhere}.lrow [data-lg-code]{grid-column:2/-1;justify-self:end}
+.hook::after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(6,18,26,.62) var(--cd),transparent 0);pointer-events:none}
+.hook span{position:relative;z-index:1}
 </style>
 
 <div id="stage"></div>
@@ -189,6 +191,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 </div>
 <div class="bossbar" id="bossBar" hidden><div class="name" id="bossName"></div><div class="bar"><div class="fill" id="bossFill"></div></div></div>
 <div class="slots" id="slots" hidden></div>
+<button class="hook" id="hookBtn" type="button" hidden><span id="hookTxt" data-t="hookBtn">KANCA</span></button>
 <button class="mini" id="mini" type="button" hidden aria-label="Haritayı büyüt" data-ta="mapBig"><canvas id="miniC" width="176" height="176"></canvas></button>
 <div class="sidebtns" id="sidebtns" hidden><button class="sbtn" id="profBtn" type="button"><i class="dot" id="profDot" hidden></i><b data-t="sbProfile">PROFİL</b><span data-t="sbProfileSub">Lig · Arkadaş</span></button><button class="sbtn" id="bagBtn" type="button"><b data-t="sbBag">ÇANTA</b><span data-t="sbBagSub">Aletler</span></button><button class="sbtn" id="shopBtn" type="button"><b data-t="sbShop">MAĞAZA</b><span data-t="sbShopSub">Güçlendir</span></button><button class="sbtn" id="adBtn" type="button"><b data-t="sbAd">REKLAM</b><span id="adBtnTxt">+100 jeton</span></button></div>
 <div class="panel" id="bag" hidden><div class="box">
@@ -335,7 +338,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x120a1f);
 scene.fog = new THREE.Fog(0x120a1f, 26, 62);
 const camera = new THREE.PerspectiveCamera(48, 1, .1, 900);
-const CAM_OFF = new THREE.Vector3(0, 12.5, 8.2);
+const CAM_OFF = new THREE.Vector3(0, 8.6, 10.4); // low over-the-shoulder chase view (was a steep top-down view)
 function resize(){
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h); if (composer) composer.setSize(w, h); camera.aspect = w / h;
@@ -607,6 +610,36 @@ function islandSurface(isl, th){
   if (th.lakes){ for (let i = 0; i < 3; i++){ const a = Math.random() * 7, r = rand(12, R - 5); const lake = new THREE.Mesh(new THREE.CircleGeometry(rand(2, 3.5), 32), new THREE.MeshStandardMaterial({color: 0x120a04, roughness: .05, metalness: .6})); lake.rotation.x = -Math.PI / 2; lake.position.set(c.x + Math.cos(a) * r, .03, c.z + Math.sin(a) * r); lake.scale.set(1.4, 1, 1); g.add(lake); } }
   if (th.id === 'europa' || th.id === 'saturn' || th.id === 'neptun'){ const sp = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 3, 6), new THREE.MeshStandardMaterial({color: th.floraCol[0], roughness: .2, metalness: .1, transparent: true, opacity: .85, emissive: th.floraCol[0], emissiveIntensity: .15}), 30);
     for (let i = 0; i < 30; i++){ const a = Math.random() * 7, r = rand(R - 4, R - .5); dummy.position.set(c.x + Math.cos(a) * r, 1, c.z + Math.sin(a) * r); if (Math.abs(dummy.position.x - c.x) < 4) dummy.position.x += 6; dummy.rotation.set(rand(-.3, .3), 0, rand(-.3, .3)); const sc = rand(.5, 1.6); dummy.scale.set(sc, sc * rand(.8, 1.8), sc); dummy.updateMatrix(); sp.setMatrixAt(i, dummy.matrix); } g.add(sp); }
+}
+// landmarks: bleached bones of giant beasts and the ruins of whoever lived here before
+const boneMat = addDetail(new THREE.MeshStandardMaterial({color: 0xd9ccb4, roughness: .8, metalness: 0}), 2.2, .7, 'bone');
+const PROP_GEO = {
+  rib: (() => { const parts = [new THREE.CylinderGeometry(.22, .3, 7, 10).rotateX(Math.PI / 2)];
+    for (let i = 0; i < 6; i++){ const z = -2.6 + i * 1.05, r = 2.3 - Math.abs(i - 2.2) * .28; for (const sx of [-1, 1]){ const a = new THREE.TorusGeometry(r, .13 - i * .008, 6, 18, Math.PI * .62); a.rotateY(Math.PI / 2); a.rotateX(-Math.PI / 2); if (sx < 0) a.rotateZ(Math.PI); a.rotateY(0); a.translate(0, 0, z); parts.push(a); } }
+    const g = mergeGeometries(parts.map(q => { q.deleteAttribute('uv'); return q; })); g.translate(0, .25, 0); return g; })(),
+  skull: (() => { const parts = [new THREE.SphereGeometry(1, 16, 12).scale(1.1, .9, 1.5), new THREE.BoxGeometry(1.4, .35, 1.6).translate(0, -.75, .9),
+    new THREE.ConeGeometry(.25, 2.2, 8).rotateZ(.9).translate(1.4, .8, -.2), new THREE.ConeGeometry(.25, 2.2, 8).rotateZ(-.9).translate(-1.4, .8, -.2)];
+    const g = mergeGeometries(parts.map(q => { q.deleteAttribute('uv'); return q.index ? q.toNonIndexed() : q; })); g.translate(0, .6, 0); return g; })(),
+  pillar: new THREE.CylinderGeometry(.55, .65, 5, 10, 4).translate(0, 2.5, 0),
+  block: new THREE.BoxGeometry(1.3, .8, 1.1, 2, 2, 2).translate(0, .4, 0)
+};
+const eyeHoleMat = new THREE.MeshBasicMaterial({color: 0x050307});
+function islandProps(isl, th){
+  const c = isl.c, g = isl.g, ruin = rockMat(new THREE.Color(th.rock2).lerp(new THREE.Color(0x9a9088), .35).getHex(), .9);
+  const spots = []; const free = (x, z) => Math.abs(x) > 5.5 && spots.every(([a, b]) => Math.hypot(a - x, b - z) > 9);
+  for (let n = 0, tries = 0; n < 6 && tries < 60; tries++){
+    const a = Math.random() * Math.PI * 2, r = rand(23, 27.5), x = Math.cos(a) * r, z = Math.sin(a) * r; if (!free(x, z)) continue; spots.push([x, z]);
+    const grp = new THREE.Group(); grp.position.set(c.x + x, 0, c.z + z); grp.rotation.y = Math.atan2(-x, -z) + rand(-.6, .6);
+    const kind = n % 3;
+    if (kind === 0){ const rib = new THREE.Mesh(PROP_GEO.rib, boneMat); rib.rotation.z = rand(-.15, .15); rib.scale.setScalar(rand(.9, 1.3)); grp.add(rib); }
+    else if (kind === 1){ const sk = new THREE.Mesh(PROP_GEO.skull, boneMat); sk.scale.setScalar(rand(1.1, 1.6)); sk.rotation.set(rand(-.2, .1), 0, rand(-.2, .2)); grp.add(sk);
+      for (const sx of [-1, 1]){ const eh = new THREE.Mesh(new THREE.SphereGeometry(.28, 10, 8), eyeHoleMat); eh.position.set(sx * .45 * sk.scale.x, .85 * sk.scale.y, 1.2 * sk.scale.z); grp.add(eh); } }
+    else { // broken colonnade
+      for (let i = 0; i < 3; i++){ const pl = new THREE.Mesh(PROP_GEO.pillar, ruin); pl.position.set((i - 1) * 2.4, 0, rand(-.3, .3)); pl.scale.y = i === 1 ? 1 : rand(.35, .8); pl.rotation.set(rand(-.06, .06), rand(0, 3), rand(-.08, .08)); grp.add(pl); }
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(3.4, .55, 1.1), ruin); lintel.position.set(-1.1, 4.9, 0); lintel.rotation.z = -.12; grp.add(lintel);
+      for (let i = 0; i < 4; i++){ const bl = new THREE.Mesh(PROP_GEO.block, ruin); bl.position.set(rand(-3, 3), 0, rand(-2, 2)); bl.rotation.set(rand(-.3, .3), rand(0, 3), rand(-.3, .3)); bl.scale.setScalar(rand(.6, 1.1)); grp.add(bl); } }
+    g.add(grp); n++;
+  }
 }
 // worn paths: from the portal to every camp, the commanders, the boss arena and the bridge
 const PATH_NET = [
@@ -892,6 +925,7 @@ function buildIsland(k){
   isl.arena = {c: ac, r: 9};
   const bossCamp = addCamp(isl, ac.x, ac.z, 9, [{type: 'boss'}], true);
   isl.boss = bossCamp.members[0]; dressBoss(isl.boss, CAST[k % CAST.length]);
+  islandProps(isl, th);
   shadeTree(g, true, true); if (isl.top) isl.top.castShadow = false;
   islandPaths(isl, th);
   groundCover(isl, th);
@@ -978,7 +1012,7 @@ const sfx = {
 const player = {
   root: new THREE.Group(), model: null, mixer: null, acts: {}, cur: null, hand: null,
   pos: new THREE.Vector3(0, 0, 0), face: 0, vel: new THREE.Vector3(),
-  hp: 100, maxHp: 100, dmg: 1, speed: 5.2, armor: 0, rate: 1, inv: 0, swing: 0, eaten: 0, kills: 0, attacking: 0, aimFace: 0
+  hp: 100, maxHp: 100, dmg: 1, speed: 5.2, armor: 0, rate: 1, inv: 0, swing: 0, eaten: 0, kills: 0, attacking: 0, aimFace: 0, size: 1
 };
 scene.add(player.root);
 const blob = (r, o = .45) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 20), new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: o, depthWrite: false})); m.rotation.x = -Math.PI / 2; m.position.y = .02; m.visible = !GFX.shadows; return m; };
@@ -1540,6 +1574,56 @@ function updateHook(dt){
   hookHead.position.copy(hook.tip); hookHead.lookAt(hook.tip.clone().add(hook.dir)); hookHead.rotateX(Math.PI / 2);
   if (Math.random() < .3) bolt(origin, hook.tip, 0x9ff6ff, .06);
 }
+// ---------------------------------------------------------------- the thrown hook: grab a live monster and yank it in, or pull Serhat onto a big one
+const tcable = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, 1, 6, 1, true), new THREE.MeshBasicMaterial({color: 0x9ff6ff})); tcable.visible = false; scene.add(tcable);
+const thead = hookHead.clone(); thead.visible = false; scene.add(thead);
+const Throw = {state: 'idle', cd: 0, target: null, tip: new THREE.Vector3(), len: 0, dir: new THREE.Vector3(), range: 15,
+  fire(){
+    if (!running || paused || this.state !== 'idle' || this.cd > 0) return;
+    let best = null, bs = -1e9; const fx = Math.sin(player.face), fz = Math.cos(player.face), R = this.range * (.85 + player.size * .15);
+    for (const e of enemies){ if (e.dead || e.spec.tree || !e.g.visible) continue; const dx = e.pos.x - player.pos.x, dz = e.pos.z - player.pos.z, d = Math.hypot(dx, dz); if (d > R || d < 1) continue;
+      const score = (dx * fx + dz * fz) / d * 6 - d * .35 + (e.state === 'chase' ? 1 : 0); if (score > bs){ bs = score; best = e; } }
+    this.dir.set(fx, 0, fz); this.target = best; this.len = 0; this.state = 'out'; this.cd = 2.2; sfx.zap(); player.swing = .22;
+    if (best){ this.dir.set(best.pos.x - player.pos.x, 0, best.pos.z - player.pos.z).normalize(); player.face = Math.atan2(this.dir.x, this.dir.z); }
+  },
+  update(dt){
+    this.cd = Math.max(0, this.cd - dt); const b = $('hookBtn'); if (b) b.style.setProperty('--cd', (this.cd / 2.2 * 100).toFixed(0) + '%');
+    if (this.state === 'idle'){ tcable.visible = thead.visible = false; return; }
+    const o = new THREE.Vector3(player.pos.x, 1.3 * player.size, player.pos.z), e = this.target;
+    if (e && (e.dead || !enemies.includes(e))){ this.state = 'back'; e.hooked = false; }
+    if (this.state === 'out'){
+      this.len += 55 * dt; const dist = e ? Math.hypot(e.pos.x - o.x, e.pos.z - o.z) : this.range;
+      this.tip.copy(o).addScaledVector(this.dir, Math.min(this.len, dist)); if (e) this.tip.y = 1;
+      if (this.len >= dist){
+        if (!e){ this.state = 'back'; }
+        else { const heavy = e.spec.boss || e.r > 1.3 || enemyPower(e) > playerPower() * 1.5; this.state = heavy ? 'self' : 'yank'; e.hooked = !heavy; e.stun = Math.max(e.stun, heavy ? .4 : 1.6); bolt(o, this.tip); sfx.hit(); shake(.15);
+          if (e.state === 'patrol') aggroCamp(e.camp); }
+      }
+    } else if (this.state === 'yank'){
+      // drag the monster to Serhat's feet; it arrives stunned and takes a heavy blow
+      const d = new THREE.Vector3(o.x - e.pos.x, 0, o.z - e.pos.z), dl = d.length(), stop = e.r + .9 * player.size;
+      e.pos.addScaledVector(d.normalize(), Math.min(Math.max(0, dl - stop), 26 * dt)); e.g.position.set(e.pos.x, 0, e.pos.z); this.tip.set(e.pos.x, 1, e.pos.z);
+      if (dl - stop < .2){ e.hooked = false; e.stun = 1.4; this.state = 'idle'; damage(e, hookHit() * 1.5, '#9ff6ff'); ring(e.pos, 2.5, 0x9ff6ff, .35); }
+    } else if (this.state === 'self'){
+      // too heavy to move: the cable pulls Serhat onto it and he lands with a slam
+      const d = new THREE.Vector3(e.pos.x - player.pos.x, 0, e.pos.z - player.pos.z), dl = d.length(), stop = e.r + .9 * player.size;
+      if (dl - stop > .2){ const step = Math.min(dl - stop, 24 * dt); const nx = player.pos.x + d.x / dl * step, nz = player.pos.z + d.z / dl * step; if (walkable(nx, nz)){ player.pos.x = nx; player.pos.z = nz; } else this.state = 'back'; }
+      else { this.state = 'idle'; damage(e, hookHit() * 2, '#9ff6ff'); ring(player.pos, 3.5 * player.size, 0x9ff6ff, .4); shake(.35); player.inv = Math.max(player.inv, .35); }
+      this.tip.set(e.pos.x, 1.4, e.pos.z);
+    } else if (this.state === 'back'){
+      this.len -= 70 * dt; this.tip.copy(o).addScaledVector(this.dir, Math.max(0, this.len)); if (this.len <= 0) this.state = 'idle';
+    }
+    if (this.state === 'idle'){ tcable.visible = thead.visible = false; return; }
+    tcable.visible = thead.visible = true; const len = o.distanceTo(this.tip);
+    tcable.position.copy(o).add(this.tip).multiplyScalar(.5); tcable.scale.set(1, Math.max(.01, len), 1); tcable.lookAt(this.tip); tcable.rotateX(Math.PI / 2);
+    thead.position.copy(this.tip); thead.lookAt(this.tip.clone().add(this.dir)); thead.rotateX(Math.PI / 2); thead.scale.setScalar(player.size);
+    if (Math.random() < .25) bolt(o, this.tip, 0x9ff6ff, .05);
+  }
+};
+// a hook strike is worth about two seconds of all equipped tools
+function hookHit(){ let dps = 0; for (const w of gear) dps += weaponDmg(w) / weaponCd(w); return Math.max(8, dps * 2); }
+$('hookBtn').addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); Throw.fire(); });
+addEventListener('keydown', ev => { if (ev.code === 'Space' || ev.code === 'KeyE') Throw.fire(); });
 let gulpT = 0;
 function devour(e){
   const msg = e.spec.gain(); player.eaten++; saveSoon = true;
@@ -1623,7 +1707,7 @@ function resetGame(){
 function startGame(){
   audio(); resetGame(); running = true; paused = false; onTitle = false; meBar.visible = true;
   for (const id of ['title', 'over', 'paused']) $(id).hidden = true;
-  for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns']) $(id).hidden = false; renderAdBtn(); $('coinTxt').textContent = '◉ ' + fmtPow(coins);
+  for (const id of ['hudTop', 'slots', 'hint', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = false; renderAdBtn(); $('coinTxt').textContent = '◉ ' + fmtPow(coins);
   intro = 1.4; play('Walk');
   banner(T('islandName', {n: curIsl + 1, planet: themeOf(curIsl).name}), curIsl ? T('resumeHere') : T('startSub'), 2600); saveGame();
   setTimeout(() => { portal.visible = false; }, 1600);
@@ -1637,14 +1721,14 @@ function respawnHere(){
   portal.visible = true; portal.position.set(player.pos.x, 1.8, player.pos.z + 2.5); ring(player.pos, 4, 0x39e6ff, .6); burst(player.pos, 24, 0x39e6ff);
   setTimeout(() => { portal.visible = false; }, 1500); banner(T('backFromPortal'), T('refilled'), 1800); saveGame();
   hook.state = 'idle'; hook.target = null; cable.visible = hookHead.visible = false;
-  running = true; $('over').hidden = true; for (const id of ['hudTop', 'slots', 'mini', 'sidebtns']) $(id).hidden = false;
+  running = true; $('over').hidden = true; for (const id of ['hudTop', 'slots', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = false;
 }
 let intro = 0;
 function gameOver(){
   running = false; sfx.boom();
   $('overEyebrow').textContent = T('islandN', {n: curIsl + 1});
   $('tKills').textContent = player.kills; $('tEat').textContent = player.eaten; $('tWave').textContent = curIsl + 1;
-  $('over').hidden = false; for (const id of ['hint', 'joy', 'mini', 'sidebtns']) $(id).hidden = true;
+  $('over').hidden = false; for (const id of ['hint', 'joy', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = true;
 }
 function togglePause(){
   if (!running) return; paused = !paused; $('paused').hidden = !paused;
@@ -2341,7 +2425,10 @@ function updatePlayer(dt, t){
   if (player.acts.Run) player.acts.Run.timeScale = .7 + player.speed / 9;
   if (player.mixer) player.mixer.update(dt);
   player.inv = Math.max(0, player.inv - dt); player.attacking -= dt;
-  if (player.chomp > 0){ player.chomp -= dt; if (player.model) player.model.scale.setScalar(1 + Math.sin(player.chomp / .25 * Math.PI) * .12); } else if (player.model) player.model.scale.setScalar(1);
+  // he grows with his power: from normal size to a towering titan (log scale so late islands stay readable)
+  const wantSize = clamp(1 + Math.log2(Math.max(1, playerPower() / 220)) * .2, 1, 2.6); player.size += (wantSize - player.size) * Math.min(1, dt * 1.5);
+  const chompK = player.chomp > 0 ? 1 + Math.sin(player.chomp / .25 * Math.PI) * .12 : 1; if (player.chomp > 0) player.chomp -= dt;
+  if (player.model) player.model.scale.setScalar(player.size * chompK); aura.scale.setScalar(player.size); meBar.position.y = 2.45 * player.size;
   aura.material.opacity = .35 + Math.sin(t * 8) * .15 + (player.inv > 0 ? .3 : 0); aura.rotation.z += dt;
   handLight.intensity = 5 + Math.sin(t * 22) * 1.5;
   if (player.model) player.model.visible = !(player.inv > 0 && Math.floor(t * 20) % 2 === 0 && hook.state !== 'reel-self');
@@ -2392,7 +2479,7 @@ function loop(){
   else if (mapOpen){ mapT -= dt; if (mapT <= 0){ drawMap($('bigC'), true); mapT = .2; } }
   else if (running && !paused){
     mapT -= dt; if (mapT <= 0){ drawMap($('miniC'), false); mapT = .15; }
-    updatePlayer(dt, t); updateHook(dt); useWeapons(dt); updateEnemies(dt, t); updateFx(dt, t);
+    updatePlayer(dt, t); updateHook(dt); Throw.update(dt); useWeapons(dt); updateEnemies(dt, t); updateFx(dt, t);
     hudT -= dt; if (hudT <= 0){ hudTick(); refreshPowers(); hudT = .08; if (saveSoon){ saveSoon = false; saveGame(); } }
   } else if (onTitle){
     // title: Serhat idles before the portal
@@ -2401,11 +2488,11 @@ function loop(){
     updateProp(dt); meBar.visible = false;
   }
   // camera
-  const focus = tmp.copy(player.pos); const want = tmp2.copy(focus).add(CAM_OFF);
+  const focus = tmp.copy(player.pos); const camK = .78 + player.size * .22; const want = tmp2.copy(focus).addScaledVector(CAM_OFF, camK);
   if (onTitle){ want.set(player.pos.x + 3.5, 3.2, player.pos.z + 7); focus.set(player.pos.x, 1.6, player.pos.z - 1); }
   camera.position.lerp(want, onTitle ? 1 : Math.min(1, dt * 6));
   if (shakeT > 0){ shakeT -= dt; camera.position.x += rand(-1, 1) * shakeA; camera.position.y += rand(-1, 1) * shakeA * .5; } else shakeA = 0;
-  camera.lookAt(focus.x, onTitle ? focus.y : 0, focus.z);
+  camera.lookAt(focus.x, onTitle ? focus.y : 1.1 * camK, onTitle ? focus.z : focus.z - 3.2 * camK);
   if (GFX.shadows){ const q = 48 / GFX.shadowSize, fx = Math.round(player.pos.x / q) * q, fz = Math.round(player.pos.z / q) * q; sun.target.position.set(fx, 0, fz); sun.position.set(fx + SUN_OFF.x, SUN_OFF.y, fz + SUN_OFF.z); }
   windU.value = t; if (Grade.pass) Grade.pass.uniforms.t.value = t % 10;
   if (running && !paused) Perf.check(dt);
@@ -2604,7 +2691,7 @@ function attach(model){
 player.regen = .6; buildIsland(0); applyTheme(themeOf(0)); player.pos.copy(spawnPoint(0)); portal.position.set(player.pos.x, 1.8, player.pos.z - 2.5);
 renderSlots(); renderStats();
 // store screenshots: ?shot=1 exposes a small handle so the capture script can stage scenes
-if (new URLSearchParams(location.search).has('shot')) window.__eh = {player, enemies, islands, corpses, startGame, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
+if (new URLSearchParams(location.search).has('shot')) window.__eh = {player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
 window.__dbg = () => ({alive: enemies.filter(e => !e.dead).length, chasing: enemies.filter(e => !e.dead && e.state === 'chase').length, corpses: corpses.length, isl: curIsl, pos: player.pos.toArray().map(v => +v.toFixed(1)), hp: Math.round(player.hp), kills: player.kills, eaten: player.eaten, hook: hook.state, gear: gear.map(g => g.id + g.lv).join(','), active});
 loop();
 Online.init(); Shop.pending(); renderAdBtn();
