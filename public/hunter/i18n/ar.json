@@ -300,5 +300,19 @@
  "tiktok": "المتابعة باستخدام TikTok",
  "ttFail": "تعذّر إكمال تسجيل الدخول عبر TikTok، حاول مرة أخرى.",
  "apple": "المتابعة باستخدام Apple",
- "weakBoss": "قوتك لا تكفي! هذه الأم تحتاج إلى ⚡{p} من القوة."
+ "weakBoss": "قوتك لا تكفي! هذه الأم تحتاج إلى ⚡{p} من القوة.",
+ "pl_pluto": "بلوتو",
+ "pl_pluto_sub": "أنهار جليد النيتروجين",
+ "pl_kepler": "كبلر-452b",
+ "pl_kepler_sub": "غابات بنفسجية",
+ "pl_enceladus": "إنسيلادوس",
+ "pl_enceladus_sub": "ينابيع جليدية",
+ "pl_trappist": "ترابيست-1e",
+ "pl_trappist_sub": "تحت قزم أحمر",
+ "pl_ceres": "سيريس",
+ "pl_ceres_sub": "بريق الملح",
+ "pl_gliese": "غليز 581",
+ "pl_gliese_sub": "عالم الكريستال",
+ "pl_cancri": "55 السرطان e",
+ "pl_cancri_sub": "ألماس وصهارة"
 }

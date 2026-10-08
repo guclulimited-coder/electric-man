@@ -300,5 +300,19 @@
  "tiktok": "TikTok के साथ जारी रखें",
  "ttFail": "TikTok साइन-इन पूरा नहीं हो सका, फिर से कोशिश करें।",
  "apple": "Apple के साथ जारी रखें",
- "weakBoss": "ताकत कम है! इस माता के लिए ⚡{p} शक्ति चाहिए।"
+ "weakBoss": "ताकत कम है! इस माता के लिए ⚡{p} शक्ति चाहिए।",
+ "pl_pluto": "प्लूटो",
+ "pl_pluto_sub": "नाइट्रोजन हिमनद",
+ "pl_kepler": "केपलर-452b",
+ "pl_kepler_sub": "बैंगनी जंगल",
+ "pl_enceladus": "एन्सेलाडस",
+ "pl_enceladus_sub": "बर्फ़ीले गीज़र",
+ "pl_trappist": "ट्रैपिस्ट-1e",
+ "pl_trappist_sub": "लाल बौने तारे के नीचे",
+ "pl_ceres": "सेरेस",
+ "pl_ceres_sub": "नमक की चमक",
+ "pl_gliese": "ग्लीज़ 581",
+ "pl_gliese_sub": "क्रिस्टल दुनिया",
+ "pl_cancri": "55 कैनक्री e",
+ "pl_cancri_sub": "हीरा और मैग्मा"
 }

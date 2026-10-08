@@ -300,5 +300,19 @@
  "tiktok": "Continuer avec TikTok",
  "ttFail": "La connexion avec TikTok n’a pas abouti. Réessaie.",
  "apple": "Continuer avec Apple",
- "weakBoss": "Pas assez fort ! Cette Mère exige ⚡{p} de puissance."
+ "weakBoss": "Pas assez fort ! Cette Mère exige ⚡{p} de puissance.",
+ "pl_pluto": "Pluton",
+ "pl_pluto_sub": "Glaciers d’azote",
+ "pl_kepler": "Kepler-452b",
+ "pl_kepler_sub": "Forêts violettes",
+ "pl_enceladus": "Encelade",
+ "pl_enceladus_sub": "Geysers de glace",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "Sous une naine rouge",
+ "pl_ceres": "Cérès",
+ "pl_ceres_sub": "Éclats de sel",
+ "pl_gliese": "Gliese 581",
+ "pl_gliese_sub": "Monde de cristal",
+ "pl_cancri": "55 Cancri e",
+ "pl_cancri_sub": "Diamant et magma"
 }

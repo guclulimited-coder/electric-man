@@ -458,7 +458,14 @@ const THEMES = [
   {id: 'jupiter', name: T('pl_jupiter'), sub: T('pl_jupiter_sub'), ground: ['#8a6a4a', '#c8a07a', '#efdcc0'], crack: null,            craters: 0,  sky: ['#0a0604', '#3a2414', '#c88a5a'], fog: 0x7a5a3e, fogNear: 24, fogFar: 70, hemi: [0xffe6c8, 0x4a2a14, 1.2], sun: [0xfff0d8, 1.6], rock: 0x6a5a50, rock2: 0xb0a090, flora: 'spindle', floraCol: [0x9a6a3a, 0xff7a4a], monTint: 0xfff0e0, dust: 0xe8c8a0, sky1: 'redspot', edge: 0xffb07a, bands: true},
   {id: 'saturn', name: T('pl_saturn'), sub: T('pl_saturn_sub'),    ground: ['#7a7060', '#b0a48a', '#e6dcc2'], crack: '#5a5040',       craters: 10, sky: ['#04030a', '#14122a', '#4a4466'], fog: 0x3a3650, fogNear: 26, fogFar: 74, hemi: [0xfff4dc, 0x2a2638, 1.2], sun: [0xfff6e0, 1.7], rock: 0x7a7060, rock2: 0xd8ccb0, flora: 'ice', floraCol: [0xe8dcc0, 0xfff6e0], monTint: 0xf8f0e0, dust: 0xf0e6cc, sky1: 'saturn', edge: 0xffe0a0},
   {id: 'neptun', name: T('pl_neptun'), sub: T('pl_neptun_sub'),            ground: ['#0e2a5a', '#1e4a8a', '#3a7ac8'], crack: '#9ff6ff',       craters: 4,  sky: ['#01020a', '#061440', '#1e4aa0'], fog: 0x0e2a6a, fogNear: 24, fogFar: 68, hemi: [0xbfe0ff, 0x061430, 1.25], sun: [0xd8ecff, 1.5], rock: 0x12305a, rock2: 0x4a8ad8, flora: 'diamond', floraCol: [0x9ff6ff, 0xffffff], monTint: 0xd8e8ff, dust: 0xbfe8ff, sky1: 'neptune', edge: 0x6fd8ff},
-  {id: 'merkur', name: T('pl_merkur'), sub: T('pl_merkur_sub'),          ground: ['#3a3836', '#5e5a56', '#8a8682'], crack: null,            craters: 40, sky: ['#000000', '#050404', '#1a1410'], fog: 0x14100c, fogNear: 30, fogFar: 80, hemi: [0xfff6e8, 0x141210, 1.0], sun: [0xffffff, 2.6], rock: 0x4a4644, rock2: 0x8a8682, flora: 'diamond', floraCol: [0xbab4ae, 0xffd27a], monTint: 0xf0ece8, dust: 0xbab4ae, sky1: 'bigsun', edge: 0xffd27a}
+  {id: 'merkur', name: T('pl_merkur'), sub: T('pl_merkur_sub'),          ground: ['#3a3836', '#5e5a56', '#8a8682'], crack: null,            craters: 40, sky: ['#000000', '#050404', '#1a1410'], fog: 0x14100c, fogNear: 30, fogFar: 80, hemi: [0xfff6e8, 0x141210, 1.0], sun: [0xffffff, 2.6], rock: 0x4a4644, rock2: 0x8a8682, flora: 'diamond', floraCol: [0xbab4ae, 0xffd27a], monTint: 0xf0ece8, dust: 0xbab4ae, sky1: 'bigsun', edge: 0xffd27a},
+  {id: 'pluto', name: T('pl_pluto'), sub: T('pl_pluto_sub'),            ground: ['#8a6f66', '#c9b0a0', '#efe2d6'], crack: '#5a4a4a',       craters: 12, sky: ['#000002', '#05060f', '#1a1a2e'], fog: 0x2a2a3a, fogNear: 26, fogFar: 74, hemi: [0xe8e0ff, 0x1a1420, 1.1], sun: [0xfff8f0, 1.2], rock: 0x6a5a58, rock2: 0xd8c8c0, flora: 'ice', floraCol: [0xf0d8e8, 0xffffff], monTint: 0xf4eaf0, dust: 0xf0e6f0, sky1: 'moons', edge: 0xffd0e0},
+  {id: 'kepler', name: T('pl_kepler'), sub: T('pl_kepler_sub'),          ground: ['#1e2a14', '#3a4a20', '#6a7a34'], crack: null,            craters: 0,  sky: ['#0a1a2a', '#2a5a7a', '#a8d0c8'], fog: 0x4a7a70, fogNear: 18, fogFar: 58, hemi: [0xd8ffe8, 0x1a2a10, 1.25], sun: [0xfff0d0, 1.7], rock: 0x3a3a2a, rock2: 0x5a5a40, flora: 'coral', floraCol: [0x6a2a8a, 0xd06aff], monTint: 0xe8ffe8, dust: 0xd0ffa0, sky1: 'moons', edge: 0xb06aff},
+  {id: 'enceladus', name: T('pl_enceladus'), sub: T('pl_enceladus_sub'), ground: ['#9ab8d0', '#d8ecf8', '#ffffff'], crack: '#3a8ad8',       craters: 5,  sky: ['#01030a', '#081428', '#2a4a6a'], fog: 0x2a4a68, fogNear: 26, fogFar: 74, hemi: [0xe0f4ff, 0x1a3050, 1.3], sun: [0xf4faff, 1.6], rock: 0x8aa8c0, rock2: 0xeaf6ff, flora: 'diamond', floraCol: [0xaee8ff, 0xffffff], monTint: 0xe8f4ff, dust: 0xffffff, sky1: 'saturn', edge: 0xaee8ff},
+  {id: 'trappist', name: T('pl_trappist'), sub: T('pl_trappist_sub'),    ground: ['#2a1a2a', '#4a2e3a', '#7a4a52'], crack: '#ff4a6a',       craters: 8,  sky: ['#05010a', '#2a0a1a', '#8a2a3a'], fog: 0x5a1a2a, fogNear: 22, fogFar: 64, hemi: [0xffb0b0, 0x2a0a14, 1.1], sun: [0xff8a6a, 1.6], rock: 0x3a2228, rock2: 0x6a3a44, flora: 'spindle', floraCol: [0x4a1a3a, 0xff4a8a], monTint: 0xffe0e8, dust: 0xff8aa0, sky1: 'bigsun', edge: 0xff4a6a},
+  {id: 'ceres', name: T('pl_ceres'), sub: T('pl_ceres_sub'),             ground: ['#2e2c2a', '#4e4a46', '#76706a'], crack: '#e8f0ff',       craters: 34, sky: ['#000000', '#040404', '#141414'], fog: 0x101010, fogNear: 30, fogFar: 80, hemi: [0xfffaf0, 0x121212, 1.0], sun: [0xffffff, 2.2], rock: 0x3a3836, rock2: 0x6a6662, flora: 'diamond', floraCol: [0xe8f4ff, 0xffffff], monTint: 0xf0f0f0, dust: 0xdcdcdc, sky1: 'moons', edge: 0xe8f4ff},
+  {id: 'gliese', name: T('pl_gliese'), sub: T('pl_gliese_sub'),          ground: ['#1a2a3a', '#2a5a6a', '#4a9aa8'], crack: '#b0ffff',       craters: 3,  sky: ['#020814', '#0a2a3a', '#3a8a9a'], fog: 0x1a4a5a, fogNear: 24, fogFar: 70, hemi: [0xc0ffff, 0x0a1a2a, 1.3], sun: [0xe0ffff, 1.6], rock: 0x1a3a4a, rock2: 0x6ad8e8, flora: 'diamond', floraCol: [0x6affff, 0xffffff], monTint: 0xe0ffff, dust: 0x9affff, sky1: 'neptune', edge: 0x6affff},
+  {id: 'cancri', name: T('pl_cancri'), sub: T('pl_cancri_sub'),          ground: ['#120808', '#2a1410', '#4a2418'], crack: '#ff7a1a',       craters: 1,  sky: ['#0a0000', '#3a0a04', '#c04010'], fog: 0x5a1408, fogNear: 16, fogFar: 52, hemi: [0xffa070, 0x200400, 1.1], sun: [0xffb070, 1.5], rock: 0x1a0e0c, rock2: 0x3a1e18, flora: 'diamond', floraCol: [0xffffff, 0xffa040], monTint: 0xffd8c0, dust: 0xff7a2a, sky1: 'bigsun', edge: 0xff5a10, lava: true}
 ];
 const themeOf = k => THEMES[k % THEMES.length];
 const texCache = {};
@@ -601,6 +608,49 @@ function islandSurface(isl, th){
   if (th.id === 'europa' || th.id === 'saturn' || th.id === 'neptun'){ const sp = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 3, 6), new THREE.MeshStandardMaterial({color: th.floraCol[0], roughness: .2, metalness: .1, transparent: true, opacity: .85, emissive: th.floraCol[0], emissiveIntensity: .15}), 30);
     for (let i = 0; i < 30; i++){ const a = Math.random() * 7, r = rand(R - 4, R - .5); dummy.position.set(c.x + Math.cos(a) * r, 1, c.z + Math.sin(a) * r); if (Math.abs(dummy.position.x - c.x) < 4) dummy.position.x += 6; dummy.rotation.set(rand(-.3, .3), 0, rand(-.3, .3)); const sc = rand(.5, 1.6); dummy.scale.set(sc, sc * rand(.8, 1.8), sc); dummy.updateMatrix(); sp.setMatrixAt(i, dummy.matrix); } g.add(sp); }
 }
+// worn paths: from the portal to every camp, the commanders, the boss arena and the bridge
+const PATH_NET = [
+  [[0, 25], [.6, 18], [-.4, 10], [0, 4], [.5, -4], [0, -10], [0, -16]],
+  [[.4, 15], [-5, 13], [-11, 10.5], [-15, 9]], [[.4, 15], [5, 13.5], [11, 10], [15, 9]],
+  [[0, 4], [-6, 2], [-12, -1], [-17, -4]], [[0, 4], [6, 1.5], [12, -1.5], [17, -4]],
+  [[0, -8], [-4, -10.5], [-8, -13]], [[0, -8], [4, -10], [8, -13]],
+  [[0, -28], [.3, -31]]
+];
+const pathTexCache = {};
+function pathTexture(th){
+  if (pathTexCache[th.id]) return pathTexCache[th.id];
+  const W = 64, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), img = g.createImageData(W, H);
+  const base = C3(th.ground[1]).lerp(C3(th.ground[2]), .4).multiplyScalar(.85).convertLinearToSRGB(); // canvas pixels are sRGB
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+    const u = x / W, edge = Math.min(u, 1 - u) * 2, n = fbmT(x / 16, y / 16, 4, 4), stone = hash2(Math.floor(x / 3), Math.floor(y / 3)) > .93 ? .25 : 0;
+    const rut = Math.exp(-Math.pow((u - .32) / .06, 2)) * .1 + Math.exp(-Math.pow((u - .68) / .06, 2)) * .1;
+    const k = .78 + n * .35 + stone - rut, i = (y * W + x) * 4;
+    img.data[i] = Math.min(255, base.r * k * 255); img.data[i + 1] = Math.min(255, base.g * k * 255); img.data[i + 2] = Math.min(255, base.b * k * 255);
+    img.data[i + 3] = Math.max(0, Math.min(255, (edge * 1.6 - .15 + (n - .5) * .9) * 255));
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return pathTexCache[th.id] = t;
+}
+function islandPaths(isl, th){
+  const c = isl.c, mat = new THREE.MeshStandardMaterial({map: pathTexture(th), transparent: true, depthWrite: false, roughness: 1, side: THREE.DoubleSide});
+  isl.paths = [];
+  for (const pts of PATH_NET){
+    const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(c.x + x + rand(-.4, .4), 0, c.z + z)));
+    const n = Math.max(8, Math.round(curve.getLength() * 1.5)), pos = [], uv = [], idx = []; let len = 0, prev = null;
+    for (let i = 0; i <= n; i++){
+      const p = curve.getPoint(i / n), tg = curve.getTangent(i / n), w = 1.05 + fbm(p.x * .3, p.z * .3, 2) * .7;
+      if (prev) len += p.distanceTo(prev); prev = p;
+      const nx = -tg.z, nz = tg.x;
+      pos.push(p.x + nx * w, .05, p.z + nz * w, p.x - nx * w, .05, p.z - nz * w); uv.push(0, len / 4, 1, len / 4);
+      if (i){ const a = (i - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+      isl.paths.push(p.x, p.z);
+    }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat); m.receiveShadow = GFX.shadows; m.renderOrder = 1; isl.g.add(m);
+  }
+}
+const nearPath = (isl, x, z, r) => { const p = isl.paths; if (!p) return false; for (let i = 0; i < p.length; i += 2){ const dx = p[i] - x, dz = p[i + 1] - z; if (dx * dx + dz * dz < r * r) return true; } return false; };
 // ground cover: thousands of instanced alien moss/grass tufts that sway in the wind (skipped on the low tier)
 const windU = {value: 0};
 const tuftGeo = (() => { const parts = [];
@@ -627,7 +677,7 @@ function groundCover(isl, th){
   for (let i = 0; i < n * 3 && k < n; i++){
     // clumped: noise decides where moss grows, paths and camp centres stay mostly bare
     const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * (ISL_R - 1.2), x = Math.cos(a) * r, z = Math.sin(a) * r;
-    if (fbm(x * .09 + isl.k * 3, z * .09, 3) < .48 || (Math.abs(x) < 2.6 && z < -6)) continue;
+    if (fbm(x * .09 + isl.k * 3, z * .09, 3) < .48 || nearPath(isl, c.x + x, c.z + z, 1.7)) continue;
     dummy.position.set(c.x + x, 0, c.z + z); dummy.rotation.set(0, Math.random() * 7, 0); const sc = rand(.55, 1.35); dummy.scale.set(sc, sc * rand(.7, 1.4), sc); dummy.updateMatrix(); m.setMatrixAt(k++, dummy.matrix);
   }
   m.count = k; m.receiveShadow = GFX.shadows; isl.g.add(m);
@@ -751,6 +801,37 @@ function buildSpecies(type){
     const tGeo = cached('tentacle', () => fuse([part(tube([[0, 0, 0], [.08, -.45, 0], [-.06, -.9, 0], [.05, -1.35, 0]], .045, 14), RIM)]));
     for (let i = 0; i < 7; i++){ const a = i / 7 * Math.PI * 2; const tg = inked(tGeo, mat); tg.position.set(Math.cos(a) * .5, 1.72, Math.sin(a) * .5); body.add(tg); limbs.push(tg); }
     anim = (t, mv) => { limbs.forEach((tg, i) => { tg.rotation.x = Math.sin(t * 3 + i) * .35; tg.rotation.z = Math.cos(t * 2.4 + i * 1.3) * .3; }); bell.scale.set(1 + Math.sin(t * 3) * .06, 1 - Math.sin(t * 3) * .06, 1 + Math.sin(t * 3) * .06); };
+  } else if (type === 'akrep'){
+    // venom scorpion: armoured segments, big pincers, a glowing stinger arched over its back
+    const MAIN = 0x2c3a1c, PLATE = 0x56702a, DARK = 0x141a0c, VENOM = 0xd4ff3a;
+    const geo = cached('scorp', () => { const p = [part(sph(.48, 18, 14), MAIN, 0, .55, .25, 0, 0, 0, 1, .55, 1.25)];
+      for (let i = 0; i < 4; i++) p.push(part(sph(.4 - i * .04, 16, 10), i % 2 ? PLATE : MAIN, 0, .58, -.3 - i * .3, 0, 0, 0, 1.05, .5, .8));
+      p.push(part(sph(.26, 14, 10), PLATE, 0, .62, .82, 0, 0, 0, 1, .6, .9));
+      for (const sx of [-1, 1]){ p.push(part(cyl(.07, .06, .55), MAIN, sx * .42, .55, .75, Math.PI / 2, 0, sx * .5)); p.push(part(sph(.2, 12, 10), PLATE, sx * .62, .55, 1.12, 0, 0, 0, 1.3, .8, 1.6));
+        p.push(part(new THREE.ConeGeometry(.07, .4, 6), DARK, sx * .55, .55, 1.42, Math.PI / 2, 0, sx * .2)); p.push(part(new THREE.ConeGeometry(.07, .4, 6), DARK, sx * .72, .55, 1.4, Math.PI / 2, 0, -sx * .25)); }
+      return fuse(p); });
+    body.add(inked(geo, mat));
+    const tailGeo = cached('scorpTail', () => { const p = []; for (let i = 0; i < 6; i++){ const a = i / 5 * 2.4; p.push(part(sph(.15 - i * .012, 12, 8), i % 2 ? PLATE : MAIN, 0, Math.sin(a) * .95, -Math.cos(a) * .7 + .7 - i * .02)); } p.push(part(new THREE.ConeGeometry(.08, .32, 8), DARK, 0, .5, 1.05, -2.2)); return fuse(p); });
+    const tail = inked(tailGeo, mat); tail.position.set(0, .6, -1.25); body.add(tail);
+    const sting = new THREE.Mesh(sph(.11, 10, 8), glowMat(VENOM)); sting.position.set(0, .55, .95); tail.add(sting);
+    const eg = cached('scorpEyes', () => fuse([part(sph(.05), 0xd4ff3a, -.09, .78, .98), part(sph(.05), 0xd4ff3a, .09, .78, .98)])); body.add(new THREE.Mesh(eg, glowMat(VENOM)));
+    const legGeo = cached('scorpLeg', () => fuse([part(cyl(.05, .045, .45), MAIN, .2, -.08, 0, 0, 0, -1.1), part(cyl(.045, .02, .5), DARK, .45, -.3, 0, 0, 0, .35)]));
+    for (let i = 0; i < 4; i++) for (const sx of [-1, 1]){ const l = inked(legGeo, mat); l.position.set(sx * .3, .55, .45 - i * .32); l.scale.x = sx; body.add(l); limbs.push(l); }
+    anim = (t, mv, e) => { limbs.forEach((l, i) => { l.rotation.x = Math.sin(t * 14 + i * 1.3) * .4 * mv; });
+      tail.rotation.x = Math.sin(t * 2.2) * .12 - (e && e.slamT > 0 ? Math.sin((1 - e.slamT / .5) * Math.PI) * .6 : 0); };
+  } else if (type === 'yarasa'){
+    // night wing: a lean bat-like hunter on membrane wings, two violet eyes
+    const MAIN = 0x2a1f3a, BELLY = 0x4a3a5e, CLAW = 0xd8cce8;
+    const geo = cached('bat', () => fuse([part(sph(.28, 16, 12), MAIN, 0, 1.8, 0, 0, 0, 0, .9, 1, 1.4), part(sph(.22, 14, 10), BELLY, 0, 1.75, .3, 0, 0, 0, 1, .9, 1),
+      part(new THREE.ConeGeometry(.07, .3, 6), MAIN, -.14, 2.02, .32, -.3, 0, .3), part(new THREE.ConeGeometry(.07, .3, 6), MAIN, .14, 2.02, .32, -.3, 0, -.3),
+      part(new THREE.ConeGeometry(.04, .2, 5), CLAW, -.08, 1.55, .42, Math.PI), part(new THREE.ConeGeometry(.04, .2, 5), CLAW, .08, 1.55, .42, Math.PI),
+      part(tube([[0, 1.75, -.35], [0, 1.6, -.7], [0, 1.7, -1.05]], .04, 10), MAIN)]));
+    body.add(inked(geo, mat));
+    const eg = cached('batEyes', () => fuse([part(sph(.05), 0xb48aff, -.08, 1.86, .42), part(sph(.05), 0xb48aff, .08, 1.86, .42)])); body.add(new THREE.Mesh(eg, glowMat(0xc8a0ff)));
+    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.bezierCurveTo(.4, .35, .9, .4, 1.25, .1); sh.lineTo(1.05, -.12); sh.lineTo(.8, .02); sh.lineTo(.6, -.2); sh.lineTo(.38, -.04); sh.lineTo(.15, -.22); sh.lineTo(0, 0);
+    const wingM = GFX.post ? new THREE.MeshPhysicalMaterial({color: 0x3a2a52, roughness: .6, side: THREE.DoubleSide, transmission: 0, sheen: .6, sheenColor: new THREE.Color(0x8a6aff)}) : new THREE.MeshStandardMaterial({color: 0x3a2a52, side: THREE.DoubleSide});
+    for (const sx of [-1, 1]){ const w = new THREE.Mesh(new THREE.ShapeGeometry(sh, 10), wingM); w.rotation.x = -Math.PI / 2; const pv = new THREE.Group(); pv.position.set(sx * .18, 1.85, 0); pv.scale.x = sx; pv.userData.sx = sx; pv.add(w); body.add(pv); limbs.push(pv); }
+    anim = (t, mv) => { const f = Math.sin(t * (10 + mv * 6)); limbs.forEach(pv => { pv.rotation.z = f * .75 * pv.userData.sx; }); };
   } else if (type === 'sifa' || type === 'ofke'){
     // firefly beetles living on the alien flora
     const glow = type === 'sifa' ? 0x3dff8a : 0xff4a4a;
@@ -793,7 +874,9 @@ function buildIsland(k){
   ];
   const order = [0, 1, 2, 3, 4];
   campSpots.slice(0, 5).forEach(([x, z], i) => {
-    const mix = mixes[(order[i] + lvl) % mixes.length].slice(); for (let n = 0; n < lvl; n++) mix.push(mix[n % mix.length]);
+    const mix = mixes[(order[i] + lvl) % mixes.length].slice();
+    if (lvl >= 2 && i % 2 === 0) mix[mix.length - 1] = 'akrep'; if (lvl >= 4 && i % 2 === 1) mix[0] = 'yarasa'; if (lvl >= 6 && i === 4) mix.push('akrep', 'yarasa');
+    for (let n = 0; n < lvl; n++) mix.push(mix[n % mix.length]);
     addCamp(isl, c.x + x, c.z + z, 6.5, mix.map(t => ({type: t})));
   });
   // commanders: tougher, crowned; each one gives Serhat a new weapon
@@ -810,6 +893,7 @@ function buildIsland(k){
   const bossCamp = addCamp(isl, ac.x, ac.z, 9, [{type: 'boss'}], true);
   isl.boss = bossCamp.members[0]; dressBoss(isl.boss, CAST[k % CAST.length]);
   shadeTree(g, true, true); if (isl.top) isl.top.castShadow = false;
+  islandPaths(isl, th);
   groundCover(isl, th);
   islands[k] = isl; return isl;
 }
@@ -1052,7 +1136,7 @@ const WEAPONS = {
   zimba:     {name: T('w_zimba'),  color: 0xfdd835, base: 12, cd: .6,  kind: 'shot',  range: 12},
   kablo:     {name: T('w_kablo'), color: 0x39e6ff, base: 10, cd: 1.1, kind: 'chain', range: 10}
 };
-const DROP_OF = {surungen: 'falcata', tukurucu: 'zimba', tank: 'keser', goz: 'kablo'};
+const DROP_OF = {surungen: 'falcata', tukurucu: 'zimba', tank: 'keser', goz: 'kablo', akrep: 'testere', yarasa: 'tornavida'};
 // commanders hand out the tools in this order, two per island
 const TOOL_ORDER = ['tornavida', 'falcata', 'zimba', 'keser', 'testere', 'kablo'];
 let gear = [], active = 0;
@@ -1136,7 +1220,7 @@ function setBar(bar, f){ bar.userData.fill.scale.x = Math.max(.001, bar.userData
 const camQ = new THREE.Quaternion(), qInv = new THREE.Quaternion();
 const meBar = makeBar(1.3, .12, 'me', 2.45); player.root.add(meBar);
 const meShBar = makeBar(1.3, .06, 'sh', 2.3); meShBar.visible = false; player.root.add(meShBar);
-const BAR_Y = {surungen: 1.55, tukurucu: 2.5, tank: 3.25, goz: 3.0, sifa: 4.1, ofke: 4.1, boss: 5.6};
+const BAR_Y = {surungen: 1.55, tukurucu: 2.5, tank: 3.25, goz: 3.0, akrep: 1.9, yarasa: 2.8, sifa: 4.1, ofke: 4.1, boss: 5.6};
 
 // ---------------------------------------------------------------- power ("güç") numbers
 const fmtPow = v => v >= 1e6 ? (v / 1e6).toFixed(1).replace('.0', '') + 'M' : v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '') + 'K' : String(Math.round(v));
@@ -1248,6 +1332,8 @@ const TYPES = {
   surungen: {name: 'Sürüngen', hp: 24, speed: 4.3, dmg: 7, r: .55, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); }},
   tukurucu: {name: 'Tükürücü', hp: 32, speed: 2.6, dmg: 9, r: .6, keep: 7.5, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.dmg += .0007; return T('gDmg'); }},
   tank:     {name: 'Kaya Dev', hp: 130, speed: 1.75, dmg: 18, r: 1.05, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.maxHp += .4; return T('gHp'); }},
+  akrep:    {name: 'Zehir Akrep', hp: 46, speed: 3.5, dmg: 11, r: .75, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.dmg += .0007; return T('gDmg'); }},
+  yarasa:   {name: 'Gece Kanadı', hp: 18, speed: 5, dmg: 5, r: .5, fly: true, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); }},
   goz:      {name: 'Uçan Göz', hp: 20, speed: 3.2, dmg: 6, r: .5, fly: true, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.rate = Math.max(.5, player.rate * .999); return T('gRate'); }},
   sifa:     {name: 'Şifa Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.maxHp += 1.2; player.hp += 1.2; player.regen += .05; return T('gRegen'); }},
   ofke:     {name: 'Öfke Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.dmg += .004; return T('gHit'); }},
@@ -1349,7 +1435,7 @@ function damage(e, amt, color = '#efe9ff'){
 }
 function kill(e){
   if (e.dead) return; e.dead = true; player.kills++;
-  burst(e.pos, e.spec.boss ? 60 : 12, e.type === 'surungen' ? 0x3ddc84 : e.type === 'tukurucu' ? 0xa64dff : e.type === 'tank' ? 0xff9a3d : e.type === 'goz' ? 0x39e6ff : 0xff3d81);
+  burst(e.pos, e.spec.boss ? 60 : 12, e.type === 'surungen' ? 0x3ddc84 : e.type === 'tukurucu' ? 0xa64dff : e.type === 'tank' ? 0xff9a3d : e.type === 'goz' ? 0x39e6ff : e.type === 'akrep' ? 0xd4ff3a : e.type === 'yarasa' ? 0x8a5cff : 0xff3d81);
   e.bar.visible = false; if (e.mixer){ e.mixer.stopAllAction(); e.mixer = null; }
   // the body stays on the ground, limp and dark, until Serhat's cable drags it in
   e.mat.color.multiplyScalar(.5); e.mat.emissive.setRGB(0, 0, 0); e.mat.emissiveIntensity = 0;

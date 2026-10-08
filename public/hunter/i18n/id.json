@@ -300,5 +300,19 @@
  "tiktok": "Lanjutkan dengan TikTok",
  "ttFail": "Masuk dengan TikTok gagal. Coba lagi.",
  "apple": "Lanjutkan dengan Apple",
- "weakBoss": "Kekuatanmu kurang! Induk ini butuh ⚡{p} kekuatan."
+ "weakBoss": "Kekuatanmu kurang! Induk ini butuh ⚡{p} kekuatan.",
+ "pl_pluto": "Pluto",
+ "pl_pluto_sub": "Gletser nitrogen",
+ "pl_kepler": "Kepler-452b",
+ "pl_kepler_sub": "Hutan ungu",
+ "pl_enceladus": "Enceladus",
+ "pl_enceladus_sub": "Geiser es",
+ "pl_trappist": "TRAPPIST-1e",
+ "pl_trappist_sub": "Di bawah katai merah",
+ "pl_ceres": "Ceres",
+ "pl_ceres_sub": "Kilau garam",
+ "pl_gliese": "Gliese 581",
+ "pl_gliese_sub": "Dunia kristal",
+ "pl_cancri": "55 Cancri e",
+ "pl_cancri_sub": "Berlian dan magma"
 }
