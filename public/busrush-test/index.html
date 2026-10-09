@@ -336,7 +336,7 @@ function trackRing(rx,ry,color){ctx.beginPath();for(let n=0;n<=120;n++){let p=tr
 function loopPos(phase,lane=2){return trackPoint(phase,120+(lane-2)*7,79+(lane-2)*7)}
 function feederPos(i){let row=Math.floor(i/4),col=i%4,side=(feedSide+row)%2,r=Math.floor(row/2);return {x:(side?362:18)+col*13.3,y:160-r*23}}
 function crowdPos(i){let w=walkers[i];if(w){let p=loopPos(w.phase,w.lane!==undefined?w.lane+.5:w.id%5);if(w.enter<1){let f=w.enter,start={x:(w.side?362:18)+(w.lane??w.id%4)*13.3,y:160};return {x:start.x+(p.x-start.x)*f,y:start.y+(p.y-start.y)*f}}return p}return feederPos(i-walkers.length)}
-const VIS_LOOP=60,visLoop=()=>Math.max(VIS_LOOP,E.loopLimit(state));
+const VIS_LOOP=80,visLoop=()=>Math.max(VIS_LOOP,E.loopLimit(state));
 function restoreWalkers(){let a=state.walkers;walkers=Array.isArray(a)&&a.length<=visLoop()&&a.every((w,i)=>w.c===state.queue[i]&&Number.isFinite(w.phase)&&Number.isFinite(w.enter)&&Number.isInteger(w.id))?E.clone(a):[];walkerSerial=walkers.reduce((m,w)=>Math.max(m,w.id+1),0);feedShift=0;walkLast=0;feedClock=0}
 function finalColorRun(){if(!state.queue.length)return false;if(state.queue.every(c=>c===state.queue[0]))return true;if(state.buses.length)return false;const need=new Map();for(const c of state.queue)need.set(c,(need.get(c)||0)+1);return [...need].every(([c,n])=>state.slots.reduce((sum,b)=>sum+(b&&b.c===c?b.cap-b.filled:0),0)>=n)}
 function pedestrianTick(t){let dt=walkLast?Math.min(.08,Math.max(0,(t-walkLast)/1000)):0;walkLast=t;if(paused||document.hidden)return;let finish=finalColorRun(),speed=(profile.fast?1.44:1.00)*(finish?2.0:1);feedShift=Math.max(0,feedShift-dt*(finish?9.6:4));for(let i=0;i<walkers.length;i++){let w=walkers[i];w.enter=Math.min(1,w.enter+dt*(finish?10:6));w.phase=(w.phase+dt*speed*2)%TAU}
