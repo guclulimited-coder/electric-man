@@ -278,7 +278,7 @@ if(typeof module!=='undefined')module.exports=RewardPlayback;
 const PROGRESS_EPOCH='bus-rush-20261003-fifo-level3';
 function resetProgress(p={}){if(p.progressEpoch===PROGRESS_EPOCH)return p;return {...p,progressEpoch:PROGRESS_EPOCH,coins:Math.max(0,Number(p.coins)||0),unlocked:3,stars:Object.fromEntries(Object.entries(p.stars||{}).filter(([k])=>Number(k)<3)),resume:null,campaignResume:null,difficultyHistory:[],firstClears:(p.firstClears||[]).filter(n=>Number(n)<3)}}
 const E=RushEngine,$=id=>document.getElementById(id),W=420,H=690,CELL=40,OX=50,OY=375;
-const palette=[['Mercan','#ef6659','#ffb99d','#b83742','●'],['Okyanus','#398ee8','#a8e6ff','#2256ae','◆'],['Limon','#f7c441','#fff3a1','#b98220','★'],['Orkide','#aa69dc','#e8baff','#713ba1','♥'],['Nane','#51bd85','#bef5c0','#247a54','✚'],['Turkuaz','#29c7cb','#b2ffff','#148290','■'],['Mandalina','#f5943e','#ffe0a0','#b95b25','▲'],['Gül','#e75da8','#ffbcdc','#a63174','✿']];
+const palette=[['Mercan','#ff2d55','#ff9db0','#c4002f','●'],['Okyanus','#00a2ff','#9fe2ff','#0057d9','◆'],['Limon','#e6ff1a','#fbffa8','#a2b300','★'],['Orkide','#b026ff','#e2a8ff','#7300cc','♥'],['Nane','#39ff14','#b9ffa6','#1fa800','✚'],['Turkuaz','#00f5e4','#aafff8','#00a39a','■'],['Mandalina','#ff7a00','#ffc68a','#c45200','▲'],['Gül','#ff2fd0','#ffb0ee','#c4009a','✿']];
 let ctx=$('canvas').getContext('2d',{alpha:false});let state,display,history=[],busy=false,paused=false,epoch=0,anim=null,hintId=null,shake=null,confetti=[],lastT=0,soundCtx=null,worldScale=1,frameRequest=0,dirty=true;
 let driving=false,boarding=false,driveAnims=[],departAnims=[];
 let previewBus=null,walkers=[],walkerSerial=0,walkLast=0,feedShift=0,feedClock=0;
@@ -336,11 +336,12 @@ function trackRing(rx,ry,color){ctx.beginPath();for(let n=0;n<=120;n++){let p=tr
 function loopPos(phase,lane=2){return trackPoint(phase,120+(lane-2)*7,79+(lane-2)*7)}
 function feederPos(i){let row=Math.floor(i/4),col=i%4,side=(feedSide+row)%2,r=Math.floor(row/2);return {x:(side?362:18)+col*13.3,y:160-r*23}}
 function crowdPos(i){let w=walkers[i];if(w){let p=loopPos(w.phase,w.lane!==undefined?w.lane+.5:w.id%5);if(w.enter<1){let f=w.enter,start={x:(w.side?362:18)+(w.lane??w.id%4)*13.3,y:160};return {x:start.x+(p.x-start.x)*f,y:start.y+(p.y-start.y)*f}}return p}return feederPos(i-walkers.length)}
-function restoreWalkers(){let a=state.walkers;walkers=Array.isArray(a)&&a.length<=E.loopLimit(state)&&a.every((w,i)=>w.c===state.queue[i]&&Number.isFinite(w.phase)&&Number.isFinite(w.enter)&&Number.isInteger(w.id))?E.clone(a):[];walkerSerial=walkers.reduce((m,w)=>Math.max(m,w.id+1),0);feedShift=0;walkLast=0;feedClock=0}
+const VIS_LOOP=60,visLoop=()=>Math.max(VIS_LOOP,E.loopLimit(state));
+function restoreWalkers(){let a=state.walkers;walkers=Array.isArray(a)&&a.length<=visLoop()&&a.every((w,i)=>w.c===state.queue[i]&&Number.isFinite(w.phase)&&Number.isFinite(w.enter)&&Number.isInteger(w.id))?E.clone(a):[];walkerSerial=walkers.reduce((m,w)=>Math.max(m,w.id+1),0);feedShift=0;walkLast=0;feedClock=0}
 function finalColorRun(){if(!state.queue.length)return false;if(state.queue.every(c=>c===state.queue[0]))return true;if(state.buses.length)return false;const need=new Map();for(const c of state.queue)need.set(c,(need.get(c)||0)+1);return [...need].every(([c,n])=>state.slots.reduce((sum,b)=>sum+(b&&b.c===c?b.cap-b.filled:0),0)>=n)}
 function pedestrianTick(t){let dt=walkLast?Math.min(.08,Math.max(0,(t-walkLast)/1000)):0;walkLast=t;if(paused||document.hidden)return;let finish=finalColorRun(),speed=(profile.fast?1.44:1.00)*(finish?2.0:1);feedShift=Math.max(0,feedShift-dt*(finish?9.6:4));for(let i=0;i<walkers.length;i++){let w=walkers[i];w.enter=Math.min(1,w.enter+dt*(finish?10:6));w.phase=(w.phase+dt*speed*2)%TAU}
  feedClock=Math.min(.20,feedClock+dt);
- if(feedClock>=(finish?.04:.07)){const lim=Math.min(E.loopLimit(state),display.queue.length),side=feedSide,ph=side?0:Math.PI;if(walkers.length<lim&&!walkers.some(w=>Math.abs(Math.atan2(Math.sin(w.phase-ph),Math.cos(w.phase-ph)))<.27)){let n=0;while(n<4&&walkers.length<lim){walkers.push({id:walkerSerial++,c:display.queue[walkers.length],phase:ph,enter:0,side,lane:n});n++}feedSide=1-feedSide;feedClock=0;feedShift=1}}
+ if(feedClock>=(finish?.04:.07)){const lim=Math.min(visLoop(),display.queue.length),side=feedSide,ph=side?0:Math.PI;if(walkers.length<lim&&!walkers.some(w=>Math.abs(Math.atan2(Math.sin(w.phase-ph),Math.cos(w.phase-ph)))<.27)){let n=0;while(n<4&&walkers.length<lim){walkers.push({id:walkerSerial++,c:display.queue[walkers.length],phase:ph,enter:0,side,lane:n});n++}feedSide=1-feedSide;feedClock=0;feedShift=1}}
  if(boarding||(busy&&!driving)||!$('veil').hidden)return;
  let qi=walkers.findIndex((w,i)=>i<E.loopLimit(state)&&w.c===state.queue[i]&&w.enter>=1&&w.phase>1.35&&w.phase<1.73&&state.slots.some(b=>b&&b.c===w.c&&b.filled<b.cap)&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&b.c===w.c)));if(qi>=0)boardWalker(qi);
 }
@@ -352,7 +353,7 @@ function drawCrowdBase(){let d=district();rr(10,-10,400,230,18,d.pavement);for(l
  ctx.save();ctx.beginPath();for(let n=0;n<=100;n++){let p=trackPoint(n/100*TAU);if(n)ctx.lineTo(p.x,p.y);else ctx.moveTo(p.x,p.y)}ctx.setLineDash([6,9]);ctx.strokeStyle='#dfe9df77';ctx.lineWidth=1;ctx.stroke();ctx.restore();
 }
 function drawCrowd(t){let d=district();
- text('→',210,29,13,'#f8edc7');text('←',210,207,13,'#f8edc7');let pressure=walkers.length/E.loopLimit(state),warning=state.slots.every(Boolean)&&E.nextPassenger(state)<0?'#c74a55':'#297b65';text('KAVŞAKTA '+walkers.length+' / '+E.loopLimit(state),210,97,10,d.ink,950);text('DIŞARIDA '+Math.max(0,display.queue.length-walkers.length)+' YOLCU',210,112,9,d.ink);rr(174,123,72,4,2,'#ffffff88');rr(174,123,Math.max(1,72*pressure),4,2,warning);let needs=Array(8).fill(0);walkers.forEach(w=>needs[w.c]++);let colors=needs.map((n,c)=>({n,c})).filter(v=>v.n).sort((a,b)=>b.n-a.n).slice(0,3);colors.forEach((v,i)=>{let x=210+(i-(colors.length-1)/2)*29;ellipse(x-6,139,5,5,palette[v.c][1]);text(v.n,x+5,139,8,d.ink)})
+ text('→',210,29,13,'#f8edc7');text('←',210,207,13,'#f8edc7');let pressure=walkers.length/visLoop(),warning=state.slots.every(Boolean)&&E.nextPassenger(state)<0?'#c74a55':'#297b65';text('KAVŞAKTA '+walkers.length+' / '+visLoop(),210,97,10,d.ink,950);text('DIŞARIDA '+Math.max(0,display.queue.length-walkers.length)+' YOLCU',210,112,9,d.ink);rr(174,123,72,4,2,'#ffffff88');rr(174,123,Math.max(1,72*pressure),4,2,warning);let needs=Array(8).fill(0);walkers.forEach(w=>needs[w.c]++);let colors=needs.map((n,c)=>({n,c})).filter(v=>v.n).sort((a,b)=>b.n-a.n).slice(0,3);colors.forEach((v,i)=>{let x=210+(i-(colors.length-1)/2)*29;ellipse(x-6,139,5,5,palette[v.c][1]);text(v.n,x+5,139,8,d.ink)})
  let waiting=display.queue.length-walkers.length;for(let j=Math.min(56,waiting)-1;j>=0;j--){let p=feederPos(j);person(display.queue[walkers.length+j],display.total-display.queue.length+walkers.length+j,p.x,p.y-feedShift*7,.98,reduced?0:Math.sin(t*.008+j)*.8,true)}
  let visible=walkers.map((w,i)=>({w,i,p:crowdPos(i)})).filter(o=>!(anim?.type==='board'&&(anim.walkerId===o.w.id||anim.group?.some(g=>g.walkerId===o.w.id)))).sort((a,b)=>a.p.y-b.p.y);for(let {w,i,p} of visible)person(w.c,w.id,p.x,p.y,.98,reduced?0:Math.sin(t*.012+w.id)*1.15,true);
  rr(176,213,68,8,3,'#f7cd70');text('BİNİŞ',210,224,7,'#54788b');
@@ -573,6 +574,8 @@ function busSprite(c,len,hidden,side,cap){const key=c+':'+Math.round(len)+':'+(h
  const LG=(x0,y0,x1,y1,stops)=>{const q=g.createLinearGradient(x0,y0,x1,y1);stops.forEach(([o,c])=>q.addColorStop(o,c));return q};
  const dm=busDims(len,cap),L=dm.L,W=dm.W,y0=-L/2,art=cap>=40;
  if(side){g.save();g.filter='blur(2.5px)';R(-W/2,y0+2,W+1,L+2,6,'#0c223366');g.restore();R(-W/2,y0,W,L,6,col[3]);R(-W/2,y0,W,L,6,'#00000038');busSprites.set(key,cv);return cv}
+ // fluorescent glow
+ g.save();g.shadowColor=col[1];g.shadowBlur=9;R(-W/2,y0,W,L,6,col[1]);g.restore();
  // body
  R(-W/2,y0,W,L,6,LG(-W/2,0,W/2,0,[[0,col[3]],[.18,col[1]],[.82,col[1]],[1,col[3]]]));
  // glass ring (side windows seen from above) with pillars
