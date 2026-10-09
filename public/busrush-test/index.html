@@ -431,6 +431,7 @@ function verifyV12(E,g){
 }
 
 
+const TEST_PAGE=/busrush-test/.test(location.pathname);
 ;(()=>{const init=E.initial,mv=E.move,made=new Set();E.initial=(level,variant=0)=>{level=Math.max(1,Math.min(E.MAX_LEVEL,level|0||1));if(!made.has(level)){E.primeCatalog([genV12(E,level)]);made.add(level)}return init(level,0)};E.move=(st,id)=>{const b=st.buses.find(v=>v.id===id),r=mv(st,id);if(!r.error&&b&&b.spinner){r.state.buses.forEach(v=>{if(v.spin)v.dir=(v.dir+2)%8});E.reveal(r.state)}return r};})();
 const palette=[['Mercan','#ff2d55','#ff9db0','#c4002f','●'],['Okyanus','#00a2ff','#9fe2ff','#0057d9','◆'],['Limon','#e6ff1a','#fbffa8','#a2b300','★'],['Orkide','#b026ff','#e2a8ff','#7300cc','♥'],['Nane','#39ff14','#b9ffa6','#1fa800','✚'],['Turkuaz','#00f5e4','#aafff8','#00a39a','■'],['Mandalina','#ff7a00','#ffc68a','#c45200','▲'],['Gül','#ff2fd0','#ffb0ee','#c4009a','✿']];
 let ctx=$('canvas').getContext('2d',{alpha:false});let state,display,history=[],busy=false,paused=false,epoch=0,anim=null,hintId=null,shake=null,confetti=[],lastT=0,soundCtx=null,worldScale=1,frameRequest=0,dirty=true;
@@ -438,7 +439,7 @@ let driving=false,boarding=false,driveAnims=[],departAnims=[];
 let previewBus=null,walkers=[],walkerSerial=0,walkLast=0,feedShift=0,feedClock=0;
 let profile={coins:0,unlocked:1,stars:{},sound:true,haptic:true,resume:null};try{let p=JSON.parse(localStorage.getItem('tusneldax-rush-mobile-v2'));if(p&&typeof p==='object')profile={...profile,...p};profile.unlocked=Math.max(1,Math.min(E.MAX_LEVEL,Number(profile.unlocked)||1));profile.coins=Math.max(0,Number(profile.coins)||0)}catch{}
 function refreshTutorial(p){p=sysReset(p);for(const key of ['resume','campaignResume']){const r=p[key];if(r&&(r.rulesVersion||2)<12){try{localStorage.setItem('br-pre-v12-'+key,JSON.stringify(r))}catch{}p[key]=E.initial(Math.max(1,Math.min(360,r.level||1)),r.variant||0)}}return p}
-profile=refreshTutorial(resetProgress(profile));try{localStorage.setItem('tusneldax-rush-mobile-v2',JSON.stringify(profile))}catch{}
+profile=refreshTutorial(resetProgress(profile));if(TEST_PAGE)profile.unlocked=E.MAX_LEVEL;try{localStorage.setItem('tusneldax-rush-mobile-v2',JSON.stringify(profile))}catch{}
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function save(){try{if(state)state.walkers=E.clone(walkers);profile.resume=state?E.clone(state):null;localStorage.setItem('tusneldax-rush-mobile-v2',JSON.stringify(profile))}catch{}}
 function rr(x,y,w,h,r,fill,stroke,line=1){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=line;ctx.stroke()}}
@@ -845,7 +846,7 @@ async function account(){if(!native&&location.origin!=='https://tusneldax.com'){
 async function prepareLogin(){if(loginPreparing)return loginPreparing;if(loginNonce&&Date.now()-loginNonceAt<240000&&(!config.appleClientId||appleReady))return;loginPreparing=(async()=>{const result=await api('/auth/nonce',{});loginNonce=result.nonce;loginNonceAt=Date.now();const jobs=[];if(config.googleClientId)jobs.push(script('https://accounts.google.com/gsi/client'));if(config.appleClientId)jobs.push(script('https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js'));await Promise.allSettled(jobs);appleReady=!!(config.appleClientId&&window.AppleID?.auth);if(appleReady)AppleID.auth.init({clientId:config.appleClientId,scope:'name email',redirectURI:'https://tusneldax.com/bus-rush/play.html',state:loginNonce,nonce:loginNonce,usePopup:true})})();try{await loginPreparing}finally{loginPreparing=null}}
 
 function script(src){return new Promise((resolve,reject)=>{let s=document.querySelector(`script[src="${src}"]`);if(s?.dataset.loaded)return resolve();let fresh=!s;if(fresh){s=document.createElement('script');s.src=src}const done=ok=>{clearTimeout(timer);s.removeEventListener('load',loaded);s.removeEventListener('error',failed);if(ok){s.dataset.loaded='1';resolve()}else{s.remove();reject(Error('LOGIN_UNAVAILABLE'))}};const loaded=()=>done(true),failed=()=>done(false),timer=setTimeout(failed,10000);s.addEventListener('load',loaded,{once:true});s.addEventListener('error',failed,{once:true});if(fresh)document.head.append(s)})}
-function needsAccount(){return !me&&!state.challengeId&&state.level>10}
+function needsAccount(){return !TEST_PAGE&&!me&&!state.challengeId&&state.level>10}
 async function finishLogin(){me=(await api('/me')).player;if(native){if(me)localStorage.setItem('br-native-player',JSON.stringify(me));else localStorage.removeItem('br-native-player');}if(!me)throw Error('LOGIN_REQUIRED');heartbeat();const loaded=await loadCloud();if(loaded&&gateLevel&&state.level<=10&&profile.unlocked>=gateLevel){const level=gateLevel;gateLevel=null;restart(level)}else{gateLevel=null;await account()}if(loaded)void recoverPendingGold()}
 const ungatedRestart=restart;restart=function(level=state.level){if(level>10&&(!me||!ready)){gateLevel=level;account();return}ungatedRestart(level)};
 async function nativeLogin(){await native.call({action:'login'});await finishLogin()}
