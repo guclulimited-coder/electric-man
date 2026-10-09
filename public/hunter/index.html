@@ -1320,10 +1320,10 @@ function giveGear(k){
 
 // ---------------------------------------------------------------- coins and permanent upgrades
 const SAVE_V = 2;
+let persistTimer = null; // must exist before the saga reset below calls store.set()
 const store = {get(k, d){ try { const v = localStorage.getItem('pa-' + k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem('pa-' + k, JSON.stringify(v)); } catch(e){} persistNative(); }};
 // the saga update starts every adventure over from Mars (coins and purchases are kept)
 (() => { const sv = store.get('save', null); if (sv && sv.v !== SAVE_V){ for (const k of ['save', 'camps', 'story', 'kid']) try { localStorage.removeItem('pa-' + k); } catch(e){} store.set('resetNote', 1); } })();
-let persistTimer = null;
 function persistNative(){ if (!Native.app) return; clearTimeout(persistTimer); persistTimer = setTimeout(() => { try { const all = {}; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k.startsWith('pa-')) all[k] = localStorage.getItem(k); } Native.call({action: 'persist', data: JSON.stringify(all)}).catch(() => {}); } catch(e){} }, 400); }
 let coins = store.get('coins', 0);
 const UPS = [
