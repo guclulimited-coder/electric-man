@@ -1,0 +1,48 @@
+name: Electric Hunter App Store profile on the existing certificate
+# Creates (once) an App Store provisioning profile for com.tusneldax.electrichunter that uses the team's
+# existing Apple Distribution certificate 8MN67BCJ83. No certificate is created or revoked.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/eh-profile.yml']
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Find or create the profile
+        env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/asc" && "$RUNNER_TEMP/asc/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/asc/bin/python" - <<'PY'
+          import json, os, re, sys, textwrap, time, urllib.request, urllib.error, jwt
+          env = os.environ
+          raw = env['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw))
+          key = '-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n'
+          def api(method, path, data=None):
+              tok = jwt.encode({'iss': env['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': env['KEY_ID'], 'typ': 'JWT'})
+              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, method=method, data=json.dumps(data).encode() if data else None, headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: return json.load(r)
+              except urllib.error.HTTPError as e:
+                  print('::error::' + method + ' ' + path + ' -> ' + str(e.code) + ' ' + e.read().decode()[:400].replace('\n', ' ')); raise
+          CERT = '8MN67BCJ83'; NAME = 'Electric Hunter App Store 2026'; BID = 'com.tusneldax.electrichunter'
+          c = api('GET', '/v1/certificates/' + CERT)['data']['attributes']
+          print('::notice::certificate ' + CERT + ' ' + c['certificateType'] + ' expires ' + c['expirationDate'])
+          bid = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + BID)['data'] if b['attributes']['identifier'] == BID][0]
+          for p in api('GET', '/v1/bundleIds/' + bid['id'] + '/profiles?limit=200')['data']:
+              a = p['attributes']
+              if a['name'] == NAME and a['profileState'] == 'ACTIVE':
+                  print('::notice::profile already exists: ' + p['id']); sys.exit(0)
+          p = api('POST', '/v1/profiles', {'data': {'type': 'profiles', 'attributes': {'name': NAME, 'profileType': 'IOS_APP_STORE'},
+                  'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': bid['id']}}, 'certificates': {'data': [{'type': 'certificates', 'id': CERT}]}}}})['data']
+          print('::notice::created profile ' + p['id'] + ' (' + NAME + ')')
+          PY
