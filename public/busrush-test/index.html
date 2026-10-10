@@ -286,16 +286,16 @@ const E=RushEngine,$=id=>document.getElementById(id),W=420,H=690,CELL=40,OX=50,O
    - tunnels: a mouth at the lot edge releases a stack of buses one after another
    - spinner (↻) bus: when it leaves, every bus marked with a small ↻ turns 90° clockwise
    Deterministic per level: the same level number always gives the same puzzle. */
-function genV12(E,level){
+function genV12(E,level,salt=0){
  const LOOP=80,COLS=10,ROWS=7,target=400+4*(level-1);
  for(let attempt=0;attempt<40;attempt++){
-  const g=buildV12(E,level,attempt,{LOOP,COLS,ROWS,target});
-  if(g&&verifyV12(E,g))return mechanicsV12(E,g,attempt);
+  const g=buildV12(E,level,attempt,{LOOP,COLS,ROWS,target,salt});
+  if(g&&verifyV12(E,g))return mechanicsV12(E,g,attempt,salt);
  }
  throw Error('v12 level failed: '+level);
 }
-function buildV12(E,level,attempt,{LOOP,COLS,ROWS,target}){
- const rand=E.rng(level*7919+attempt*104729+12011),pick=a=>a[Math.floor(rand()*a.length)];
+function buildV12(E,level,attempt,{LOOP,COLS,ROWS,target,salt=0}){
+ const rand=E.rng(level*7919+attempt*104729+12011+salt),pick=a=>a[Math.floor(rand()*a.length)];
  const grid=Array.from({length:ROWS},()=>Array(COLS).fill(false));
  const free=(c,r)=>c>=0&&r>=0&&c<COLS&&r<ROWS&&!grid[r][c];
  const buses=[];
@@ -424,12 +424,12 @@ function emitQueueV12(order,bays,rand){
  return queue;
 }
 // extra bus types added on top of a verified layout; each addition is kept only if the level is still solvable
-function mechanicsV12(E,g,attempt){
- const level=g.level,rand=E.rng(level*4241+attempt*613+77),byId=new Map(g.buses.map(b=>[b.id,b]));
+function mechanicsV12(E,g,attempt,salt=0){
+ const level=g.level,rand=E.rng(level*4241+attempt*613+77+salt),byId=new Map(g.buses.map(b=>[b.id,b]));
  const order=()=>g.solution.map(id=>byId.get(id)),bays=E.baseSlots(level),nColors=Math.min(8,4+Math.floor((level-1)/12));
  const tryAdd=(apply,undo)=>{apply();if(verifyV12(E,g))return true;undo();return false};
  const plain=b=>b.garageAfter===undefined&&!b.garageMouth&&!b.spinner&&!b.spin&&b.keyFrom===undefined&&!b.carriesKey&&!b.ice&&b.c2===undefined;
- const reemit=()=>{const q=emitQueueV12(order(),bays,E.rng(level*991+attempt));g.queue=q;g.passengerQueue=q.slice()};
+ const reemit=()=>{const q=emitQueueV12(order(),bays,E.rng(level*991+attempt+salt));g.queue=q;g.passengerQueue=q.slice()};
  const pick=a=>a[Math.floor(rand()*a.length)];
  // two-colour buses: front half one colour, back half another
  if(level>=8&&rand()<.7){const want=Math.min(4,1+Math.floor(level/60));for(let k=0,tries=0;k<want&&tries<6;tries++){
@@ -488,6 +488,16 @@ function verifyV12(E,g){
  }
  return E.outcome(s)==='win';
 }
+// Special puzzles shared by client and league server: daily (UTC day), weekly (UTC Monday) and duel (code).
+const SPECIAL_EPOCH=Date.UTC(2026,0,1);
+function specialV13(kind,id,duelLevel){
+ if(kind==='daily'){if(!/^\d{4}-\d{2}-\d{2}$/.test(id))return null;const d=Math.round((Date.parse(id+'T00:00:00Z')-SPECIAL_EPOCH)/86400000);if(!(d>=0&&d<100000))return null;return {kind,id,key:10000+d,tier:20+(d*7)%100,salt:d*7919+1,variant:7}}
+ if(kind==='weekly'){if(!/^\d{4}-\d{2}-\d{2}$/.test(id)||new Date(id+'T00:00:00Z').getUTCDay()!==1)return null;const w=Math.round((Date.parse(id+'T00:00:00Z')-SPECIAL_EPOCH)/604800000);if(!(w>=0&&w<10000))return null;return {kind,id,key:20000+w,tier:150+(w*13)%150,salt:w*104729+2,variant:8}}
+ if(kind==='duel'){if(!/^[A-Z0-9]{6}$/.test(id)||!Number.isSafeInteger(duelLevel)||duelLevel<1||duelLevel>360)return null;return {kind,id,key:null,tier:duelLevel,salt:parseInt(id,36)%1000003+3,variant:9}}
+ return null;
+}
+function stateV13(E,g){return {...E.clone(g),rulesVersion:13,boardingMode:'loop-capacity',slots:Array(E.baseSlots(g.level)).fill(null),moves:0,dispatched:0,score:0,combo:0,help:0,extra:false,boost:{hint:3,undo:E.undoAllowance(g.level),sort:0,vip:1},rewarded:false,walkers:[]}}
+function genSpecialV13(E,sp){const g=genV12(E,sp.tier,sp.salt);g.variant=sp.variant;g.special={kind:sp.kind,id:sp.id};return g}
 // League points for the new rules: target time is 15 s per 100 passengers; the best time of the week counts.
 const V13_TIERS=[[.5,200],[1,150],[1.5,100],[2,70]];
 function targetMsV13(total){return total*150}
@@ -495,7 +505,7 @@ function leagueTierV13(ms,total){const t=targetMsV13(total);for(const [k,p] of V
 
 
 const TEST_PAGE=/busrush-test/.test(location.pathname);
-;(()=>{const init=E.initial,mv=E.move,RAW={...E},made=new Set();E.initial=(level,variant=0)=>{level=Math.max(1,Math.min(E.MAX_LEVEL,level|0||1));if(!made.has(level)){E.primeCatalog([genV12(RAW,level)]);made.add(level)}const st=init(level,0);if(st.rulesV12)st.rulesVersion=13;return st};E.move=(st,id)=>st&&st.rulesV12?moveV12(RAW,st,id):mv(st,id);})();
+;(()=>{const init=E.initial,mv=E.move,RAW={...E},made=new Set();E.raw=RAW;E.rawInitial=init;E.initial=(level,variant=0)=>{level=Math.max(1,Math.min(E.MAX_LEVEL,level|0||1));if(!made.has(level)){E.primeCatalog([genV12(RAW,level)]);made.add(level)}const st=init(level,0);if(st.rulesV12)st.rulesVersion=13;return st};E.move=(st,id)=>st&&st.rulesV12?moveV12(RAW,st,id):mv(st,id);})();
 const palette=[['Mercan','#ff2d55','#ff9db0','#c4002f','●'],['Okyanus','#00a2ff','#9fe2ff','#0057d9','◆'],['Limon','#e6ff1a','#fbffa8','#a2b300','★'],['Orkide','#b026ff','#e2a8ff','#7300cc','♥'],['Nane','#39ff14','#b9ffa6','#1fa800','✚'],['Turkuaz','#00f5e4','#aafff8','#00a39a','■'],['Mandalina','#ff7a00','#ffc68a','#c45200','▲'],['Gül','#ff2fd0','#ffb0ee','#c4009a','✿']];
 let ctx=$('canvas').getContext('2d',{alpha:false});let state,display,history=[],busy=false,paused=false,epoch=0,anim=null,hintId=null,shake=null,confetti=[],lastT=0,soundCtx=null,worldScale=1,frameRequest=0,dirty=true;
 let driving=false,boarding=false,driveAnims=[],departAnims=[];
@@ -622,8 +632,8 @@ function fx16Over(t){if(!state.rulesV12)return;
  FX16.puffs=FX16.puffs.filter(p=>t-p.t<900);for(const p of FX16.puffs){const k=Math.max(0,(t-p.t)/900);if(t<p.t)continue;ellipse(p.x+p.vx*(t-p.t),p.y+p.vy*(t-p.t),4+k*12,4+k*12,'rgba(190,200,215,'+(0.45*(1-k)).toFixed(2)+')')}
  if(state.combo>FX16.combo&&state.combo>=2)FX16.shake=t;FX16.combo=state.combo||0;
  const sk=t-FX16.shake,cv=$('canvas');if(sk<380){const a=(1-sk/380)*4;cv.style.transform=`translate(${(Math.random()-.5)*a}px,${(Math.random()-.5)*a}px)`;rr(0,0,W,H,0,ist().accent+Math.round(40*(1-sk/380)).toString(16).padStart(2,'0'))}else if(cv.style.transform)cv.style.transform='';
- if(FX16.lvl!==state.level){FX16.lvl=state.level;FX16.banner=t;FX16.vip=null;FX16.nextVip=0;tips16()}vip16(t);
- const bk=t-FX16.banner;if(bk>=0&&bk<2600){const al=Math.min(1,bk/250,(2600-bk)/400);ctx.save();ctx.globalAlpha=al;rr(90,258,240,46,14,'#070c16e8',ist().accent,2);text(ist().name,210,274,16,ist().accent,950);text('GECE · '+state.level,210,292,9,'#dfe8ff',800);ctx.restore()}
+ const lk16=state.level+':'+(state.special?state.special.kind+state.special.id:'');if(FX16.lvl!==lk16){FX16.lvl=lk16;FX16.banner=t;FX16.vip=null;FX16.nextVip=0;tips16();FX16.ghost=null;FX16.gi=0;FX16.gflash=[];FX16.ghostKey=ghostKey16();if(state.special?.kind!=='duel')window.__ghost16?.(FX16.ghostKey)}vip16(t);ghost16(t);
+ const bk=t-FX16.banner;if(bk>=0&&bk<2600){const al=Math.min(1,bk/250,(2600-bk)/400);ctx.save();ctx.globalAlpha=al;rr(90,258,240,46,14,'#070c16e8',ist().accent,2);text(ist().name,210,274,16,ist().accent,950);text(state.special?({daily:'GÜNLÜK BULMACA',weekly:'HAFTANIN BÖLÜMÜ',duel:'DÜELLO'})[state.special.kind]:'GECE · '+state.level,210,292,9,'#dfe8ff',800);ctx.restore()}
 }
 function snowRoof16(b,x,y,angle){if(ist().wx!=='snow')return;const L=(b.len-.45)*CELL*LF.k;ctx.save();ctx.translate(x,y);ctx.rotate(angle);rr(-5*LF.k,-L/2+4,10*LF.k,L-8,5,'#f4fbff8c');ctx.restore()}
 // Hint for the new rules: follow the level's exit plan and only suggest a bus after which the level can still be won.
@@ -666,6 +676,19 @@ function vip16(t){
  const w=cand[Math.floor(Math.random()*cand.length)];FX16.vip={id:w.id,c:w.c,start:t,until:t+30000};toast('🚑 VIP YOLCU GELDİ! 30 SN İÇİNDE BİNDİR');tone(990,.15,'square');
 }
 function tips16(){const ms=state.mechanics||[];profile.seen16=profile.seen16||[];const m=ms.find(m=>MECH_TIPS[m]&&!profile.seen16.includes(m));if(m){profile.seen16.push(m);save();setTimeout(()=>say(MECH_TIPS[m]),900)}}
+// ghost race display (record run of this puzzle)
+FX16.ghost=null;FX16.ghostKey=null;FX16.gflash=[];FX16.gi=0;
+function ghostKey16(){if(!state.special)return state.level;const sp=specialV13(state.special.kind,state.special.id,state.special.level);return sp?.key||null}
+function ghost16(t){
+ const g=FX16.ghost;if(!g||FX16.ghostKey!==ghostKey16()||E.outcome(state)==='win')return;
+ const ms=state.elapsedMs||0;let gi=0;while(gi<g.times.length&&g.times[gi]<=ms)gi++;
+ for(;FX16.gi<gi;FX16.gi++){const id=g.moves[FX16.gi];if(display.buses.some(b=>b.id===id&&b.garageAfter===undefined))FX16.gflash.push({id,t})}
+ FX16.gflash=FX16.gflash.filter(f=>t-f.t<700);
+ for(const f of FX16.gflash){const b=display.buses.find(v=>v.id===f.id);if(!b)continue;const p=busPos(b),a=1-(t-f.t)/700;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(b.dir*Math.PI/4);ctx.globalAlpha=a;rr(-15*LF.k,-b.len*CELL*LF.k/2,30*LF.k,b.len*CELL*LF.k,9,'#ffffff40','#ffffff',2);ctx.restore()}
+ const mine=(state.leagueMoves||[]).length,ahead=mine>=gi,n=g.moves.length;
+ rr(6,346,236,18,9,'#05080ddd',ahead?'#5affa0':'#ff6b6b',1.4);
+ text('👻 '+String(g.name).slice(0,10)+' '+gi+'/'+n+'  ·  SEN '+mine+'/'+n+'  '+(ahead?'ÖNDESİN':'GERİDESİN'),124,355,8.5,ahead?'#b9ffd2':'#ffd0d0',900);
+}
 
 const sprites=new Map();
 function personSprite(c,n){let key=c+':'+n%6;if(sprites.has(key))return sprites.get(key);let cv=document.createElement('canvas');cv.width=100;cv.height=150;let p=cv.getContext('2d'),col=palette[c],skin=['#efc298','#c88c65','#e9b188','#a96d4b','#f4cdb1','#d39c77'][n%6],hair=['#423333','#372f35','#8f592f','#dcab65','#493530','#6c4330'][n%6];
@@ -711,7 +734,7 @@ function pedestrianTick(t){let dt=walkLast?Math.min(.08,Math.max(0,(t-walkLast)/
  if(boarding||(busy&&!driving)||!$('veil').hidden)return;
  let qi=walkers.findIndex((w,i)=>i<E.loopLimit(state)&&w.c===state.queue[i]&&w.enter>=1&&w.phase>1.35&&w.phase<1.73&&state.slots.some(b=>b&&E.acc2(b,w.c)&&b.filled<b.cap)&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&E.acc2(b,w.c))));if(qi>=0)boardWalker(qi);
 }
-async function boardWalker(qi){if(boarding||(busy&&!driving)||paused)return;const w0=walkers[qi];if(!w0)return;const lim=Math.min(E.loopLimit(state),walkers.length),room=new Map();state.slots.forEach(b=>{if(!b)return;if(b.c2===undefined)room.set(b.c,(room.get(b.c)||0)+b.cap-b.filled);else{room.set(b.c,(room.get(b.c)||0)+b.cap/2-(b.fa||0));room.set(b.c2,(room.get(b.c2)||0)+b.cap/2-(b.fb||0))}});const ok=c=>(room.get(c)||0)>0&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&E.acc2(b,c)));if(!ok(w0.c))return;room.set(w0.c,room.get(w0.c)-1);let picks=[qi];const near=walkers.map((w,i)=>({w,i,d:Math.abs(Math.atan2(Math.sin(w.phase-w0.phase),Math.cos(w.phase-w0.phase)))})).filter(o=>o.i!==qi&&o.i<lim&&o.w.enter>=1&&o.w.c===state.queue[o.i]&&o.d<.55).sort((a,b)=>a.d-b.d);for(const o of near){if(picks.length>=4)break;if(ok(o.w.c)){room.set(o.w.c,room.get(o.w.c)-1);picks.push(o.i)}}picks.sort((a,b)=>b-a);let s=state,events=[];for(const i of picks){const r=E.board(s,i);if(r.error)continue;s=r.state;events.push(...r.events)}const boards=events.filter(e=>e.type==='board'),deps=events.filter(e=>e.type==='depart');if(!boards.length)return;busy=true;boarding=true;let token=epoch;updateHUD();updateHits();say(boards.length>1?boards.length+' yolcu birlikte biniyor.':palette[boards[0].c][0]+' yolcu otobüse biniyor.');tone(210,.035,'triangle');const group=boards.map((e,j)=>{const st=crowdPos(e.qi),w=walkers[e.qi],tx=bayXs()[e.slot]+13,ox=(j-(boards.length-1)/2)*10;return {c:e.c,n:w?.id||0,walkerId:w?.id,points:[st,{x:210+ox,y:227},{x:tx+ox*.6,y:236},{x:tx+ox*.25,y:266}]}});if(!await animate({type:'board',group,duration:finalColorRun()?90:170},token))return;for(const e of boards){display.queue.splice(e.qi,1);walkers.splice(e.qi,1);if(display.slots[e.slot])display.slots[e.slot].filled++}const f=display.slots[boards[0].slot];soundSequence([440*Math.pow(2,((f?.filled||0)%8)/12),880],35,.055,'sine');vibrate(7);updateHUD();invalidate();if(deps.length&&!await playEvents(deps,token))return;if(token!==epoch)return;let ns=s;ns.buses=E.clone(state.buses);for(const d of deps)ns.buses.forEach(b=>{if(b.keyFrom===d.id)delete b.keyFrom});ns.elapsedMs=state.elapsedMs;ns.moves=state.moves;ns.dispatched=state.dispatched;ns.attemptMoves=state.attemptMoves;ns.leagueMoves=[...(state.leagueMoves||[])];ns.leagueEligible=state.leagueEligible;const touched=new Set(events.map(e=>e.slot));ns.slots=state.slots.map((b,i)=>touched.has(i)?ns.slots[i]:E.clone(b));let combo=state.combo,score=state.score+10*boards.length;for(const d of deps){combo++;score+=50*Math.max(1,Math.min(5,combo))}ns.combo=combo;ns.score=score;state=ns;display=E.clone(state);boarding=false;busy=driving;anim=null;updateHUD();updateHits();save();if(!busy)checkEnd()}
+async function boardWalker(qi){if(boarding||(busy&&!driving)||paused)return;const w0=walkers[qi];if(!w0)return;const lim=Math.min(E.loopLimit(state),walkers.length),room=new Map();state.slots.forEach(b=>{if(!b)return;if(b.c2===undefined)room.set(b.c,(room.get(b.c)||0)+b.cap-b.filled);else{room.set(b.c,(room.get(b.c)||0)+b.cap/2-(b.fa||0));room.set(b.c2,(room.get(b.c2)||0)+b.cap/2-(b.fb||0))}});const ok=c=>(room.get(c)||0)>0&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&E.acc2(b,c)));if(!ok(w0.c))return;room.set(w0.c,room.get(w0.c)-1);let picks=[qi];const near=walkers.map((w,i)=>({w,i,d:Math.abs(Math.atan2(Math.sin(w.phase-w0.phase),Math.cos(w.phase-w0.phase)))})).filter(o=>o.i!==qi&&o.i<lim&&o.w.enter>=1&&o.w.c===state.queue[o.i]&&o.d<.55).sort((a,b)=>a.d-b.d);for(const o of near){if(picks.length>=4)break;if(ok(o.w.c)){room.set(o.w.c,room.get(o.w.c)-1);picks.push(o.i)}}picks.sort((a,b)=>b-a);let s=state,events=[];for(const i of picks){const r=E.board(s,i);if(r.error)continue;s=r.state;events.push(...r.events)}const boards=events.filter(e=>e.type==='board'),deps=events.filter(e=>e.type==='depart');if(!boards.length)return;busy=true;boarding=true;let token=epoch;updateHUD();updateHits();say(boards.length>1?boards.length+' yolcu birlikte biniyor.':palette[boards[0].c][0]+' yolcu otobüse biniyor.');tone(210,.035,'triangle');const group=boards.map((e,j)=>{const st=crowdPos(e.qi),w=walkers[e.qi],tx=bayXs()[e.slot]+13,ox=(j-(boards.length-1)/2)*10;return {c:e.c,n:w?.id||0,walkerId:w?.id,points:[st,{x:210+ox,y:227},{x:tx+ox*.6,y:236},{x:tx+ox*.25,y:266}]}});if(!await animate({type:'board',group,duration:finalColorRun()?90:170},token))return;for(const e of boards){display.queue.splice(e.qi,1);walkers.splice(e.qi,1);if(display.slots[e.slot])display.slots[e.slot].filled++}const f=display.slots[boards[0].slot];soundSequence([440*Math.pow(2,((f?.filled||0)%8)/12),880],35,.055,'sine');vibrate(7);updateHUD();invalidate();if(deps.length&&!await playEvents(deps,token))return;if(token!==epoch)return;let ns=s;ns.buses=E.clone(state.buses);for(const d of deps)ns.buses.forEach(b=>{if(b.keyFrom===d.id)delete b.keyFrom});ns.elapsedMs=state.elapsedMs;ns.moves=state.moves;ns.dispatched=state.dispatched;ns.attemptMoves=state.attemptMoves;ns.leagueMoves=[...(state.leagueMoves||[])];ns.moveTimes=[...(state.moveTimes||[])];ns.leagueEligible=state.leagueEligible;const touched=new Set(events.map(e=>e.slot));ns.slots=state.slots.map((b,i)=>touched.has(i)?ns.slots[i]:E.clone(b));let combo=state.combo,score=state.score+10*boards.length;for(const d of deps){combo++;score+=50*Math.max(1,Math.min(5,combo))}ns.combo=combo;ns.score=score;state=ns;display=E.clone(state);boarding=false;busy=driving;anim=null;updateHUD();updateHits();save();if(!busy)checkEnd()}
 function drawCrowdBase(){let d=district();rr(10,-10,400,230,18,d.pavement);for(let y=0;y<220;y+=20)line([[12,y],[408,y]],'#9fb8c333',1);
  // Incoming three-abreast line, then a distinct continuous passenger loop.
  for(const m of [0,1]){const X=x=>m?420-x:x;rr(m?348:6,-12,66,184,16,'#f9f3e4');rr(m?352:10,-12,58,178,13,'#91a5b4');line([[X(58),160],[X(86),134]],'#f9f3e4',27);line([[X(58),160],[X(86),134]],'#91a5b4',21)}
@@ -842,7 +865,7 @@ async function animate(spec,token){if(profile.fast)spec={...spec,duration:spec.d
 async function playEvents(events,token){for(let e of events){if(token!==epoch)return false;if(e.type==='board'){let start=crowdPos(e.qi),w=walkers[e.qi],target={x:bayXs()[e.slot]+13,y:266};say(palette[e.c][0]+' yolcu otobüse biniyor.');tone(210,.035,'triangle');await animate({type:'board',...e,walkerId:w?.id,n:w?.id||0,points:[start,{x:233,y:227},{x:target.x,y:233},target],duration:finalColorRun()?50:82.5},token);if(token!==epoch)return false;display.queue.splice(e.qi,1);walkers.splice(e.qi,1);display.slots[e.slot].filled++;soundSequence([440*Math.pow(2,(display.slots[e.slot].filled%8)/12),880],35,.055,'sine');vibrate(7);updateHUD()}else{let b=display.slots[e.slot],x=bayXs()[e.slot];say('Otobüs doldu! Perondan ayrılıyor.');toast('TAM DOLU · '+b.cap+'/'+b.cap);soundSequence([523,659,784,1046],65,.13);vibrate([25,35,25]);engineSound();await animate({type:'full',bus:b,slot:e.slot,duration:finalColorRun()?220:450},token);if(token!==epoch)return false;{const dep={bus:b,points:[{x,y:278},{x,y:314},{x:x+8,y:334},{x:x+29,y:347},{x:475,y:347}],duration:(finalColorRun()?900:2200)*(profile.fast?.55:1),start:gnow()};departAnims.push(dep);display.slots[e.slot]=null;invalidate();gwait(dep.duration).then(()=>{departAnims=departAnims.filter(a=>a!==dep);invalidate()})}}invalidate()}return true}
 
 async function select(id){previewBus=null;if((busy&&!boarding&&!driving)||paused||!$('veil').hidden||E.outcome(state)==='win')return;let r=E.move(state,id);if(r.error){if(r.error==='frozen'){say('Buzlu otobüs! Yanındaki otobüsler çıktıkça buz erir.');tone(220,.12);vibrate([20,40,20]);shake={id,start:gnow()}}else if(r.error==='locked'){say('Kilitli otobüs! Önce anahtar işaretli otobüsü doldur.');tone(150,.12);vibrate([20,40,20])}else if(r.error==='blocked'){shake={id,start:gnow()};say('Önü kapalı. Önce yolunu kesen otobüsü çıkar.');tone(170,.14,'triangle');vibrate(25);invalidate()}else if(r.error==='bay-color')say('Boş peron renk kilitli. Çerçevesindeki renkle eşleşen aracı seç.');else if(r.error==='gate')say('Kapı için önce '+(state.buses.find(b=>b.id===id).gateAfter+1)+' numaralı aracı çıkar.');else if(r.error==='timed-exit')say('Bu çıkış '+state.buses.find(b=>b.id===id).opensAfter+' araç çıktıktan sonra açılır.');else say('Peronlar dolu. Dolan otobüsün çıkmasını bekle.');return}
- snapshot();driving=true;busy=true;let token=epoch,b=state.buses.find(b=>b.id===id);state=r.state;state.moves++;state.attemptMoves=(state.attemptMoves||0)+1;state.hintStage=0;state.leagueMoves??=[];state.leagueMoves.push(id);display.buses=E.clone(state.buses);E.reveal(display);updateHits();updateHUD();engineSound();vibrate(18);const flight={type:'drive',bus:{...b,hidden:false},points:route(b,r.slot),duration:profile.fast?800:1500,start:gnow(),slot:r.slot};driveAnims.push(flight);invalidate();await gwait(flight.duration);if(token!==epoch)return;driveAnims=driveAnims.filter(a=>a!==flight);driving=driveAnims.length>0;busy=boarding||driving;display.slots[r.slot]=E.clone(state.slots[r.slot]);updateHUD();updateHits();save();if(!busy)checkEnd();
+ snapshot();driving=true;busy=true;let token=epoch,b=state.buses.find(b=>b.id===id);state=r.state;state.moves++;state.attemptMoves=(state.attemptMoves||0)+1;state.hintStage=0;state.leagueMoves??=[];state.leagueMoves.push(id);(state.moveTimes??=[]).push(Math.round(state.elapsedMs||0));display.buses=E.clone(state.buses);E.reveal(display);updateHits();updateHUD();engineSound();vibrate(18);const flight={type:'drive',bus:{...b,hidden:false},points:route(b,r.slot),duration:profile.fast?800:1500,start:gnow(),slot:r.slot};driveAnims.push(flight);invalidate();await gwait(flight.duration);if(token!==epoch)return;driveAnims=driveAnims.filter(a=>a!==flight);driving=driveAnims.length>0;busy=boarding||driving;display.slots[r.slot]=E.clone(state.slots[r.slot]);updateHUD();updateHits();save();if(!busy)checkEnd();
 }
 
 function openPanel(html){paused=true;$('panel').innerHTML=html;$('veil').hidden=false;let b=$('panel').querySelector('button');b?.focus();invalidate()}
@@ -1312,7 +1335,7 @@ async function beginLeagueAttempt(){
  const sharedPending=leagueOutboxKey(owner)+':start:'+runId;
  try{
   localStorage.setItem(sharedPending,JSON.stringify({until:Date.now()+30000}));
-  const d=await api('/league',{action:'start',level:target.level,rulesVersion:target.rulesVersion||2,variant:target.variant||0,progressEpoch:PROGRESS_EPOCH});
+  const d=await api('/league',{action:'start',level:target.level,rulesVersion:target.rulesVersion||2,variant:target.variant||0,progressEpoch:PROGRESS_EPOCH,special:target.special?{kind:target.special.kind,id:target.special.id}:undefined});
   if(typeof d.attemptId!=='string'||!d.attemptId)throw Error('INVALID_ATTEMPT');
   const ticket={attemptId:d.attemptId,week:d.week};localStorage.setItem(leagueOutboxKey(owner)+':attempt:'+runId,JSON.stringify(ticket));
   // Engine moves clone state. Match the stable run, including completed proofs
@@ -1356,7 +1379,7 @@ function queueLeagueWin(){
  if(readLeagueReview().some(v=>v.completionId===state.leagueCompletionId))return;
  if(!items.some(v=>v.completionId===state.leagueCompletionId)){
   let ticket;try{ticket=JSON.parse(localStorage.getItem(leagueOutboxKey()+':attempt:'+state.leagueRunId)||'null')}catch{}
-  const item={completionId:state.leagueCompletionId,runId:state.leagueRunId,attemptId:state.leagueAttemptId||ticket?.attemptId||undefined,level:state.level,moves:[...(state.leagueMoves||[])],progressEpoch:PROGRESS_EPOCH,rulesVersion:state.rulesVersion||2,variant:state.variant||0,completionMode:'helpers',elapsedMs:Math.round(state.elapsedMs||0)};
+  const item={completionId:state.leagueCompletionId,runId:state.leagueRunId,attemptId:state.leagueAttemptId||ticket?.attemptId||undefined,level:state.level,moves:[...(state.leagueMoves||[])],progressEpoch:PROGRESS_EPOCH,rulesVersion:state.rulesVersion||2,variant:state.variant||0,completionMode:'helpers',elapsedMs:Math.round(state.elapsedMs||0),special:state.special?{kind:state.special.kind,id:state.special.id}:undefined,moveTimes:[...(state.moveTimes||[])]};
   try{localStorage.setItem(leagueReceiptKey(me.id,item.completionId),JSON.stringify(item));save()}catch{notice(t('leagueStorageError'));return}
  }
  paintLeagueQueue();void flushLeague();
@@ -1365,6 +1388,62 @@ const competitionLoadCloud=loadCloud;loadCloud=async function(...args){const res
 const priorEnd=checkEnd;checkEnd=function(){priorEnd();queueLeagueWin()};
 state.leagueMoves??=[];state.leagueEligible??=state.moves===0&&!state.challengeId;
 window.addEventListener('online',flushLeague);
+/* ---- Special puzzles for the new rules: daily (with streak), weekly, duel codes; ghost of the record holder ---- */
+const day16=(ms=Date.now())=>new Date(ms).toISOString().slice(0,10);
+const week16=(ms=Date.now())=>{const d=new Date(ms);d.setUTCHours(0,0,0,0);d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));return d.toISOString().slice(0,10)};
+const SPECIAL_LABEL={daily:'GÜNLÜK BULMACA',weekly:'HAFTANIN BÖLÜMÜ',duel:'DÜELLO'};
+function special16Info(st=state){return st?.special?specialV13(st.special.kind,st.special.id,st.special.level):null}
+function startSpecial16(kind,id,duelLevel){
+ if(busy)return;const sp=specialV13(kind,id,duelLevel);if(!sp)return;
+ const g=genSpecialV13(E.raw,sp);
+ if(!state.special){state.walkers=E.clone(walkers);profile.campaignResume=E.clone(state)}
+ epoch++;const st=stateV13(E,g);st.special={kind,id,level:duelLevel};st.leagueMoves=[];st.moveTimes=[];st.leagueEligible=true;
+ state=st;walkers=[];walkLast=0;history=[];anim=null;boarding=false;driving=false;busy=false;display=E.clone(state);
+ closePanel();updateHUD();updateHits();save();try{beginLeagueAttempt()}catch{}
+ say(kind==='daily'?'Günlük bulmaca! Bitirince 100 altın, 7 gün üst üste oynarsan +500.':kind==='weekly'?'Haftanın bölümü: herkes aynı bulmacayı oynuyor, en hızlılar listesinde yerini al.':'Düello! Aynı bulmacayı rakibinden hızlı bitir.');
+}
+function specialMenu16(){
+ if(busy)return;const d=profile.daily16||{},streak=d.last===day16()||d.last===day16(Date.now()-86400000)?d.streak||0:0,doneToday=d.last===day16();
+ const wk=(profile.weekly16||[]).includes(week16());
+ openPanel(`<div class="medal">☾</div><h2 id="panelTitle">Özel bulmacalar</h2>
+ <div class="mission"><strong>☀ Günlük bulmaca</strong><small>Her gün yeni bulmaca · 100 altın · 🔥 Seri: ${streak} gün${streak?'':' — bugün başla'} · 7. gün +500 altın</small><button class="action" data-x16="daily">${doneToday?'Tekrar oyna (süreni geliştir)':'Bugünkünü oyna'}</button></div>
+ <div class="mission"><strong>🏆 Haftanın bölümü</strong><small>Herkes aynı zor bulmacayı oynar · en hızlılar listesi · 150 altın${wk?' · bu hafta bitirdin':''}</small><button class="action blue" data-x16="weekly">Oyna</button></div>
+ <div class="mission"><strong>⚔ Düello</strong><small>Kod oluştur, arkadaşına gönder. Aynı bulmacayı oynayın, hızlı olan kazanır.</small><button class="action light" data-x16="duel-new">Düello kodu oluştur</button><div style="display:flex;gap:6px;margin-top:6px"><input id="x16code" maxlength="6" placeholder="KOD" style="flex:1;min-width:0;padding:10px;border-radius:12px;border:2px solid #9fb8c8;font:800 16px system-ui;text-transform:uppercase;letter-spacing:3px"><button class="action light" data-x16="duel-join" style="width:auto">Katıl</button></div><p id="x16msg" role="status" style="margin:6px 0 0;font-size:13px"></p></div>
+ ${state.special?'<button class="action" data-action="challenge-return">Ana oyuna dön</button>':''}<button class="close" data-action="resume">Geri</button>`);
+}
+function duelShow16(code,level){openPanel(`<div class="medal">⚔</div><h2 id="panelTitle">Düello kodun</h2><p>Bu kodu arkadaşına gönder. O da “Özel bulmacalar → Düello” bölümünden koda katılsın.</p><div style="font:900 34px system-ui;letter-spacing:6px;text-align:center;margin:10px 0;color:#123b57">${code}</div><button class="action light" data-x16="duel-share" data-code="${code}">Kodu paylaş</button><button class="action" data-x16="duel-play" data-code="${code}" data-level="${level}">Şimdi oyna</button><button class="close" data-action="resume">Geri</button>`)}
+document.addEventListener('click',async e=>{const el=e.target.closest('[data-x16]');if(!el)return;const a=el.dataset.x16,msg=t=>{const m=$('x16msg');if(m)m.textContent=t};
+ if(a==='daily')startSpecial16('daily',day16());
+ if(a==='weekly')startSpecial16('weekly',week16());
+ if(a==='duel-new'){if(!me){account();return}try{const d=await api('/duel',{action:'create',level:Math.max(5,Math.min(E.MAX_LEVEL,profile.unlocked||1))});duelShow16(d.code,d.level)}catch(err){msg('Düello oluşturulamadı. İnternet bağlantını kontrol et.')}}
+ if(a==='duel-share'){const text='Bus Rush düellosu! Kod: '+el.dataset.code+' — Özel bulmacalar → Düello bölümünden katıl.';try{if(navigator.share)await navigator.share({text});else{await navigator.clipboard.writeText(text);toast('KOD KOPYALANDI')}}catch{}}
+ if(a==='duel-play')startSpecial16('duel',el.dataset.code,Number(el.dataset.level));
+ if(a==='duel-join'){const code=($('x16code')?.value||'').trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(code)){msg('6 haneli kodu yaz.');return}if(!me){account();return}try{const d=await api('/duel?code='+code);startSpecial16('duel',code,d.level)}catch(err){msg(err.status===404?'Bu kod bulunamadı ya da süresi doldu.':'Koda bağlanılamadı.')}}
+});
+// attempts and verified clears carry which special puzzle they belong to, plus move timing for the ghost
+// win: rewards and a special panel (campaign progress is untouched)
+const special16End=checkEnd;checkEnd=function(){
+ if(!state.special)return special16End();
+ const keepU=profile.unlocked,keepS={...profile.stars};special16End();profile.unlocked=keepU;profile.stars=keepS;
+ if(E.outcome(state)!=='win')return;
+ const sp=state.special;let gold=0,note='';
+ if(!state.special16Paid){state.special16Paid=true;
+  if(sp.kind==='daily'){const d=profile.daily16||{};if(d.last!==sp.id){d.streak=d.last===day16(Date.parse(sp.id+'T00:00:00Z')-86400000)?(d.streak||0)+1:1;d.last=sp.id;gold=100;if(d.streak%7===0){gold+=500;note='🔥 7 GÜNLÜK SERİ! +500 ALTIN'}else note='🔥 Seri: '+d.streak+' gün'}profile.daily16=d}
+  if(sp.kind==='weekly'){profile.weekly16=profile.weekly16||[];if(!profile.weekly16.includes(sp.id)){profile.weekly16.push(sp.id);gold=150}}
+  profile.coins+=gold;save();updateHUD()}
+ const tot=state.paxTotal||0,ms=state.elapsedMs||0;
+ openPanel(`<div class="medal">${sp.kind==='duel'?'⚔':sp.kind==='weekly'?'🏆':'☀'}</div><h2 id="panelTitle">${SPECIAL_LABEL[sp.kind]} tamam!</h2><p>Süren: <b>${fmtLevelTime(ms)}</b>${gold?' · <b>+'+gold+' altın</b>':''}${note?'<br>'+note:''}</p>${sp.kind!=='duel'?`<div class="v13goal" style="margin:8px 0;padding:8px 10px;border-radius:12px;background:#eef6ff;color:#123b57;font-weight:800">Hedef: ${Math.round(targetMsV13(tot)/1000)} sn · +${leagueTierV13(ms,tot)} lig puanı</div><div id="lvlRank" class="lvl-rank"></div>`:`<div id="x16duel" class="lvl-rank"><small>${me?'Düello sonuçları yükleniyor…':'Sonuçları görmek için giriş yap.'}</small></div>`}<button class="action" data-x16="menu">Özel bulmacalar</button><button class="action light" data-action="challenge-return">Ana oyuna dön</button>`);
+ setTimeout(()=>window.__brPaintLevelRank?.(),0);
+ if(sp.kind==='duel'&&me){const code=sp.id,load=async(n)=>{try{const d=await api('/duel?code='+code);const box=$('x16duel');if(!box)return;box.innerHTML=`<div><b>Düello ${code}</b> · ${esc(d.creator)} başlattı</div><ol>${d.results.map(r=>`<li class="${r.me?'me':''}">${r.rank}. ${esc(r.name)} <em>${fmtMs(r.ms)}</em></li>`).join('')||'<li>Henüz sonuç yok</li>'}</ol>`;if(n<4&&!d.results.some(r=>r.me))setTimeout(()=>load(n+1),2500)}catch{}};setTimeout(()=>load(0),1500)}
+};
+document.addEventListener('click',e=>{if(e.target.closest('[data-x16="menu"]'))specialMenu16()});
+const special16Restart=restart;restart=function(level){if(state?.special&&level===undefined){const s=state.special;startSpecial16(s.kind,s.id,s.level);return}return special16Restart(level)};
+const special16Map=map;map=function(){if(state?.special){specialMenu16();return}special16Map();if(state?.rulesV12&&!busy&&$('panel'))$('panel').insertAdjacentHTML('afterbegin','<button class="action blue" data-x16="menu" style="margin-bottom:10px">☾ Özel bulmacalar: günlük · haftalık · düello</button>')};
+if(typeof challengeMenu==='function'){const special16Challenge=challengeMenu;challengeMenu=function(){if(state?.rulesV12)return specialMenu16();return special16Challenge()}}
+const special16HUD=updateHUD;updateHUD=function(){special16HUD();if(state?.special){$('levelLabel').textContent=SPECIAL_LABEL[state.special.kind]+(state.special.kind==='duel'?' · '+state.special.id:'')}};
+// ghost: the record run of this puzzle, raced in real time
+window.__ghost16=key=>{FX16.ghost=null;if(!me||!key)return;api('/ghost?key='+key).then(r=>{if(r?.ghost&&FX16.ghostKey===key)FX16.ghost=r.ghost}).catch(()=>{})};
+
 setInterval(()=>{if(me&&!document.hidden&&!appBackground){queueLeagueWin();if(navigator.onLine){void flushLeague();void beginLeagueAttempt()}}},30000);
 /* End Bus Rush verified score outbox. */
 
