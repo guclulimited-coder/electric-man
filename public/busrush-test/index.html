@@ -215,8 +215,9 @@ const RushEngine=(()=>{
  function reveal(s){s.buses.forEach(b=>{if(b.hidden&&clear(b,s.buses))b.hidden=false});return s}
  const LOOP_LIMIT=24;
  const loopLimit=s=>s.queueSchema>=2?s.passengerLoopCapacity:s.rulesVersion>=9?Math.max(12,baseSlots(s.level)*6):s.rulesVersion>=8&&s.level>5&&!s.challengeId?Math.max(12,20-2*Math.floor((s.level-6)/20)):s.rulesVersion>=7&&s.level>10&&!s.challengeId?Math.max(16,24-2*Math.floor((s.level-11)/20)):s.rulesVersion>=6?Math.min(80,Math.max(24,Math.ceil(s.total*.25))):s.rulesVersion>=4&&s.level>=4&&!s.challengeId?12:LOOP_LIMIT;
- function board(state,qi){if(qi<0||qi>=Math.min(loopLimit(state),state.queue.length))return {error:'outside-loop'};let si=state.slots.findIndex(b=>b&&b.c===state.queue[qi]);if(si<0)return {error:'no-bus'};let s=clone(state),b=s.slots[si],c=s.queue.splice(qi,1)[0],events=[{type:'board',slot:si,qi,c,id:b.id}];b.filled++;if(b.filled===b.cap){events.push({type:'depart',slot:si,id:b.id});s.slots[si]=null;s.buses.forEach(v=>{if(v.keyFrom===b.id)delete v.keyFrom})}return {state:s,events}}
- function nextPassenger(s){return s.queue.slice(0,loopLimit(s)).findIndex(c=>s.slots.some(b=>b&&b.c===c&&b.filled<b.cap))}
+ function board(state,qi){if(qi<0||qi>=Math.min(loopLimit(state),state.queue.length))return {error:'outside-loop'};let si=state.slots.findIndex(b=>b&&acc2(b,state.queue[qi]));if(si<0)return {error:'no-bus'};let s=clone(state),b=s.slots[si],c=s.queue.splice(qi,1)[0],events=[{type:'board',slot:si,qi,c,id:b.id}];b.filled++;if(b.c2!==undefined){if(c===b.c&&(b.fa||0)<b.cap/2)b.fa=(b.fa||0)+1;else b.fb=(b.fb||0)+1}if(b.filled===b.cap){events.push({type:'depart',slot:si,id:b.id});s.slots[si]=null;s.buses.forEach(v=>{if(v.keyFrom===b.id)delete v.keyFrom})}return {state:s,events}}
+ const acc2=(b,c)=>b.c2===undefined?b.c===c:(c===b.c&&(b.fa||0)<b.cap/2)||(c===b.c2&&(b.fb||0)<b.cap/2);
+ function nextPassenger(s){return s.queue.slice(0,loopLimit(s)).findIndex(c=>s.slots.some(b=>b&&acc2(b,c)&&b.filled<b.cap))}
  function settle(state){let s=clone(state),events=[];while(s.queue.length){const qi=nextPassenger(s);if(qi<0)break;const r=board(s,qi);if(r.error)throw Error(r.error);s=r.state;events.push(...r.events)}return {state:s,events}}
  function move(state,id){let b=state.buses.find(b=>b.id===id);if(!b)return {error:'missing'};if(b.garageAfter!==undefined)return {error:'garage'};if(b.keyFrom!==undefined)return {error:'locked'};if(b.gateAfter!==undefined)return {error:'gate'};if((b.opensAfter||0)>(state.dispatched||0))return {error:'timed-exit'};if(!clear(b,state.buses))return {error:'blocked',blockers:blockers(b,state.buses).map(b=>b.id)};let slot=state.slots.findIndex((v,i)=>!v&&(state.bayLocks?.[i]===undefined||state.bayLocks[i]===b.c));if(slot<0)return {error:state.slots.some(v=>!v)?'bay-color':'full'};let s=clone(state);s.dispatched=(s.dispatched||0)+1;s.buses=s.buses.filter(b=>b.id!==id);s.buses.forEach(v=>{if(v.gateAfter===id)delete v.gateAfter});s.buses.forEach(v=>{if(v.garageAfter===id)delete v.garageAfter});s.slots[slot]={...b,hidden:false,filled:0};reveal(s);return {state:s,events:[],slot,bus:b}}
  function outcome(s){if(!s.queue.length&&!s.buses.length&&s.slots.every(b=>!b))return 'win';if(nextPassenger(s)>=0)return 'play';if(s.slots.every(Boolean))return 'lose';if(s.buses.length&&!s.buses.some(b=>!move(s,b.id).error))return 'lose';return 'play'}
@@ -244,7 +245,7 @@ const RushEngine=(()=>{
   if(kind==='slot'){s.slots.push(null);s.extra=true;s.help++}else s.boost[kind]=(s.boost[kind]||0)+1;
   return {state:s,coins:coins-price};
  }
- return {nextPassenger,MAX_LEVEL:360,validatePuzzle,countTraps,mixPassengers,colorRuns,streakLimit,primeCatalog(items){for(const g of items)levelCache.set(g.level+':'+(g.variant||0),clone(g))},analyze,tier,undoAllowance,metrics,verifyWitness,adaptation,medal,ready,baseSlots,goldPrices,buyGold,COLS,ROWS,axes,corners,rect,collision,clear,blockers,generate,challenge,LOOP_LIMIT,loopLimit,initial,move,settle,board,reveal,outcome,clone,solve,rng}
+ return {acc2,nextPassenger,MAX_LEVEL:360,validatePuzzle,countTraps,mixPassengers,colorRuns,streakLimit,primeCatalog(items){for(const g of items)levelCache.set(g.level+':'+(g.variant||0),clone(g))},analyze,tier,undoAllowance,metrics,verifyWitness,adaptation,medal,ready,baseSlots,goldPrices,buyGold,COLS,ROWS,axes,corners,rect,collision,clear,blockers,generate,challenge,LOOP_LIMIT,loopLimit,initial,move,settle,board,reveal,outcome,clone,solve,rng}
 })();
 
 
@@ -289,7 +290,7 @@ function genV12(E,level){
  const LOOP=80,COLS=10,ROWS=7,target=400+4*(level-1);
  for(let attempt=0;attempt<40;attempt++){
   const g=buildV12(E,level,attempt,{LOOP,COLS,ROWS,target});
-  if(g&&verifyV12(E,g))return g;
+  if(g&&verifyV12(E,g))return mechanicsV12(E,g,attempt);
  }
  throw Error('v12 level failed: '+level);
 }
@@ -399,13 +400,7 @@ function buildV12(E,level,attempt,{LOOP,COLS,ROWS,target}){
  const nColors=Math.min(8,4+Math.floor((level-1)/12));
  let last=[];for(const b of order){let c;do{c=Math.floor(rand()*nColors)}while(last.includes(c)&&nColors>2);b.c=c;last=[c,...last].slice(0,2)}
  // 8. passenger queue: emitted while the planned buses wait at the bays
- const bays=E.baseSlots(level),queue=[],left=new Map(order.map(b=>[b,b.cap]));let active=[],p=0;
- const fill=()=>{while(active.length<bays&&p<order.length)active.push(order[p++])};fill();
- while(active.length){
-  let w=active.reduce((n,b)=>n+left.get(b),0),x=rand()*w,b=active[0];
-  for(const a of active){x-=left.get(a);if(x<=0){b=a;break}}
-  queue.push(b.c);left.set(b,left.get(b)-1);if(!left.get(b)){active=active.filter(a=>a!==b);fill()}
- }
+ const queue=emitQueueV12(order,E.baseSlots(level),rand);
  for(const b of buses){delete b.axis;delete b.oldId}
  const n=order.length;
  return {level,variant:0,buses,solution:order.map(b=>b.id),requiredBusOrder:order.map(b=>b.id),queue,passengerQueue:queue.slice(),total:queue.length,paxTotal:queue.length,
@@ -415,6 +410,48 @@ function buildV12(E,level,attempt,{LOOP,COLS,ROWS,target}){
   metrics:{vehicleCount:n,minimumMoves:n,difficultyScore:n*10,blockageDepth:2,forcedOrders:0,specialMechanics:spinner?1:0},
   validation:{accepted:true,status:'v12-witness-verified',solvable:true},layoutRevision:'packed-v12'};
 }
+// passengers reach the junction while the planned buses wait at the bays (two-colour buses: half the seats each)
+function emitQueueV12(order,bays,rand){
+ const queue=[],pools=b=>b.c2===undefined?[{c:b.c,n:b.cap}]:[{c:b.c,n:b.cap/2},{c:b.c2,n:b.cap/2}];
+ let active=[],p=0;const fill=()=>{while(active.length<bays&&p<order.length)active.push({b:order[p++],ps:null})};fill();
+ active.forEach(a=>a.ps=pools(a.b));
+ while(active.length){
+  const all=active.flatMap(a=>a.ps.map(q=>({a,q}))).filter(o=>o.q.n>0);let w=all.reduce((n,o)=>n+o.q.n,0),x=rand()*w,pick=all[0];
+  for(const o of all){x-=o.q.n;if(x<=0){pick=o;break}}
+  queue.push(pick.q.c);pick.q.n--;
+  if(pick.a.ps.every(q=>!q.n)){active=active.filter(a=>a!==pick.a);fill();active.forEach(a=>{if(!a.ps)a.ps=pools(a.b)})}
+ }
+ return queue;
+}
+// extra bus types added on top of a verified layout; each addition is kept only if the level is still solvable
+function mechanicsV12(E,g,attempt){
+ const level=g.level,rand=E.rng(level*4241+attempt*613+77),byId=new Map(g.buses.map(b=>[b.id,b]));
+ const order=()=>g.solution.map(id=>byId.get(id)),bays=E.baseSlots(level),nColors=Math.min(8,4+Math.floor((level-1)/12));
+ const tryAdd=(apply,undo)=>{apply();if(verifyV12(E,g))return true;undo();return false};
+ const plain=b=>b.garageAfter===undefined&&!b.garageMouth&&!b.spinner&&!b.spin&&b.keyFrom===undefined&&!b.carriesKey&&!b.ice&&b.c2===undefined;
+ const reemit=()=>{const q=emitQueueV12(order(),bays,E.rng(level*991+attempt));g.queue=q;g.passengerQueue=q.slice()};
+ const pick=a=>a[Math.floor(rand()*a.length)];
+ // two-colour buses: front half one colour, back half another
+ if(level>=8&&rand()<.7){const want=Math.min(4,1+Math.floor(level/60));for(let k=0,tries=0;k<want&&tries<6;tries++){
+  const c=order().filter(b=>plain(b)&&b.cap>=16&&b.len>=2);if(!c.length)break;const b=pick(c);let c2;do{c2=Math.floor(rand()*nColors)}while(c2===b.c);
+  if(tryAdd(()=>{b.c2=c2;reemit()},()=>{delete b.c2;reemit()}))k++}}
+ // locked bus: opens when the bus with the key leaves full
+ if(level>=6&&rand()<.65){const want=Math.min(3,1+Math.floor(level/90));for(let k=0,tries=0;k<want&&tries<8;tries++){
+  const o=order(),i=bays+3+Math.floor(rand()*Math.max(1,o.length-bays-3)),L=o[i];if(!L||!plain(L))continue;
+  const ks=o.slice(0,Math.max(0,i-bays-1)).filter(plain);if(!ks.length)continue;const K=pick(ks);
+  if(tryAdd(()=>{L.keyFrom=K.id;L.lockColor=K.c;K.carriesKey=true;K.keyColors=[L.c]},()=>{delete L.keyFrom;delete L.lockColor;delete K.carriesKey;delete K.keyColors}))k++}}
+ // frozen bus: melts when buses right next to it drive away
+ if(level>=10&&rand()<.65){const want=Math.min(3,1+Math.floor(level/80)),o=order();
+  const near=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<=2.3;
+  for(let k=0,tries=0;k<want&&tries<8;tries++){const i=Math.floor(rand()*o.length),F=o[i];if(!F||!plain(F))continue;
+   const before=o.slice(0,i).filter(b=>b.garageAfter===undefined&&near(b,F)).length;if(before<1)continue;const n=Math.min(2,before);
+   if(tryAdd(()=>{F.ice=n},()=>{delete F.ice}))k++}}
+ g.mechanics=['spin','tunnel','twoColour','lock','ice'].filter(m=>m==='spin'?g.buses.some(b=>b.spinner):m==='tunnel'?g.buses.some(b=>b.garageMouth):m==='twoColour'?g.buses.some(b=>b.c2!==undefined):m==='lock'?g.buses.some(b=>b.keyFrom!==undefined):g.buses.some(b=>b.ice));
+ return g;
+}
+function acceptsV12(b,c){return b.c2===undefined?b.c===c:(c===b.c&&(b.fa||0)<b.cap/2)||(c===b.c2&&(b.fb||0)<b.cap/2)}
+function blockV12(s,b){return b&&b.ice>0?'frozen':null}
+function afterMoveV12(s,b){if(!b)return s;if(b.spinner)s.buses.forEach(v=>{if(v.spin)v.dir=(v.dir+2)%8});s.buses.forEach(v=>{if(v.ice>0&&Math.hypot(v.x-b.x,v.y-b.y)<=2.3){v.ice--;if(!v.ice)delete v.ice}});return s}
 // rotate the marked buses when a spinner leaves
 function applySpin(s,b){if(b&&b.spinner)s.buses.forEach(v=>{if(v.spin)v.dir=(v.dir+2)%8});return s}
 function forwardOrder(E,buses,plan){
@@ -431,13 +468,23 @@ function forwardOrder(E,buses,plan){
  // the stored layout keeps the original headings; the order is valid with turning applied on the way
  return out;
 }
-function moveV12(E,state,id){const b=state.buses.find(v=>v.id===id),r=E.move(state,id);if(r.error)return r;applySpin(r.state,b);E.reveal(r.state);return r}
+function moveV12(E,state,id){const b=state.buses.find(v=>v.id===id),e=blockV12(state,b);if(e)return {error:e};const r=E.move(state,id);if(r.error)return r;afterMoveV12(r.state,b);E.reveal(r.state);return r}
+// same boarding rules as the engine's settle(), without copying the whole state for every passenger
+function settleFastV12(E,s){
+ const lim=E.loopLimit(s),acc=E.acc2||((b,c)=>b.c===c);
+ for(;;){
+  let qi=-1;const n=Math.min(lim,s.queue.length);
+  for(let i=0;i<n&&qi<0;i++){const c=s.queue[i];for(const b of s.slots)if(b&&acc(b,c)&&b.filled<b.cap){qi=i;break}}
+  if(qi<0)return s;
+  const c=s.queue[qi],si=s.slots.findIndex(b=>b&&acc(b,c)),b=s.slots[si];s.queue.splice(qi,1);b.filled++;
+  if(b.c2!==undefined){if(c===b.c&&(b.fa||0)<b.cap/2)b.fa=(b.fa||0)+1;else b.fb=(b.fb||0)+1}
+  if(b.filled===b.cap){s.slots[si]=null;s.buses.forEach(v=>{if(v.keyFrom===b.id)delete v.keyFrom})}
+ }
+}
 function verifyV12(E,g){
  let s={...E.clone(g),rulesVersion:13,slots:Array(E.baseSlots(g.level)).fill(null),moves:0,dispatched:0,score:0,combo:0,help:0,extra:false,boost:{hint:3,undo:3,sort:0,vip:1},rewarded:false,walkers:[]};
  for(const id of g.solution){
-  let guard=0;
-  while(!s.slots.some(v=>!v)&&guard++<5){const st=E.settle(s).state;if(st===s)break;s=st}
-  const r=moveV12(E,s,id);if(r.error)return false;s=E.settle(r.state).state;
+  const r=moveV12(E,s,id);if(r.error)return false;s=settleFastV12(E,r.state);
  }
  return E.outcome(s)==='win';
 }
@@ -448,7 +495,7 @@ function leagueTierV13(ms,total){const t=targetMsV13(total);for(const [k,p] of V
 
 
 const TEST_PAGE=/busrush-test/.test(location.pathname);
-;(()=>{const init=E.initial,mv=E.move,RAW={...E},made=new Set();E.initial=(level,variant=0)=>{level=Math.max(1,Math.min(E.MAX_LEVEL,level|0||1));if(!made.has(level)){E.primeCatalog([genV12(RAW,level)]);made.add(level)}const st=init(level,0);if(st.rulesV12)st.rulesVersion=13;return st};E.move=(st,id)=>{const b=st.buses.find(v=>v.id===id),r=mv(st,id);if(!r.error&&b&&b.spinner){r.state.buses.forEach(v=>{if(v.spin)v.dir=(v.dir+2)%8});E.reveal(r.state)}return r};})();
+;(()=>{const init=E.initial,mv=E.move,RAW={...E},made=new Set();E.initial=(level,variant=0)=>{level=Math.max(1,Math.min(E.MAX_LEVEL,level|0||1));if(!made.has(level)){E.primeCatalog([genV12(RAW,level)]);made.add(level)}const st=init(level,0);if(st.rulesV12)st.rulesVersion=13;return st};E.move=(st,id)=>st&&st.rulesV12?moveV12(RAW,st,id):mv(st,id);})();
 const palette=[['Mercan','#ff2d55','#ff9db0','#c4002f','●'],['Okyanus','#00a2ff','#9fe2ff','#0057d9','◆'],['Limon','#e6ff1a','#fbffa8','#a2b300','★'],['Orkide','#b026ff','#e2a8ff','#7300cc','♥'],['Nane','#39ff14','#b9ffa6','#1fa800','✚'],['Turkuaz','#00f5e4','#aafff8','#00a39a','■'],['Mandalina','#ff7a00','#ffc68a','#c45200','▲'],['Gül','#ff2fd0','#ffb0ee','#c4009a','✿']];
 let ctx=$('canvas').getContext('2d',{alpha:false});let state,display,history=[],busy=false,paused=false,epoch=0,anim=null,hintId=null,shake=null,confetti=[],lastT=0,soundCtx=null,worldScale=1,frameRequest=0,dirty=true;
 let driving=false,boarding=false,driveAnims=[],departAnims=[];
@@ -575,7 +622,7 @@ function fx16Over(t){if(!state.rulesV12)return;
  FX16.puffs=FX16.puffs.filter(p=>t-p.t<900);for(const p of FX16.puffs){const k=Math.max(0,(t-p.t)/900);if(t<p.t)continue;ellipse(p.x+p.vx*(t-p.t),p.y+p.vy*(t-p.t),4+k*12,4+k*12,'rgba(190,200,215,'+(0.45*(1-k)).toFixed(2)+')')}
  if(state.combo>FX16.combo&&state.combo>=2)FX16.shake=t;FX16.combo=state.combo||0;
  const sk=t-FX16.shake,cv=$('canvas');if(sk<380){const a=(1-sk/380)*4;cv.style.transform=`translate(${(Math.random()-.5)*a}px,${(Math.random()-.5)*a}px)`;rr(0,0,W,H,0,ist().accent+Math.round(40*(1-sk/380)).toString(16).padStart(2,'0'))}else if(cv.style.transform)cv.style.transform='';
- if(FX16.lvl!==state.level){FX16.lvl=state.level;FX16.banner=t}
+ if(FX16.lvl!==state.level){FX16.lvl=state.level;FX16.banner=t;FX16.vip=null;FX16.nextVip=0;tips16()}vip16(t);
  const bk=t-FX16.banner;if(bk>=0&&bk<2600){const al=Math.min(1,bk/250,(2600-bk)/400);ctx.save();ctx.globalAlpha=al;rr(90,258,240,46,14,'#070c16e8',ist().accent,2);text(ist().name,210,274,16,ist().accent,950);text('GECE · '+state.level,210,292,9,'#dfe8ff',800);ctx.restore()}
 }
 function snowRoof16(b,x,y,angle){if(ist().wx!=='snow')return;const L=(b.len-.45)*CELL*LF.k;ctx.save();ctx.translate(x,y);ctx.rotate(angle);rr(-5*LF.k,-L/2+4,10*LF.k,L-8,5,'#f4fbff8c');ctx.restore()}
@@ -587,6 +634,38 @@ function hint16(st){
  for(const id of cands.slice(0,6))if(wins(st,id))return {path:[id]};
  return cands.length?{path:[cands[0]]}:{path:[],limited:true};
 }
+// overlays for the extra bus types (two-colour, frozen, locked, key holder)
+function mech16(b,x,y,angle,k,bay){
+ if(!state.rulesV12||(!b.c2&&b.c2!==0&&!b.ice&&b.keyFrom===undefined&&!b.carriesKey))return;
+ const len=bay?Math.min(b.len,2.4):b.len,L=(len-.2)*CELL*k*(bay?.82:1),Wd=(bay?22:25)*k,rx=-Math.sin(angle),ry=Math.cos(angle);
+ ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+ if(b.c2!==undefined){const c2=palette[b.c2];rr(-Wd/2,1.5*k,Wd,L/2-3*k,6*k,c2[1],c2[3],1.4);rr(-Wd/2+3*k,4*k,Wd-6*k,L/2-9*k,4*k,c2[2]+'88');line([[-Wd/2,1*k],[Wd/2,1*k]],'#ffffff',2.2*k)}
+ if(b.ice>0){rr(-Wd/2-2*k,-L/2,Wd+4*k,L,7*k,'#cdeeffb8','#ffffff',1.6);line([[-Wd/4,-L/3],[0,-L/6],[-Wd/5,L/8]],'#ffffffcc',1.2);line([[Wd/4,L/5],[Wd/10,L/3]],'#ffffffcc',1.2)}
+ if(b.keyFrom!==undefined){rr(-Wd/2-1,-L/2,Wd+2,L,7*k,'#00000066');line([[-Wd/2,-L/2+6],[Wd/2,L/2-6]],'#d9dee8aa',2*k);line([[Wd/2,-L/2+6],[-Wd/2,L/2-6]],'#d9dee8aa',2*k)}
+ ctx.restore();
+ if(b.c2!==undefined)text(palette[b.c2][4],x+rx*L/4,y+ry*L/4,(bay?8:10)*k+2,'#ffffff',900);
+ if(b.ice>0){const ix=x+rx*L*.28,iy=y+ry*L*.28;ellipse(ix,iy,9*k+2,9*k+2,'#eaf8ff');text('❄'+b.ice,ix,iy+1,9*k+2,'#1f6fa8',900)}
+ if(b.keyFrom!==undefined){const lc=palette[b.lockColor??0];ellipse(x,y,12*k+2,12*k+2,'#ffffff');ellipse(x,y,12*k,12*k,lc[1]);rr(x-5*k,y-1*k,10*k,8*k,2,'#2b2f3a');ctx.beginPath();ctx.arc(x,y-1*k,3.6*k,Math.PI,0);ctx.strokeStyle='#2b2f3a';ctx.lineWidth=2*k;ctx.stroke()}
+ if(b.carriesKey){const kx=x+(bay?12:10)*k,ky=y-(bay?18:10)*k,kc=palette[(b.keyColors||[b.c])[0]];ellipse(kx,ky,8*k+2,8*k+2,'#ffd84a');ellipse(kx-2*k,ky,2.6*k,2.6*k,'#7a5a00');line([[kx,ky],[kx+5*k,ky]],'#7a5a00',1.6*k);line([[kx+4*k,ky],[kx+4*k,ky+2.5*k]],'#7a5a00',1.4*k);ellipse(kx+6*k,ky-5*k,2.4*k,2.4*k,kc[1])}
+}
+// VIP / ambulance passenger: a marked passenger in the junction; board her before the timer ends for bonus gold
+FX16.vip=null;FX16.nextVip=0;
+const MECH_TIPS={twoColour:'YENİ: Çift renkli otobüs! Önü bir renk, arkası başka renk yolcu alır. Yarısı yarısına dolar.',lock:'YENİ: Kilitli otobüs! Anahtarlı otobüs dolup gidince kilidi açılır.',ice:'YENİ: Buzlu otobüs! Yanındaki otobüsler çıktıkça buz erir, sayı 0 olunca hareket eder.',spin:'Dönen otobüs: ↻ işaretli otobüs çıkınca küçük ↻ olanlar 90° döner.'};
+function vip16(t){
+ if(!state.rulesV12||state.level<3||paused||E.outcome(state)!=='play')return;
+ if(!FX16.nextVip)FX16.nextVip=t+25000;
+ const v=FX16.vip;
+ if(v){const idx=walkers.findIndex(w=>w.id===v.id);
+  if(idx<0){FX16.vip=null;FX16.nextVip=t+45000;profile.coins+=40;save();updateHUD();toast('🚑 VIP YOLCU YETİŞTİ · +40 ALTIN');soundSequence([660,880,1100],90,.12)}
+  else if(t>v.until){FX16.vip=null;FX16.nextVip=t+45000;toast('VIP YOLCU BEKLEYEMEDİ')}
+  else{const p=crowdPos(idx),k=(v.until-t)/(v.until-v.start);ctx.beginPath();ctx.arc(p.x,p.y-24,10,-Math.PI/2,-Math.PI/2+k*TAU);ctx.strokeStyle=k<.3?'#ff4d4d':'#ffffff';ctx.lineWidth=2.5;ctx.stroke();ellipse(p.x,p.y-24,7.5,7.5,'#e8203a');rr(p.x-1.6,p.y-29,3.2,10,1,'#fff');rr(p.x-5,p.y-25.6,10,3.2,1,'#fff')}
+  return}
+ if(t<FX16.nextVip||walkers.length<20)return;
+ const colours=new Set([...state.slots.filter(Boolean).map(b=>b.c),...state.buses.filter(b=>b.garageAfter===undefined&&E.clear(b,state.buses)).map(b=>b.c)]);
+ const cand=walkers.filter((w,i)=>i>8&&colours.has(w.c));if(!cand.length){FX16.nextVip=t+5000;return}
+ const w=cand[Math.floor(Math.random()*cand.length)];FX16.vip={id:w.id,c:w.c,start:t,until:t+30000};toast('🚑 VIP YOLCU GELDİ! 30 SN İÇİNDE BİNDİR');tone(990,.15,'square');
+}
+function tips16(){const ms=state.mechanics||[];profile.seen16=profile.seen16||[];const m=ms.find(m=>MECH_TIPS[m]&&!profile.seen16.includes(m));if(m){profile.seen16.push(m);save();setTimeout(()=>say(MECH_TIPS[m]),900)}}
 
 const sprites=new Map();
 function personSprite(c,n){let key=c+':'+n%6;if(sprites.has(key))return sprites.get(key);let cv=document.createElement('canvas');cv.width=100;cv.height=150;let p=cv.getContext('2d'),col=palette[c],skin=['#efc298','#c88c65','#e9b188','#a96d4b','#f4cdb1','#d39c77'][n%6],hair=['#423333','#372f35','#8f592f','#dcab65','#493530','#6c4330'][n%6];
@@ -625,14 +704,14 @@ function feederPos(i){let row=Math.floor(i/4),col=i%4,side=(feedSide+row)%2,r=Ma
 function crowdPos(i){let w=walkers[i];if(w){let p=loopPos(w.phase,w.lane!==undefined?w.lane+.5:w.id%5);if(w.enter<1){let f=w.enter,start={x:(w.side?362:18)+(w.lane??w.id%4)*13.3,y:160};return {x:start.x+(p.x-start.x)*f,y:start.y+(p.y-start.y)*f}}return p}return feederPos(i-walkers.length)}
 const VIS_LOOP=80,visLoop=()=>Math.max(VIS_LOOP,E.loopLimit(state));
 function restoreWalkers(){let a=state.walkers;walkers=Array.isArray(a)&&a.length<=visLoop()&&a.every((w,i)=>w.c===state.queue[i]&&Number.isFinite(w.phase)&&Number.isFinite(w.enter)&&Number.isInteger(w.id))?E.clone(a):[];walkerSerial=walkers.reduce((m,w)=>Math.max(m,w.id+1),0);feedShift=0;walkLast=0;feedClock=0}
-function finalColorRun(){if(!state.queue.length)return false;if(state.queue.every(c=>c===state.queue[0]))return true;if(state.buses.length)return false;const need=new Map();for(const c of state.queue)need.set(c,(need.get(c)||0)+1);return [...need].every(([c,n])=>state.slots.reduce((sum,b)=>sum+(b&&b.c===c?b.cap-b.filled:0),0)>=n)}
+function finalColorRun(){if(!state.queue.length)return false;if(state.queue.every(c=>c===state.queue[0]))return true;if(state.buses.length)return false;const need=new Map();for(const c of state.queue)need.set(c,(need.get(c)||0)+1);return [...need].every(([c,n])=>state.slots.reduce((sum,b)=>sum+(!b?0:b.c2===undefined?(b.c===c?b.cap-b.filled:0):(b.c===c?b.cap/2-(b.fa||0):0)+(b.c2===c?b.cap/2-(b.fb||0):0)),0)>=n)}
 function pedestrianTick(t){let dt=walkLast?Math.min(.08,Math.max(0,(t-walkLast)/1000)):0;walkLast=t;if(paused||document.hidden)return;let finish=finalColorRun(),speed=(profile.fast?1.44:1.00)*(finish?2.0:1);feedShift=Math.max(0,feedShift-dt*(finish?9.6:4));for(let i=0;i<walkers.length;i++){let w=walkers[i];w.enter=Math.min(1,w.enter+dt*(finish?10:6));w.phase=(w.phase+dt*speed*2)%TAU}
  feedClock=Math.min(.20,feedClock+dt);
  if(feedClock>=(finish?.04:.07)){const lim=Math.min(visLoop(),display.queue.length),side=feedSide,ph=side?0:Math.PI;if(walkers.length<lim&&(state.rulesV12?!walkers.some(w=>w.enter<.6&&w.side===side):!walkers.some(w=>Math.abs(Math.atan2(Math.sin(w.phase-ph),Math.cos(w.phase-ph)))<.27))){let n=0;while(n<4&&walkers.length<lim){walkers.push({id:walkerSerial++,c:display.queue[walkers.length],phase:ph,enter:0,side,lane:n});n++}feedSide=1-feedSide;feedClock=0;feedShift=1}}
  if(boarding||(busy&&!driving)||!$('veil').hidden)return;
- let qi=walkers.findIndex((w,i)=>i<E.loopLimit(state)&&w.c===state.queue[i]&&w.enter>=1&&w.phase>1.35&&w.phase<1.73&&state.slots.some(b=>b&&b.c===w.c&&b.filled<b.cap)&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&b.c===w.c)));if(qi>=0)boardWalker(qi);
+ let qi=walkers.findIndex((w,i)=>i<E.loopLimit(state)&&w.c===state.queue[i]&&w.enter>=1&&w.phase>1.35&&w.phase<1.73&&state.slots.some(b=>b&&E.acc2(b,w.c)&&b.filled<b.cap)&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&E.acc2(b,w.c))));if(qi>=0)boardWalker(qi);
 }
-async function boardWalker(qi){if(boarding||(busy&&!driving)||paused)return;const w0=walkers[qi];if(!w0)return;const lim=Math.min(E.loopLimit(state),walkers.length),room=new Map();state.slots.forEach(b=>{if(b)room.set(b.c,(room.get(b.c)||0)+b.cap-b.filled)});const ok=c=>(room.get(c)||0)>0&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&b.c===c));if(!ok(w0.c))return;room.set(w0.c,room.get(w0.c)-1);let picks=[qi];const near=walkers.map((w,i)=>({w,i,d:Math.abs(Math.atan2(Math.sin(w.phase-w0.phase),Math.cos(w.phase-w0.phase)))})).filter(o=>o.i!==qi&&o.i<lim&&o.w.enter>=1&&o.w.c===state.queue[o.i]&&o.d<.55).sort((a,b)=>a.d-b.d);for(const o of near){if(picks.length>=4)break;if(ok(o.w.c)){room.set(o.w.c,room.get(o.w.c)-1);picks.push(o.i)}}picks.sort((a,b)=>b-a);let s=state,events=[];for(const i of picks){const r=E.board(s,i);if(r.error)continue;s=r.state;events.push(...r.events)}const boards=events.filter(e=>e.type==='board'),deps=events.filter(e=>e.type==='depart');if(!boards.length)return;busy=true;boarding=true;let token=epoch;updateHUD();updateHits();say(boards.length>1?boards.length+' yolcu birlikte biniyor.':palette[boards[0].c][0]+' yolcu otobüse biniyor.');tone(210,.035,'triangle');const group=boards.map((e,j)=>{const st=crowdPos(e.qi),w=walkers[e.qi],tx=bayXs()[e.slot]+13,ox=(j-(boards.length-1)/2)*10;return {c:e.c,n:w?.id||0,walkerId:w?.id,points:[st,{x:210+ox,y:227},{x:tx+ox*.6,y:236},{x:tx+ox*.25,y:266}]}});if(!await animate({type:'board',group,duration:finalColorRun()?90:170},token))return;for(const e of boards){display.queue.splice(e.qi,1);walkers.splice(e.qi,1);if(display.slots[e.slot])display.slots[e.slot].filled++}const f=display.slots[boards[0].slot];soundSequence([440*Math.pow(2,((f?.filled||0)%8)/12),880],35,.055,'sine');vibrate(7);updateHUD();invalidate();if(deps.length&&!await playEvents(deps,token))return;if(token!==epoch)return;let ns=s;ns.buses=E.clone(state.buses);for(const d of deps)ns.buses.forEach(b=>{if(b.keyFrom===d.id)delete b.keyFrom});ns.elapsedMs=state.elapsedMs;ns.moves=state.moves;ns.dispatched=state.dispatched;ns.attemptMoves=state.attemptMoves;ns.leagueMoves=[...(state.leagueMoves||[])];ns.leagueEligible=state.leagueEligible;const touched=new Set(events.map(e=>e.slot));ns.slots=state.slots.map((b,i)=>touched.has(i)?ns.slots[i]:E.clone(b));let combo=state.combo,score=state.score+10*boards.length;for(const d of deps){combo++;score+=50*Math.max(1,Math.min(5,combo))}ns.combo=combo;ns.score=score;state=ns;display=E.clone(state);boarding=false;busy=driving;anim=null;updateHUD();updateHits();save();if(!busy)checkEnd()}
+async function boardWalker(qi){if(boarding||(busy&&!driving)||paused)return;const w0=walkers[qi];if(!w0)return;const lim=Math.min(E.loopLimit(state),walkers.length),room=new Map();state.slots.forEach(b=>{if(!b)return;if(b.c2===undefined)room.set(b.c,(room.get(b.c)||0)+b.cap-b.filled);else{room.set(b.c,(room.get(b.c)||0)+b.cap/2-(b.fa||0));room.set(b.c2,(room.get(b.c2)||0)+b.cap/2-(b.fb||0))}});const ok=c=>(room.get(c)||0)>0&&!driveAnims.some(a=>a.slot===state.slots.findIndex(b=>b&&E.acc2(b,c)));if(!ok(w0.c))return;room.set(w0.c,room.get(w0.c)-1);let picks=[qi];const near=walkers.map((w,i)=>({w,i,d:Math.abs(Math.atan2(Math.sin(w.phase-w0.phase),Math.cos(w.phase-w0.phase)))})).filter(o=>o.i!==qi&&o.i<lim&&o.w.enter>=1&&o.w.c===state.queue[o.i]&&o.d<.55).sort((a,b)=>a.d-b.d);for(const o of near){if(picks.length>=4)break;if(ok(o.w.c)){room.set(o.w.c,room.get(o.w.c)-1);picks.push(o.i)}}picks.sort((a,b)=>b-a);let s=state,events=[];for(const i of picks){const r=E.board(s,i);if(r.error)continue;s=r.state;events.push(...r.events)}const boards=events.filter(e=>e.type==='board'),deps=events.filter(e=>e.type==='depart');if(!boards.length)return;busy=true;boarding=true;let token=epoch;updateHUD();updateHits();say(boards.length>1?boards.length+' yolcu birlikte biniyor.':palette[boards[0].c][0]+' yolcu otobüse biniyor.');tone(210,.035,'triangle');const group=boards.map((e,j)=>{const st=crowdPos(e.qi),w=walkers[e.qi],tx=bayXs()[e.slot]+13,ox=(j-(boards.length-1)/2)*10;return {c:e.c,n:w?.id||0,walkerId:w?.id,points:[st,{x:210+ox,y:227},{x:tx+ox*.6,y:236},{x:tx+ox*.25,y:266}]}});if(!await animate({type:'board',group,duration:finalColorRun()?90:170},token))return;for(const e of boards){display.queue.splice(e.qi,1);walkers.splice(e.qi,1);if(display.slots[e.slot])display.slots[e.slot].filled++}const f=display.slots[boards[0].slot];soundSequence([440*Math.pow(2,((f?.filled||0)%8)/12),880],35,.055,'sine');vibrate(7);updateHUD();invalidate();if(deps.length&&!await playEvents(deps,token))return;if(token!==epoch)return;let ns=s;ns.buses=E.clone(state.buses);for(const d of deps)ns.buses.forEach(b=>{if(b.keyFrom===d.id)delete b.keyFrom});ns.elapsedMs=state.elapsedMs;ns.moves=state.moves;ns.dispatched=state.dispatched;ns.attemptMoves=state.attemptMoves;ns.leagueMoves=[...(state.leagueMoves||[])];ns.leagueEligible=state.leagueEligible;const touched=new Set(events.map(e=>e.slot));ns.slots=state.slots.map((b,i)=>touched.has(i)?ns.slots[i]:E.clone(b));let combo=state.combo,score=state.score+10*boards.length;for(const d of deps){combo++;score+=50*Math.max(1,Math.min(5,combo))}ns.combo=combo;ns.score=score;state=ns;display=E.clone(state);boarding=false;busy=driving;anim=null;updateHUD();updateHits();save();if(!busy)checkEnd()}
 function drawCrowdBase(){let d=district();rr(10,-10,400,230,18,d.pavement);for(let y=0;y<220;y+=20)line([[12,y],[408,y]],'#9fb8c333',1);
  // Incoming three-abreast line, then a distinct continuous passenger loop.
  for(const m of [0,1]){const X=x=>m?420-x:x;rr(m?348:6,-12,66,184,16,'#f9f3e4');rr(m?352:10,-12,58,178,13,'#91a5b4');line([[X(58),160],[X(86),134]],'#f9f3e4',27);line([[X(58),160],[X(86),134]],'#91a5b4',21)}
@@ -701,7 +780,7 @@ function parkedBus(b,x,y,angle){
   if(renderCache.buses.size>=48)renderCache.buses.delete(renderCache.buses.keys().next().value);
   renderCache.buses.set(key,image);
  }
- ctx.drawImage(image,x-image.width/4,y-image.height/4,image.width/2,image.height/2);if(state.rulesV12)snowRoof16(b,x,y,angle);
+ ctx.drawImage(image,x-image.width/4,y-image.height/4,image.width/2,image.height/2);if(state.rulesV12){snowRoof16(b,x,y,angle);mech16(b,x,y,angle,LF.k,false)}
  if(b.spinner){ellipse(x,y,12*LF.k+4,12*LF.k+4,'#fff');ellipse(x,y,12*LF.k+2,12*LF.k+2,'#7a2cff');text('↻',x,y+1,18*LF.k+4,'#fff',900)}else if(b.spin){ellipse(x+9*LF.k,y-9*LF.k,7*LF.k+2,7*LF.k+2,'#7a2cff');text('↻',x+9*LF.k,y-9*LF.k+1,10*LF.k+3,'#fff',900)}
  if(state.rulesVersion>=9){if(b.gateAfter!==undefined||b.opensAfter>(state.dispatched||0)){rr(x-23,y-28*LF.k-9,46,18,6,'#18354bee','#ffd45a',1.5);text(b.gateAfter!==undefined?'K '+(b.gateAfter+1):'H '+Math.max(0,b.opensAfter-(state.dispatched||0)),x,y-28*LF.k,11,'#fff',900)}}
 
@@ -716,7 +795,7 @@ function draw(rt=performance.now()){let t=gnow(rt);
  if(window.RushNative&&!dirty&&rt-lastRenderedFrame<32){frameRequest=requestAnimationFrame(draw);return;}
  lastRenderedFrame=rt;
  dirty=false;fitLot();pedestrianTick(t);background(t);fx16Under(t);drawPreview(t);let xs=bayXs();display.buses.filter(b=>b.garageAfter===undefined).sort((a,b)=>a.y-b.y).forEach(b=>{let p=busPos(b),angle=b.dir*Math.PI/4,dx=0;if(shake?.id===b.id){let k=(t-shake.start)/420;dx=Math.sin(k*25)*(1-k)*5;if(k>=1)shake=null}if(hintId===b.id){ctx.save();ctx.translate(p.x,p.y);ctx.scale(LF.k,LF.k);ctx.rotate(angle);ctx.shadowColor='#fffdb8';ctx.shadowBlur=12;rr(-22,-b.len*CELL/2-4,44,b.len*CELL+8,12,null,'#fff5b2',3);ctx.restore()}if(b.garageMouth&&state.rulesV12){ctx.save();ctx.translate(p.x,p.y);ctx.scale(LF.k,LF.k);ctx.rotate(angle);const hh=b.len*CELL;rr(-24,-hh/2-8,48,hh+16,10,'#4a4038','#a39079',3);for(let yy=-hh/2-4,k=0;yy<hh/2+6;yy+=7,k++){line([[-23,yy],[-18,yy]],'#6d5f52',2);line([[18,yy],[23,yy]],'#6d5f52',2)}rr(-18,-hh/2-3,36,hh+6,7,'#07090d');const gl=ctx.createRadialGradient(0,hh/2,2,0,hh/2,hh*.7);gl.addColorStop(0,'#ffcf5aaa');gl.addColorStop(1,'#ffcf5a00');ctx.fillStyle=gl;ctx.fillRect(-18,-hh/2,36,hh+3);ctx.restore()}else if(b.garageMouth){ctx.save();ctx.translate(p.x,p.y);ctx.scale(LF.k,LF.k);ctx.rotate(angle);rr(-23,-b.len*CELL/2-7,46,b.len*CELL+14,6,'#35506a','#a8c8d8',3);for(let y=-b.len*CELL/2;y<b.len*CELL/2;y+=9)line([[-20,y],[20,y]],'#819aaf',2);ctx.restore();}parkedBus(b,p.x+dx,p.y,angle);if(b.garageMouth){rr(p.x-26,p.y+24*LF.k,52,15,5,'#18354bdd');let remaining=0,tail=b.id,seen=new Set();for(;;){let next=display.buses.find(v=>v.garageAfter===tail);if(!next||seen.has(next.id))break;seen.add(next.id);remaining++;tail=next.id}text(remaining?(state.rulesV12?'TÜNEL · ':'GARAJ · ')+remaining:'ÇIKIŞ',p.x,p.y+24*LF.k+8,8.5,'#fff',900);}});
- display.slots.forEach((b,i)=>{if(!b||driveAnims.some(a=>a.slot===i)||anim?.type==='depart'&&anim.slot===i)return;bus(b,xs[i],278,0,.62,{arrow:false,badge:b.filled+'/'+b.cap});rr(xs[i]-17,322,34,4,2,'#314a60');if(b.filled)rr(xs[i]-17,322,34*b.filled/b.cap,4,2,palette[b.c][2]);if(anim?.type==='board'&&anim.slot===i){let k=Math.min(1,(t-anim.start)/anim.duration),opening=Math.min(1,k*6,(1-k)*8);rr(xs[i]+7,256,9,20,2,'#183a50');rr(xs[i]+8+opening*7,256,4,20,1,palette[b.c][2]);line([[xs[i]+10,277],[xs[i]+22,277]],'#fff0bd',3)}if(anim?.type==='full'&&anim.slot===i){if(Math.floor(t/120)%2){ellipse(xs[i]-12,249,3,3,'#ffcf45');ellipse(xs[i]+12,249,3,3,'#ffcf45')}rr(xs[i]-22,233,44,17,6,'#fff2a5');text('DOLU',xs[i],242,9,'#8c6726')}});
+ display.slots.forEach((b,i)=>{if(!b||driveAnims.some(a=>a.slot===i)||anim?.type==='depart'&&anim.slot===i)return;bus(b,xs[i],278,0,.62,{arrow:false,badge:b.filled+'/'+b.cap});mech16(b,xs[i],278,0,.62,true);rr(xs[i]-17,322,34,4,2,'#314a60');if(b.filled)rr(xs[i]-17,322,34*b.filled/b.cap,4,2,palette[b.c][2]);if(anim?.type==='board'&&anim.slot===i){let k=Math.min(1,(t-anim.start)/anim.duration),opening=Math.min(1,k*6,(1-k)*8);rr(xs[i]+7,256,9,20,2,'#183a50');rr(xs[i]+8+opening*7,256,4,20,1,palette[b.c][2]);line([[xs[i]+10,277],[xs[i]+22,277]],'#fff0bd',3)}if(anim?.type==='full'&&anim.slot===i){if(Math.floor(t/120)%2){ellipse(xs[i]-12,249,3,3,'#ffcf45');ellipse(xs[i]+12,249,3,3,'#ffcf45')}rr(xs[i]-22,233,44,17,6,'#fff2a5');text('DOLU',xs[i],242,9,'#8c6726')}});
  departAnims=departAnims.filter(a=>t-a.start<a.duration+50);for(const d of departAnims){let k=Math.min(1,(t-d.start)/d.duration),p=pathPoint(d.points,k);bus(d.bus,p.x,p.y,p.angle,.62,{arrow:false})}
  for(const driveAnim of driveAnims){let k=Math.min(1,(t-driveAnim.start)/driveAnim.duration),p=pathPoint(driveAnim.points,k);bus(driveAnim.bus,p.x,p.y,p.angle,LF.k*(1-k)+.62*k,{arrow:false})}
  if(anim){let k=Math.min(1,Math.max(0,(t-anim.start)/anim.duration));if(anim.type==='drive'){let p=pathPoint(anim.points,k);bus(anim.bus,p.x,p.y,p.angle,1-(.38*k),{arrow:false})}if(anim.type==='depart'){let p=pathPoint(anim.points,k);bus(anim.bus,p.x,p.y,p.angle,.62,{arrow:false})}if(anim.type==='board'){for(const g of (anim.group||[anim])){let p=pathPoint(g.points,k);person(g.c,g.n,p.x,p.y,.88*(1-.30*k),Math.sin(k*22+g.n)*2.3,true)}}}
@@ -762,7 +841,7 @@ function route(b,slot){let p=busPos(b),[u,v]=E.axes(b),distance=0;while(distance
 async function animate(spec,token){if(profile.fast)spec={...spec,duration:spec.duration*.55};if(reduced&&spec.type!=='drive'&&spec.type!=='depart')return token===epoch;anim={...spec,start:gnow()};invalidate();await gwait(spec.duration);if(token!==epoch)return false;anim=null;return true}
 async function playEvents(events,token){for(let e of events){if(token!==epoch)return false;if(e.type==='board'){let start=crowdPos(e.qi),w=walkers[e.qi],target={x:bayXs()[e.slot]+13,y:266};say(palette[e.c][0]+' yolcu otobüse biniyor.');tone(210,.035,'triangle');await animate({type:'board',...e,walkerId:w?.id,n:w?.id||0,points:[start,{x:233,y:227},{x:target.x,y:233},target],duration:finalColorRun()?50:82.5},token);if(token!==epoch)return false;display.queue.splice(e.qi,1);walkers.splice(e.qi,1);display.slots[e.slot].filled++;soundSequence([440*Math.pow(2,(display.slots[e.slot].filled%8)/12),880],35,.055,'sine');vibrate(7);updateHUD()}else{let b=display.slots[e.slot],x=bayXs()[e.slot];say('Otobüs doldu! Perondan ayrılıyor.');toast('TAM DOLU · '+b.cap+'/'+b.cap);soundSequence([523,659,784,1046],65,.13);vibrate([25,35,25]);engineSound();await animate({type:'full',bus:b,slot:e.slot,duration:finalColorRun()?220:450},token);if(token!==epoch)return false;{const dep={bus:b,points:[{x,y:278},{x,y:314},{x:x+8,y:334},{x:x+29,y:347},{x:475,y:347}],duration:(finalColorRun()?900:2200)*(profile.fast?.55:1),start:gnow()};departAnims.push(dep);display.slots[e.slot]=null;invalidate();gwait(dep.duration).then(()=>{departAnims=departAnims.filter(a=>a!==dep);invalidate()})}}invalidate()}return true}
 
-async function select(id){previewBus=null;if((busy&&!boarding&&!driving)||paused||!$('veil').hidden||E.outcome(state)==='win')return;let r=E.move(state,id);if(r.error){if(r.error==='locked'){say('Kilitli otobüs! Önce anahtar işaretli otobüsü doldur.');tone(150,.12);vibrate([20,40,20])}else if(r.error==='blocked'){shake={id,start:gnow()};say('Önü kapalı. Önce yolunu kesen otobüsü çıkar.');tone(170,.14,'triangle');vibrate(25);invalidate()}else if(r.error==='bay-color')say('Boş peron renk kilitli. Çerçevesindeki renkle eşleşen aracı seç.');else if(r.error==='gate')say('Kapı için önce '+(state.buses.find(b=>b.id===id).gateAfter+1)+' numaralı aracı çıkar.');else if(r.error==='timed-exit')say('Bu çıkış '+state.buses.find(b=>b.id===id).opensAfter+' araç çıktıktan sonra açılır.');else say('Peronlar dolu. Dolan otobüsün çıkmasını bekle.');return}
+async function select(id){previewBus=null;if((busy&&!boarding&&!driving)||paused||!$('veil').hidden||E.outcome(state)==='win')return;let r=E.move(state,id);if(r.error){if(r.error==='frozen'){say('Buzlu otobüs! Yanındaki otobüsler çıktıkça buz erir.');tone(220,.12);vibrate([20,40,20]);shake={id,start:gnow()}}else if(r.error==='locked'){say('Kilitli otobüs! Önce anahtar işaretli otobüsü doldur.');tone(150,.12);vibrate([20,40,20])}else if(r.error==='blocked'){shake={id,start:gnow()};say('Önü kapalı. Önce yolunu kesen otobüsü çıkar.');tone(170,.14,'triangle');vibrate(25);invalidate()}else if(r.error==='bay-color')say('Boş peron renk kilitli. Çerçevesindeki renkle eşleşen aracı seç.');else if(r.error==='gate')say('Kapı için önce '+(state.buses.find(b=>b.id===id).gateAfter+1)+' numaralı aracı çıkar.');else if(r.error==='timed-exit')say('Bu çıkış '+state.buses.find(b=>b.id===id).opensAfter+' araç çıktıktan sonra açılır.');else say('Peronlar dolu. Dolan otobüsün çıkmasını bekle.');return}
  snapshot();driving=true;busy=true;let token=epoch,b=state.buses.find(b=>b.id===id);state=r.state;state.moves++;state.attemptMoves=(state.attemptMoves||0)+1;state.hintStage=0;state.leagueMoves??=[];state.leagueMoves.push(id);display.buses=E.clone(state.buses);E.reveal(display);updateHits();updateHUD();engineSound();vibrate(18);const flight={type:'drive',bus:{...b,hidden:false},points:route(b,r.slot),duration:profile.fast?800:1500,start:gnow(),slot:r.slot};driveAnims.push(flight);invalidate();await gwait(flight.duration);if(token!==epoch)return;driveAnims=driveAnims.filter(a=>a!==flight);driving=driveAnims.length>0;busy=boarding||driving;display.slots[r.slot]=E.clone(state.slots[r.slot]);updateHUD();updateHits();save();if(!busy)checkEnd();
 }
 
