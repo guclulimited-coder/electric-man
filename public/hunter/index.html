@@ -1689,8 +1689,11 @@ function updateHook(dt){
 // ---------------------------------------------------------------- the thrown hook: grab a live monster and yank it in, or pull Serhat onto a big one
 const tcable = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, 1, 6, 1, true), new THREE.MeshBasicMaterial({color: 0x9ff6ff})); tcable.visible = false; scene.add(tcable);
 const thead = hookHead.clone(); thead.visible = false; scene.add(thead);
+const LIVE_HOOK = false;
 const Throw = {state: 'idle', cd: 0, target: null, tip: new THREE.Vector3(), len: 0, dir: new THREE.Vector3(), range: 15,
   fire(auto = false){
+    // the cable is only for the dead: live monsters are fought with the tools, never hooked
+    if (!LIVE_HOOK) return;
     if (!running || paused || this.state !== 'idle' || this.cd > 0) return;
     let best = null, bs = -1e9; const fx = Math.sin(player.face), fz = Math.cos(player.face), R = this.range * (.85 + player.size * .15);
     for (const e of enemies){ if (e.dead || e.spec.tree || !e.g.visible) continue; const dx = e.pos.x - player.pos.x, dz = e.pos.z - player.pos.z, d = Math.hypot(dx, dz); if (d > R || d < 1) continue;
@@ -1701,7 +1704,6 @@ const Throw = {state: 'idle', cd: 0, target: null, tip: new THREE.Vector3(), len
   },
   update(dt){
     this.cd = Math.max(0, this.cd - dt);
-    if (this.state === 'idle' && this.cd <= 0) this.fire(true);
     if (this.state === 'idle'){ tcable.visible = thead.visible = false; return; }
     const o = new THREE.Vector3(player.pos.x, 1.3 * player.size, player.pos.z), e = this.target;
     if (e && (e.dead || !enemies.includes(e))){ this.state = 'back'; e.hooked = false; }
@@ -1737,7 +1739,6 @@ const Throw = {state: 'idle', cd: 0, target: null, tip: new THREE.Vector3(), len
 // a hook strike is worth about two seconds of all equipped tools
 function hookHit(){ let dps = 0; for (const w of gear) dps += weaponDmg(w) / weaponCd(w); return Math.max(8, dps * 2); }
 
-addEventListener('keydown', ev => { if (ev.code === 'Space' || ev.code === 'KeyE') Throw.fire(); });
 let gulpT = 0;
 function devour(e){
   const msg = e.spec.gain(); player.eaten++; saveSoon = true;
