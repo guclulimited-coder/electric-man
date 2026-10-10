@@ -180,6 +180,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 [data-lg-code]{flex-shrink:0;max-width:120px;overflow-wrap:anywhere}.lrow [data-lg-code]{grid-column:2/-1;justify-self:end}
 .hook::after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(6,18,26,.62) var(--cd),transparent 0);pointer-events:none}
 .hook span{position:relative;z-index:1}
+.getapp{display:inline-flex;align-items:center;gap:8px;background:#000;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:12px;padding:8px 14px 8px 10px;font:600 15px/1.05 system-ui,sans-serif}.getapp small{display:block;font-size:9px;letter-spacing:.06em;opacity:.85}.getapp[hidden]{display:none}
 </style>
 
 <div id="stage"></div>
@@ -257,7 +258,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
       <dt data-t="howKit">Ekipman</dt><dd data-t="howKitD">Her boss yalıtkan eldiven, bot, baret, yelek ya da dielektrik kalkan bırakır</dd>
       <dt data-t="howPow">Güç</dt><dd data-t="howPowD">Herkesin başında ⚡ güç yazar: yeşil senden zayıf, kırmızı senden güçlü</dd>
     </dl>
-    <div class="btns"><button class="go" id="startBtn" type="button" disabled data-t="loadingSerhat">Serhat yükleniyor…</button></div>
+    <div class="btns"><button class="go" id="startBtn" type="button" disabled data-t="loadingSerhat">Serhat yükleniyor…</button><a class="getapp" id="getApp" hidden href="https://play.google.com/store/apps/details?id=com.tusneldax.electrichunter" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#00d7fe" d="M3.6 2.3 13.3 12l-9.7 9.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1z"/><path fill="#ffce00" d="m16.6 15.3-3.3-3.3 3.3-3.3 3.7 2.1c1 .6 1 2 0 2.5z"/><path fill="#ff3a44" d="M16.6 15.3 13.3 12l-9.7 9.7c.4.2.8.2 1.2 0z"/><path fill="#00f076" d="M16.6 8.7 4.8 2c-.4-.2-.8-.2-1.2 0L13.3 12z"/></svg><span><small>UYGULAMAYI İNDİR</small>Google Play</span></a></div>
     <div class="loading" id="loadTxt" data-t="loadingModel">Karakter modeli yükleniyor</div>
   </div>
 </div>
@@ -3018,3 +3019,9 @@ if (Native.app) $('shopNote2').hidden = true;
 Promise.race([loadSerhat(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + (window.__ehErr || ''))), 25000))]).then(attach).catch(err => { console.warn('Serhat modeli yüklenemedi', err); attach(fallbackModel()); $('loadTxt').hidden = false; $('loadTxt').textContent = T('modelFail'); });
 </script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0f22bce0294547dbb49f14ec3e283ddb"}'></script>
+<script>
+/* web only: "get it on Google Play" button (hidden inside the Android/iOS apps) */
+(function(){ var a=document.getElementById('getApp'); if(!a) return; if(window.EMNative&&window.EMNative.call) return; if(/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+  var tr=(document.documentElement.lang||navigator.language||'tr').slice(0,2)==='tr';
+  a.querySelector('small').textContent=tr?'UYGULAMAYI İNDİR':'GET IT ON'; a.hidden=false; })();
+</script>

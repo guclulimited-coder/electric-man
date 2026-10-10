@@ -168,6 +168,7 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
 [dir=rtl] .bubble::before{left:auto;right:-7px;border-right-color:transparent;border-left:7px solid #fff;border-right:0}
 
 [data-lg-code]{flex-shrink:0;max-width:120px;overflow-wrap:anywhere}.lrow [data-lg-code]{grid-column:2/-1;justify-self:end}
+.getapp{position:absolute;top:4px;right:12px;z-index:5;display:inline-flex;align-items:center;gap:7px;background:#111;color:#fff;text-decoration:none;border-radius:10px;padding:5px 11px 5px 8px;box-shadow:0 2px 8px rgba(0,0,0,.25);font:600 13px/1.05 system-ui,sans-serif}.getapp small{display:block;font-size:8.5px;letter-spacing:.06em;opacity:.85}.getapp[hidden]{display:none}
 </style>
 
 <div id="app">
@@ -191,6 +192,7 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
     <div class="stat" id="moveStat"><div class="lbl" data-t="movesLbl">Hamle</div><div class="val"><span id="moves">0</span> <small id="limitWrap">/ <span id="limit">0</span></small></div><div class="bar"><i id="movebar"></i></div></div>
   </div>
   <div class="boardwrap" id="wrap">
+    <a class="getapp" id="getApp" hidden href="https://play.google.com/store/apps/details?id=com.tusneldax.electricman" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#00d7fe" d="M3.6 2.3 13.3 12l-9.7 9.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1z"/><path fill="#ffce00" d="m16.6 15.3-3.3-3.3 3.3-3.3 3.7 2.1c1 .6 1 2 0 2.5z"/><path fill="#ff3a44" d="M16.6 15.3 13.3 12l-9.7 9.7c.4.2.8.2 1.2 0z"/><path fill="#00f076" d="M16.6 8.7 4.8 2c-.4-.2-.8-.2-1.2 0L13.3 12z"/></svg><span><small>UYGULAMAYI İNDİR</small>Google Play</span></a>
     <canvas id="boardCanvas" data-ta="aBoard" aria-label="Oyun tahtası: kabloya dokunarak döndür"></canvas>
     <div class="loading" id="loading" data-t="loading">3D sahne yükleniyor…</div>
   </div>
@@ -1377,3 +1379,9 @@ function shotScene(){
 window.__em = { generate, diff, stepsCW, setDir(cw){ dirCW = cw; }, get S(){ return S; }, start, tap, act, screenOf(){ const r = canvas.getBoundingClientRect(); return S.tiles.filter(t => t.kind === 'cable').map(t => { const v = new THREE.Vector3(t.g.position.x, .165, t.g.position.z).project(camera); return {idx:t.idx, fixed:!!t.fixed || !!t.fog, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height}; }); } };
 </script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0f22bce0294547dbb49f14ec3e283ddb"}'></script>
+<script>
+/* web only: "get it on Google Play" button (hidden inside the Android/iOS apps) */
+(function(){ var a=document.getElementById('getApp'); if(!a) return; if(window.EMNative&&window.EMNative.call) return; if(/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+  var tr=(document.documentElement.lang||navigator.language||'tr').slice(0,2)==='tr';
+  a.querySelector('small').textContent=tr?'UYGULAMAYI İNDİR':'GET IT ON'; a.hidden=false; })();
+</script>
