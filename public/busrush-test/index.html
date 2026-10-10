@@ -602,7 +602,7 @@ function paintBackground16(t){
  const z=ist();ctx.fillStyle=grad(0,0,0,H,'#0d1626','#0a0f18');ctx.fillRect(0,0,W,H);drawCrowdBase16();
  // terminal with the district skyline behind the bays
  rr(5,223,410,118,24,'#070c16');skyline16(z,t);rr(12,228,396,109,18,null,z.accent+'55',1.5);
- bayXs().forEach((x,i)=>{let locked=i>=display.slots.length;rr(x-23,241,46,84,9,locked?'#0b122088':'#0d1a2c70',locked?'#ffffff33':z.accent+'cc',1.5);text(locked?'▶':'P',x,275,locked?16:23,locked?'#7dffa0':'#ffffff55',700);text(locked?'+1 PERON':String(i+1).padStart(2,'0'),x,311,7,locked?'#a8ffc0':'#dfe8ff');if(!locked&&state.bayLocks?.[i]!==undefined){const bc=state.bayLocks[i];rr(x-23,241,46,84,9,null,palette[bc][1],4);ellipse(x,257,7,7,palette[bc][1]);text(palette[bc][0],x,299,7,'#fff',900)};if(i>=4&&!locked)rr(x-23,241,46,84,9,null,'#f7cd67',2)});
+ bayXs().forEach((x,i)=>{let locked=i>=display.slots.length;const bs=bayStyle16(z,i,locked);if((profile.bayTheme||'night')==='golden'){ctx.shadowColor='#ffd84a';ctx.shadowBlur=10}rr(x-23,241,46,84,9,bs[0],bs[1],bs[2]);ctx.shadowBlur=0;if(profile.bayTheme==='pier')pierPlanks16(x);text(locked?'▶':'P',x,275,locked?16:23,locked?'#7dffa0':'#ffffff55',700);text(locked?'+1 PERON':String(i+1).padStart(2,'0'),x,311,7,locked?'#a8ffc0':'#dfe8ff');if(!locked&&state.bayLocks?.[i]!==undefined){const bc=state.bayLocks[i];rr(x-23,241,46,84,9,null,palette[bc][1],4);ellipse(x,257,7,7,palette[bc][1]);text(palette[bc][0],x,299,7,'#fff',900)};if(i>=4&&!locked)rr(x-23,241,46,84,9,null,'#f7cd67',2)});
  // top road
  ctx.fillStyle='#111821';ctx.fillRect(0,343,420,23);line([[0,344],[420,344]],'#cfd3c2aa',2);line([[0,365],[420,365]],'#cfd3c2aa',2);ctx.setLineDash([17,14]);line([[0,355],[420,355]],'#ffd45a99',1.8);ctx.setLineDash([]);text('→',390,355,18,'#ffe9a8');
  // the lot: asphalt, faint bay lines, oil stains, tyre marks, cones
@@ -689,6 +689,20 @@ function ghost16(t){
  rr(6,346,236,18,9,'#05080ddd',ahead?'#5affa0':'#ff6b6b',1.4);
  text('👻 '+String(g.name).slice(0,10)+' '+gi+'/'+n+'  ·  SEN '+mine+'/'+n+'  '+(ahead?'ÖNDESİN':'GERİDESİN'),124,355,8.5,ahead?'#b9ffd2':'#ffd0d0',900);
 }
+// ---- 4: bus looks and bay themes (bought with gold) ----
+const SKINS16=[{id:'iett',name:'İETT',desc:'Beyaz tavan, kırmızı şerit',price:180},{id:'retro',name:'Retro',desc:'Krom tamponlar, krem çizgiler',price:260},{id:'double',name:'Çift katlı',desc:'İki sıra pencere',price:350},{id:'gold',name:'Altın otobüs',desc:'Parlayan altın kenarlar',price:1000}];
+const BAYS16=[{id:'night',name:'Gece',desc:'Şehir silüeti',price:0},{id:'neon',name:'Neon',desc:'Renk renk parlayan peronlar',price:200},{id:'pier',name:'Ahşap iskele',desc:'Vapur iskelesi tahtaları',price:300},{id:'golden',name:'Altın peron',desc:'Altın çerçeve ve ışık',price:800}];
+function skin16(len,cap){const s=profile.skin;if(!state?.rulesV12||!['iett','retro','double','gold'].includes(s))return;const W=busDims(len,cap).W;
+ if(s==='iett'){rr(-W/2+2,-len/2+5,W-4,len*.24,4,'#f4f6f8');rr(-W/2+2,-len/2+5+len*.24-3,W-4,3,1,'#d6242f');rr(-W/2+2,len/2-12,W-4,3,1,'#d6242f')}
+ if(s==='double'){for(let y=-len/2+11;y<len/2-9;y+=9){rr(-W/2+3,y,W-6,5,2,'#0d2a3fcc');rr(-W/2+5,y+1,W-10,2,1,'#bfe9ffaa')}}
+ if(s==='retro'){rr(-W/2-1,-len/2+1,W+2,4,2,'#eeeeee');rr(-W/2-1,len/2-5,W+2,4,2,'#eeeeee');line([[-W/2+3,-len/2+9],[-W/2+3,len/2-9]],'#fff3d6',1.6);line([[W/2-3,-len/2+9],[W/2-3,len/2-9]],'#fff3d6',1.6)}
+ if(s==='gold'){ctx.shadowColor='#ffd84a';ctx.shadowBlur=9;rr(-W/2,-len/2,W,len,8,null,'#ffd84a',2.2);ctx.shadowBlur=0;text('✦',0,-len/4,9,'#fff6c8',900)}}
+function bayStyle16(z,i,locked){const t=profile.bayTheme||'night';
+ if(t==='neon'){const c=palette[i%8][1];return [locked?'#0b122088':'#0a0f1ccc',c,2.2]}
+ if(t==='pier')return [locked?'#5a3d2688':'#7a5232dd','#c9a271',2];
+ if(t==='golden')return [locked?'#2a210888':'#3a2d0cdd','#ffd84a',2.4];
+ return [locked?'#0b122088':'#0d1a2c70',locked?'#ffffff33':z.accent+'cc',1.5]}
+function pierPlanks16(x){for(let y=245;y<322;y+=7)line([[x-21,y],[x+21,y]],'#5e3e22',1)}
 
 const sprites=new Map();
 function personSprite(c,n){let key=c+':'+n%6;if(sprites.has(key))return sprites.get(key);let cv=document.createElement('canvas');cv.width=100;cv.height=150;let p=cv.getContext('2d'),col=palette[c],skin=['#efc298','#c88c65','#e9b188','#a96d4b','#f4cdb1','#d39c77'][n%6],hair=['#423333','#372f35','#8f592f','#dcab65','#493530','#6c4330'][n%6];
@@ -1005,7 +1019,7 @@ const RushArt=(()=>{
   ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
   if(profile.skin==='sport'){line([[-3,-len*.17],[-3,len*.21]],'#fff4d9bb',2);line([[3,-len*.17],[3,len*.21]],'#fff4d9bb',2)}
   if(profile.skin==='royal')text('★',0,-len*.17,13,'#fff1a8');
-  if(profile.skin==='night'){ctx.shadowColor=col[2];ctx.shadowBlur=5;rr(-17,-len/2,34,len,9,null,col[2],1);ctx.shadowBlur=0}
+  if(profile.skin==='night'){ctx.shadowColor=col[2];ctx.shadowBlur=5;rr(-17,-len/2,34,len,9,null,col[2],1);ctx.shadowBlur=0}skin16(len,b.cap);
   if(options.arrow!==false){const dm=busDims(len,b.cap),bw=dm.W,ah=Math.min(dm.L*.30,16),aw=bw*.38,ay=0;ctx.beginPath();ctx.moveTo(0,ay-ah);ctx.lineTo(aw,ay-ah+aw*1.05);ctx.lineTo(aw*.42,ay-ah+aw*1.05);ctx.lineTo(aw*.42,ay+ah);ctx.lineTo(-aw*.42,ay+ah);ctx.lineTo(-aw*.42,ay-ah+aw*1.05);ctx.lineTo(-aw,ay-ah+aw*1.05);ctx.closePath();ctx.lineJoin='round';ctx.strokeStyle=col[3];ctx.lineWidth=2.2;ctx.stroke();ctx.fillStyle='#ffffff';ctx.fill();if(options.id){ctx.save();ctx.translate(0,-busDims(len,b.cap).L/2-2);ctx.rotate(-angle);ellipse(0,0,7.5,7.5,'#ffd45a');text(options.id,0,.5,9.5,'#3d2a05',950);ctx.restore()}}
   drawMatchingLock(b);
   ctx.restore();if(options.badge){rr(x-20,y+len*scale/2+2,40,17,7,'#fffdf5',col[2],1.5);text(options.badge,x,y+len*scale/2+10,11,col[3],900)}
@@ -1443,6 +1457,12 @@ if(typeof challengeMenu==='function'){const special16Challenge=challengeMenu;cha
 const special16HUD=updateHUD;updateHUD=function(){special16HUD();if(state?.special){$('levelLabel').textContent=SPECIAL_LABEL[state.special.kind]+(state.special.kind==='duel'?' · '+state.special.id:'')}};
 // ghost: the record run of this puzzle, raced in real time
 window.__ghost16=key=>{FX16.ghost=null;if(!me||!key)return;api('/ghost?key='+key).then(r=>{if(r?.ghost&&FX16.ghostKey===key)FX16.ghost=r.ghost}).catch(()=>{})};
+// garage: extra bus looks and bay themes
+if(typeof skins!=='undefined'&&Array.isArray(skins))for(const k of SKINS16)if(!skins.some(s=>s.id===k.id))skins.push(k);
+{const st=document.createElement('style');st.textContent='.skin-bus.iett{background:linear-gradient(#f4f6f8 0 30%,#d6242f 31% 38%,#7fb8e6 39%)}.skin-bus.retro{border-color:#eee;box-shadow:0 5px 0 #b9b9b9}.skin-bus.double{background:repeating-linear-gradient(#2a5f86 0 6px,#bfe9ff 7px 10px)}.skin-bus.gold{border-color:#ffd84a;box-shadow:0 0 10px #ffd84a,0 5px 0 #c39a2a}';document.head.append(st)}
+const garage16=garage;garage=function(){garage16();if(busy||!$('panel'))return;profile.bays16=profile.bays16||['night'];const cur=profile.bayTheme||'night';
+ $('panel').querySelector('.skin-grid')?.insertAdjacentHTML('afterend',`<h3 style="margin:14px 0 6px">Peron temaları</h3><div class="skin-grid">${BAYS16.map(b=>`<button class="skin-card ${cur===b.id?'selected':''}" data-bay16="${b.id}"><strong>${b.name}</strong><small>${b.desc}</small><em>${cur===b.id?'✓ Seçili':profile.bays16.includes(b.id)?'Kullan':b.price+' altın'}</em></button>`).join('')}</div>`)};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-bay16]');if(!el)return;const b=BAYS16.find(v=>v.id===el.dataset.bay16);if(!b)return;profile.bays16=profile.bays16||['night'];if(!profile.bays16.includes(b.id)){if(profile.coins<b.price){toast('YETERLİ ALTIN YOK');return}profile.coins-=b.price;profile.bays16.push(b.id)}profile.bayTheme=b.id;renderCache.key='';save();updateHUD();garage();invalidate()});
 
 setInterval(()=>{if(me&&!document.hidden&&!appBackground){queueLeagueWin();if(navigator.onLine){void flushLeague();void beginLeagueAttempt()}}},30000);
 /* End Bus Rush verified score outbox. */
