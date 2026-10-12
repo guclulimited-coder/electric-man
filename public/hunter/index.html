@@ -1015,6 +1015,7 @@ function buildIsland(k){
   const order = [0, 1, 2, 3, 4];
   campSpots.slice(0, 5).forEach(([x, z], i) => {
     const mix = mixes[(order[i] + lvl) % mixes.length].slice();
+    if (lvl >= 1 && i === 2) mix[0] = 'zombi'; if (lvl >= 1 && i === 3) mix[0] = 'goblin';
     if (lvl >= 2 && i % 2 === 0) mix[mix.length - 1] = 'akrep'; if (lvl >= 4 && i % 2 === 1) mix[0] = 'yarasa'; if (lvl >= 6 && i === 4) mix.push('akrep', 'yarasa');
     for (let n = 0; n < lvl; n++) mix.push(mix[n % mix.length]);
     addCamp(isl, c.x + x, c.z + z, 6.5, mix.map(t => ({type: t})));
@@ -1367,7 +1368,7 @@ function setBar(bar, f, hideFull = false){ const u = bar.userData; u.fill.scale.
 const camQ = new THREE.Quaternion(), qInv = new THREE.Quaternion();
 const meBar = makeBar(1.3, .12, 'me', 2.45); player.root.add(meBar);
 const meShBar = makeBar(1.3, .06, 'sh', 2.3); meShBar.visible = false; player.root.add(meShBar);
-const BAR_Y = {surungen: 1.55, tukurucu: 2.5, tank: 3.25, goz: 3.0, akrep: 1.9, yarasa: 2.8, sifa: 4.1, ofke: 4.1, boss: 5.6};
+const BAR_Y = {surungen: 1.55, tukurucu: 2.5, tank: 3.25, goz: 3.0, akrep: 1.9, yarasa: 2.8, sifa: 4.1, ofke: 4.1, zombi: 2.6, goblin: 2.9, boss: 5.6};
 
 // ---------------------------------------------------------------- power ("güç") numbers
 const fmtPow = v => v >= 1e6 ? (v / 1e6).toFixed(1).replace('.0', '') + 'M' : v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '') + 'K' : String(Math.round(v));
@@ -1417,7 +1418,9 @@ const CAST = [
   {id: 'cebrail', name: 'Ahmet', skin: 0x8e24aa, eye: 0x00e5ff, wing: 'crystal', wingCol: 0xe040fb, horn: 0xfff59d},
   {id: 'dilan',   name: 'Hicret Hanım',   skin: 0x26a69a, eye: 0xff9100, wing: 'bat',     wingCol: 0x004d40, horn: 0xffab91},
   {id: 'zulfu',   name: 'Zülfü',   skin: 0x8d6e63, eye: 0xff3d00, wing: 'bat',     wingCol: 0x3e2723, horn: 0xfafafa},
-  {id: 'zeynep',  name: 'Zeynep',  skin: 0xf06292, eye: 0x76ff03, wing: 'crystal', wingCol: 0xff80ab, horn: 0xffffff}
+  {id: 'zeynep',  name: 'Zeynep',  skin: 0xf06292, eye: 0x76ff03, wing: 'crystal', wingCol: 0xff80ab, horn: 0xffffff},
+  // Mixamo creature bosses (CC-licensed Adobe Mixamo characters, converted in-house): keep their own textures
+  {id: 'mutant',  name: 'Mutant',  skin: 0x8a6a4a, eye: 0x39e6ff, wing: null, wingCol: 0, horn: null, raw: true, height: 4.8}
 ];
 const castCache = {};
 function loadCast(id){
@@ -1448,12 +1451,13 @@ function dressBoss(e, cast){
   loadCast(cast.id).then(gltf => {
     if (e.dead) return;
     const sc = gltf.scene; sc.traverse(o => { if (o.isMesh){ o.frustumCulled = false; if (GFX.shadows) o.castShadow = true; } });
-    const box = new THREE.Box3().setFromObject(sc); const h = box.max.y - box.min.y || 1.8; const S = 4.3 / h; sc.scale.setScalar(S);
+    const box = new THREE.Box3().setFromObject(sc); const h = box.max.y - box.min.y || 1.8; const S = (cast.height || 4.3) / h; sc.scale.setScalar(S);
     // mutate: alien skin, glowing eyes
     let skinMat = null;
     sc.traverse(o => { if (!o.isMesh) return; const mats = Array.isArray(o.material) ? o.material : [o.material];
       const out = mats.map(m => { const n = m.name || ''; const c = m.clone();
-        if (/skin|face|Hands|Ears/i.test(n)){ c.color.set(cast.skin); c.emissive = new THREE.Color(cast.skin); c.emissiveIntensity = .18; c.map = m.map; if (c.map) c.color.lerp(new THREE.Color(0xffffff), .25); if (!skinMat) skinMat = c; }
+        if (cast.raw){ c.emissive = new THREE.Color(cast.skin); c.emissiveIntensity = .08; if (!skinMat) skinMat = c; }
+        else if (/skin|face|Hands|Ears/i.test(n)){ c.color.set(cast.skin); c.emissive = new THREE.Color(cast.skin); c.emissiveIntensity = .18; c.map = m.map; if (c.map) c.color.lerp(new THREE.Color(0xffffff), .25); if (!skinMat) skinMat = c; }
         else if (/iris|eye|sclera/i.test(n)){ c.color.set(cast.eye); c.emissive = new THREE.Color(cast.eye); c.emissiveIntensity = 2.5; c.map = null; }
         else { c.color.multiplyScalar(.75).lerp(new THREE.Color(cast.skin), .25); }
         return c; });
@@ -1462,10 +1466,10 @@ function dressBoss(e, cast){
     for (const ch of [...e.body.children]) if (!ch.userData.keep) ch.visible = false;
     e.body.add(sc);
     // wings on the back
-    for (const side of [-1, 1]){ const w = makeWing(cast.wing, cast.wingCol); w.position.set(side * .25, 2.95, -.45); w.scale.set(side * 1.25, 1.25, 1.25); w.rotation.y = side * -.35; w.userData.side = side; e.body.add(w); (e.wings = e.wings || []).push(w); }
+    if (cast.wing) for (const side of [-1, 1]){ const w = makeWing(cast.wing, cast.wingCol); w.position.set(side * .25, 2.95, -.45); w.scale.set(side * 1.25, 1.25, 1.25); w.rotation.y = side * -.35; w.userData.side = side; e.body.add(w); (e.wings = e.wings || []).push(w); }
     // horns on the head bone
     const head = sc.getObjectByName('mixamorigHead');
-    if (head){ sc.updateMatrixWorld(true); const ws = head.getWorldScale(new THREE.Vector3()).x || 1;
+    if (head && cast.horn){ sc.updateMatrixWorld(true); const ws = head.getWorldScale(new THREE.Vector3()).x || 1;
       for (const side of [-1, 1]){ const hm = new THREE.Mesh(new THREE.ConeGeometry(.05, .3, 8), new THREE.MeshStandardMaterial({color: cast.horn, roughness: .4})); hm.position.set(side * .07 / ws * S, .2 / ws * S, -.01); hm.scale.setScalar(S / ws); hm.rotation.z = -side * .45; head.add(hm); } }
     if (skinMat){ e.mat = skinMat; e.baseEm = skinMat.emissive.clone(); }
     e.mixer = new THREE.AnimationMixer(sc); e.acts = {}; for (const cl of gltf.animations) e.acts[cl.name] = e.mixer.clipAction(cl);
@@ -1484,6 +1488,8 @@ const TYPES = {
   goz:      {name: 'Uçan Göz', hp: 20, speed: 3.2, dmg: 6, r: .5, fly: true, gain: p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.rate = Math.max(.5, player.rate * .999); return T('gRate'); }},
   sifa:     {name: 'Şifa Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.maxHp += 1.2; player.hp += 1.2; player.regen += .05; return T('gRegen'); }},
   ofke:     {name: 'Öfke Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.dmg += .004; return T('gHit'); }},
+  zombi:    {name: 'Çürük', hp: 58, speed: 3.1, dmg: 12, r: .7, model: {id: 'warzombie', skin: 0x6a7a4a, height: 2.1}, gain: p => { player.dmg += .002; player.maxHp += .8; player.hp += .8; player.dmg += .0007; return T('gDmg'); }},
+  goblin:   {name: 'Dağ Goblini', hp: 84, speed: 3.8, dmg: 14, r: .8, model: {id: 'goblin', skin: 0x8a6a3a, height: 2.4}, gain: p => { player.dmg += .002; player.maxHp += .8; player.hp += .8; player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); }},
   boss:     {name: 'Kaçırıcı Ana', hp: 10000, speed: 2.1, dmg: 22, r: 2.2, boss: true, gain: p => { player.maxHp += 40; player.hp = player.maxHp; player.dmg += .25; return T('gBoss'); }}
 };
 const M = (c, e = 0, ei = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({color: c, emissive: e || 0x000000, emissiveIntensity: ei, roughness: .55, metalness: .05}, extra));
@@ -1496,6 +1502,7 @@ function eyes(g, n, y, z, spread, size = .11){
 }
 function buildEnemy(type){
   const g = new THREE.Group();
+  if (TYPES[type].model){ const body = new THREE.Group(); g.add(body); const mat = M(TYPES[type].model.skin, TYPES[type].model.skin, .2); const ph = new THREE.Mesh(new THREE.CapsuleGeometry(.3, .8, 4, 8), mat); ph.position.y = .9; body.add(ph); g.add(blob(TYPES[type].r * 1.15, .38)); return {g, body, mat, baseEm: mat.emissive.clone(), anim: null}; }
   if (type !== 'boss'){ const sp = buildSpecies(type); g.add(sp.body); g.add(blob(TYPES[type].r * 1.15, .38)); return {g, body: sp.body, mat: sp.mat, baseEm: sp.mat.emissive.clone(), anim: sp.anim}; }
   const body = new THREE.Group(); g.add(body); let mat;
   if (false){
@@ -1561,7 +1568,8 @@ function spawn(type, at, opt = {}){
     const halo = new THREE.Mesh(new THREE.RingGeometry(spec.r * 1.6, spec.r * 1.75, 36), new THREE.MeshBasicMaterial({color: 0xffc94a, transparent: true, opacity: .7, side: THREE.DoubleSide})); halo.rotation.x = -Math.PI / 2; halo.position.y = .05; e.g.add(halo);
   }
   if (spec.tree){ e.body.position.y = 3.35; e.perch = 3.35; }
-  if (!spec.boss) e.mat.color.set(themeOf(lv).monTint);
+  if (!spec.boss && !spec.model) e.mat.color.set(themeOf(lv).monTint);
+  if (spec.model) dressBoss(e, Object.assign({raw: true, wing: null, horn: null}, spec.model));
   e.bar = makeBar(spec.boss ? 3 : elite ? 1.6 : spec.tree ? .7 : 1.1, spec.boss ? .2 : .11, spec.boss ? 'boss' : elite ? 'elite' : spec.tree ? 'bug' : 'foe', (BAR_Y[type] || 2) * (elite ? 1.4 : 1)); e.g.add(e.bar);
   if (spec.boss){ e.gate = bossGate(lv); e.hp = e.maxHp = e.gate * 12; e.baseDmgMul = e.dmgMul; }
   e.r = spec.r * (elite ? 1.45 : 1);
@@ -3011,7 +3019,7 @@ function attach(model){
 player.regen = .6; buildIsland(0); applyTheme(themeOf(0)); player.pos.copy(spawnPoint(0)); portal.position.set(player.pos.x, 1.8, player.pos.z - 2.5);
 renderSlots(); renderStats();
 // store screenshots: ?shot=1 exposes a small handle so the capture script can stage scenes
-if (new URLSearchParams(location.search).has('shot')) window.__eh = {Kid, Cine, storyArrive, get curIslN(){ return curIsl; }, renderer, Perf, GFX, scene, camera, get composer(){ return composer; }, get bloom(){ return bloom; }, draw, player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, Evo, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
+if (new URLSearchParams(location.search).has('shot')) window.__eh = {Kid, Cine, storyArrive, spawn, dressBoss, CAST, TYPES, get curIslN(){ return curIsl; }, renderer, Perf, GFX, scene, camera, get composer(){ return composer; }, get bloom(){ return bloom; }, draw, player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, Evo, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
 window.__dbg = () => ({alive: enemies.filter(e => !e.dead).length, chasing: enemies.filter(e => !e.dead && e.state === 'chase').length, corpses: corpses.length, isl: curIsl, pos: player.pos.toArray().map(v => +v.toFixed(1)), hp: Math.round(player.hp), kills: player.kills, eaten: player.eaten, hook: hook.state, gear: gear.map(g => g.id + g.lv).join(','), active});
 loop();
 Online.init(); Shop.pending(); renderAdBtn();
