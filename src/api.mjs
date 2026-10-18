@@ -193,7 +193,7 @@ async function appleCallback(db, env, req, fetcher){
 
 /* identity → player (separate namespace from Bus Rush) */
 async function resolveIdentity(db, provider, subject){
-  if (!['google', 'email', 'tiktok', 'apple'].includes(provider) || typeof subject !== 'string' || !subject || subject.length > 512) fail('INVALID_IDENTITY', 401);
+  if (!['google', 'email', 'tiktok', 'apple', 'review'].includes(provider) || typeof subject !== 'string' || !subject || subject.length > 512) fail('INVALID_IDENTITY', 401);
   const key = await hash('electric-man:' + provider + ':' + subject);
   const m = await one(db, 'SELECT player FROM em_identities WHERE id=?', key);
   if (m) return m.player;
@@ -275,10 +275,25 @@ export async function emAPI(req, env, deps = {}){
     if (path === '/pay/callback' && req.method === 'POST'){ await ensureSchema(db); return await payCallback({db, env, req, url, fetcher}); }
     if (path === '/auth/apple/callback' && req.method === 'POST') return await appleCallback(db, env, req, fetcher);
     if (path === '/auth/apple/start' && req.method === 'GET'){ await quota(db, 'auth:' + ip, 40, 3600000); return await appleStart(db, env, url); }
+    /* 18 Ekim 2026 — App Store ret (2.1a, iPad: "Sign in with Apple and listed logins failed"): uygulamaya dönüş artık
+       sunucu yönlendirmesiyle (302 → electricman://signin) yapılır; sistem giriş penceresi (ASWebAuthenticationSession)
+       özel adrese giden yönlendirmeyi kesin yakalar. Oturum yoksa giriş sayfasına hata ile döner. */
+    if (path === '/native/handoff' && req.method === 'GET'){
+      const challenge = url.searchParams.get('challenge') || '', state = url.searchParams.get('state') || '', hunter = url.searchParams.get('app') === 'hunter';
+      const page = '/app-login?' + new URLSearchParams({challenge, state, lang: /^[a-z]{2}$/.test(url.searchParams.get('lang') || '') ? url.searchParams.get('lang') : 'tr', ...(hunter ? {app:'hunter'} : {}), platform:'ios', login:'fail'});
+      if (!/^[a-f0-9]{64}$/.test(challenge) || !/^[a-f0-9]{32,64}$/.test(state)) return new Response(null, {status:303, headers:{Location: page, 'Cache-Control':'no-store'}});
+      await ensureSchema(db);
+      const me = await current(req, db); if (!me) return new Response(null, {status:303, headers:{Location: page, 'Cache-Control':'no-store'}});
+      await quota(db, 'handoff:' + me.id, 30, 3600000);
+      const ticket = random();
+      await db.batch([db.prepare('DELETE FROM em_tickets WHERE expires<?').bind(Date.now()),
+        db.prepare('INSERT INTO em_tickets(id,player,challenge,expires) VALUES(?,?,?,?)').bind(await hash(ticket), me.id, challenge, Date.now() + 120000)]);
+      return new Response(null, {status:302, headers:{Location:(hunter ? 'electrichunter' : 'electricman') + '://signin?ticket=' + ticket + '&state=' + state, 'Cache-Control':'no-store', 'Referrer-Policy':'no-referrer'}});
+    }
     if (req.method === 'POST' && (req.headers.get('origin') !== url.origin || !req.headers.get('content-type')?.includes('application/json'))) fail('ORIGIN', 403);
     if (path === '/auth/tiktok/start' && req.method === 'GET'){ await quota(db, 'auth:' + ip, 40, 3600000); return await ttStart(db, env, url); }
     if (path === '/auth/tiktok/callback' && req.method === 'GET') return await ttCallback(db, env, req, url, fetcher);
-    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, appleClientId: env.EM_APPLE_SERVICE_ID || null, email: emailEnabled(env), tiktok: ttEnabled(env), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
+    if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, appleClientId: env.EM_APPLE_SERVICE_ID || null, email: emailEnabled(env), tiktok: ttEnabled(env), review: !!(env.EM_REVIEW_USER && env.EM_REVIEW_PASS_SHA256), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
     const body = req.method === 'POST' ? await bounded(req) : {};
 
     if (path === '/auth/nonce' && req.method === 'POST'){
@@ -287,6 +302,16 @@ export async function emAPI(req, env, deps = {}){
       await db.batch([db.prepare('DELETE FROM em_nonces WHERE expires<?').bind(Date.now()), db.prepare('DELETE FROM em_limits WHERE expires<?').bind(Date.now()),
         db.prepare('INSERT INTO em_nonces(id,expires) VALUES(?,?)').bind(await hash(n), Date.now() + 300000)]);
       return reply({nonce:n}, 200, {'Set-Cookie': ck(NONCE, n, 300)});
+    }
+    /* App Review demo hesabı: kullanıcı adı + parola (parolanın yalnız SHA-256 özeti ortamda tutulur). */
+    if (path === '/auth/review' && req.method === 'POST'){
+      await quota(db, 'review:' + ip, 20, 3600000);
+      if (!env.EM_REVIEW_USER || !/^[a-f0-9]{64}$/.test(env.EM_REVIEW_PASS_SHA256 || '')) fail('LOGIN_NOT_CONFIGURED', 503);
+      const user = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '', pass = typeof body.password === 'string' ? body.password : '';
+      if (user !== String(env.EM_REVIEW_USER).toLowerCase() || pass.length > 200 || await hash('em-review:' + pass) !== env.EM_REVIEW_PASS_SHA256) fail('LOGIN_FAILED', 401);
+      await ensureSchema(db);
+      const id = await resolveIdentity(db, 'review', 'app-review');
+      return Response.json({ok:true}, {headers:{'Cache-Control':'no-store','Set-Cookie': await newSession(db, id)}});
     }
     if (path === '/auth/email/request' && req.method === 'POST'){
       if (!emailEnabled(env)) fail('LOGIN_NOT_CONFIGURED', 503);

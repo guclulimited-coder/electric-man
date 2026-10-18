@@ -207,5 +207,9 @@
   "eINVALID_PACK": "Ödeme şu an alınamıyor, biraz sonra tekrar dene.",
   "tiktok": "TikTok ile devam et",
   "ttFail": "TikTok ile giriş tamamlanamadı, yeniden dene.",
-  "apple": "Apple ile devam et"
+  "apple": "Apple ile devam et",
+  "reviewLogin": "Demo hesap ile giriş (App Review)",
+  "reviewUser": "Kullanıcı adı",
+  "reviewPass": "Parola",
+  "eLOGIN_FAILED": "Kullanıcı adı veya parola hatalı."
 }

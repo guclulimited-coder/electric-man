@@ -47,3 +47,25 @@ async function verifyAppleToken(extra){return verifyApple(await token('n',extra)
 const good=await token('n');await assert.rejects(()=>verifyApple(good.slice(0,-10)+'AAAAAAAAAA',env.EM_APPLE_SERVICE_ID,'n',fetcher));ok();
 const disabled=await emAPI(new Request(ORIGIN+'/api/em/auth/apple/start'),{DB:env.DB});assert.equal(disabled.status,503);ok();
 console.log(checks+' Apple login security checks passed');
+
+// 18 Oct 2026 — App Store 2.1a: server-side hand-off back to the app and the App Review demo account
+{
+ const env2={DB:d1(),EM_REVIEW_USER:'appreview@tusneldax.com',EM_REVIEW_PASS_SHA256:await (async()=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('em-review:secret-pass'));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')})()};
+ const api2=req=>emAPI(req,env2,{fetch:fetcher});
+ const ch='a'.repeat(64),st='b'.repeat(32);
+ let r=await api2(new Request(ORIGIN+'/api/em/native/handoff?challenge='+ch+'&state='+st));
+ assert.equal(r.status,303);assert.match(r.headers.get('location'),/^\/app-login\?.*login=fail/);ok();
+ r=await api2(new Request(ORIGIN+'/api/em/config'));assert.equal((await r.json()).review,true);ok();
+ const post=(path,body,cookie='')=>api2(new Request(ORIGIN+'/api/em'+path,{method:'POST',headers:{origin:ORIGIN,'content-type':'application/json',cookie},body:JSON.stringify(body)}));
+ r=await post('/auth/review',{username:'appreview@tusneldax.com',password:'wrong'});assert.equal(r.status,401);ok();
+ r=await post('/auth/review',{username:'AppReview@tusneldax.com',password:'secret-pass'});assert.equal(r.status,200);
+ const sess=r.headers.get('set-cookie').split(';')[0];assert.match(sess,/^__Host-em-session=/);ok();
+ r=await api2(new Request(ORIGIN+'/api/em/native/handoff?challenge='+ch+'&state='+st+'&app=hunter',{headers:{cookie:sess}}));
+ assert.equal(r.status,302);const loc=new URL(r.headers.get('location'));assert.equal(loc.protocol,'electrichunter:');assert.equal(loc.searchParams.get('state'),st);ok();
+ // ticket + verifier exchange works and is single use
+ const verifier='c'.repeat(64);const vh=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+ r=await api2(new Request(ORIGIN+'/api/em/native/handoff?challenge='+vh+'&state='+st,{headers:{cookie:sess}}));const t2=new URL(r.headers.get('location')).searchParams.get('ticket');
+ r=await post('/native/exchange',{ticket:t2,verifier});assert.equal(r.status,200);assert.match((await r.json()).token,/^[a-f0-9]{64}$/);ok();
+ r=await post('/native/exchange',{ticket:t2,verifier});assert.equal(r.status,401);ok();
+}
+console.log('handoff/review checks ok');

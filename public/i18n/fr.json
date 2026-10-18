@@ -207,5 +207,9 @@
   "eINVALID_PACK": "Les paiements sont indisponibles pour le moment, réessaie plus tard.",
   "tiktok": "Continuer avec TikTok",
   "ttFail": "La connexion avec TikTok n’a pas abouti. Réessaie.",
-  "apple": "Continuer avec Apple"
+  "apple": "Continuer avec Apple",
+  "reviewLogin": "Connexion avec un compte démo (App Review)",
+  "reviewUser": "Nom d'utilisateur",
+  "reviewPass": "Mot de passe",
+  "eLOGIN_FAILED": "Nom d'utilisateur ou mot de passe incorrect."
 }

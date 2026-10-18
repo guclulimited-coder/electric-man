@@ -207,5 +207,9 @@
   "eINVALID_PACK": "Pagamentos indisponíveis no momento, tente mais tarde.",
   "tiktok": "Continuar com o TikTok",
   "ttFail": "Não foi possível concluir o login com o TikTok. Tente novamente.",
-  "apple": "Continuar com Apple"
+  "apple": "Continuar com Apple",
+  "reviewLogin": "Entrar com conta demo (App Review)",
+  "reviewUser": "Usuário",
+  "reviewPass": "Senha",
+  "eLOGIN_FAILED": "Usuário ou senha incorretos."
 }

@@ -207,5 +207,9 @@
   "eINVALID_PACK": "現在お支払いできません。しばらくしてからお試しください。",
   "tiktok": "TikTokで続ける",
   "ttFail": "TikTokでのログインを完了できませんでした。もう一度お試しください。",
-  "apple": "Appleで続ける"
+  "apple": "Appleで続ける",
+  "reviewLogin": "デモアカウントでログイン (App Review)",
+  "reviewUser": "ユーザー名",
+  "reviewPass": "パスワード",
+  "eLOGIN_FAILED": "ユーザー名またはパスワードが違います。"
 }

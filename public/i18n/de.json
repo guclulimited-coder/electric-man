@@ -207,5 +207,9 @@
   "eINVALID_PACK": "Zahlungen sind gerade nicht möglich, versuche es später erneut.",
   "tiktok": "Mit TikTok fortfahren",
   "ttFail": "Die Anmeldung mit TikTok wurde nicht abgeschlossen. Bitte versuche es erneut.",
-  "apple": "Mit Apple fortfahren"
+  "apple": "Mit Apple fortfahren",
+  "reviewLogin": "Mit Demo-Konto anmelden (App Review)",
+  "reviewUser": "Benutzername",
+  "reviewPass": "Passwort",
+  "eLOGIN_FAILED": "Benutzername oder Passwort falsch."
 }

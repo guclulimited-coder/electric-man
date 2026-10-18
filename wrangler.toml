@@ -19,3 +19,8 @@ EM_GOOGLE_CLIENT_ID = "41728285329-57ufbn6uq8u891enlriivf4c8h74sc3b.apps.googleu
 
 # Shared web Apple login for Electric Man and Electric Hunter (public identifier).
 EM_APPLE_SERVICE_ID = "com.tusneldax.electricman.web"
+
+# App Review demo account (18 Oct 2026, App Store 2.1a). Only the SHA-256 of "em-review:" + password is public;
+# the password itself is given to Apple in App Store Connect › App Review Information.
+EM_REVIEW_USER = "appreview@tusneldax.com"
+EM_REVIEW_PASS_SHA256 = "68176be556e649f001f3a36c2eed9dc614f37d632d17544a84dce3f917167ba0"

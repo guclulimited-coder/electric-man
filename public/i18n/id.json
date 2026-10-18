@@ -207,5 +207,9 @@
   "eINVALID_PACK": "Pembayaran sedang tidak tersedia, coba lagi nanti.",
   "tiktok": "Lanjutkan dengan TikTok",
   "ttFail": "Masuk dengan TikTok gagal. Coba lagi.",
-  "apple": "Lanjutkan dengan Apple"
+  "apple": "Lanjutkan dengan Apple",
+  "reviewLogin": "Masuk dengan akun demo (App Review)",
+  "reviewUser": "Nama pengguna",
+  "reviewPass": "Kata sandi",
+  "eLOGIN_FAILED": "Nama pengguna atau kata sandi salah."
 }

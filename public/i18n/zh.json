@@ -207,5 +207,9 @@
   "eINVALID_PACK": "暂时无法付款，请稍后再试。",
   "tiktok": "使用 TikTok 继续",
   "ttFail": "TikTok 登录未完成，请重试。",
-  "apple": "通过 Apple 继续"
+  "apple": "通过 Apple 继续",
+  "reviewLogin": "使用演示账号登录 (App Review)",
+  "reviewUser": "用户名",
+  "reviewPass": "密码",
+  "eLOGIN_FAILED": "用户名或密码错误。"
 }
