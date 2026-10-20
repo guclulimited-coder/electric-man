@@ -33,7 +33,10 @@ android {
             buildConfigField("String", "AD_REWARDED", "\"ca-app-pub-3940256099942544/5224354917\"")
         }
         getByName("release") {
-            isMinifyEnabled = false
+            // Play önerisi: R8 ile küçültme/optimizasyon açık (uygulama sınıfları proguard-rules.pro ile korunur)
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (env("EM_KEYSTORE_FILE").isNotEmpty()) signingConfig = signingConfigs.getByName("upload")
             manifestPlaceholders["admobAppId"] = env("EM_ADMOB_APP_ANDROID", testApp)
             buildConfigField("String", "AD_APP_OPEN", "\"" + env("EM_AD_APP_OPEN_ANDROID") + "\"")

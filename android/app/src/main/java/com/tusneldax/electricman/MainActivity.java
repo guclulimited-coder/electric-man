@@ -75,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Play büyük ekran önerisi: yön kilidi manifestte değil; yalnız telefonlarda (en kısa kenar < 600dp) dikey tutulur, tablet/katlanabilirde serbest.
+        if (getResources().getConfiguration().smallestScreenWidthDp < 600) setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         store = getSharedPreferences("em_store", MODE_PRIVATE);
         auth = getSharedPreferences("em_auth", MODE_PRIVATE);
