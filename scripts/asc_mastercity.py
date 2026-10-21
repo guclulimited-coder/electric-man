@@ -52,15 +52,17 @@ for loc in []:
         try:
             api('PATCH',f"/v1/appInfoLocalizations/{loc['id']}",{'data':{'type':'appInfoLocalizations','id':loc['id'],'attributes':{'name':'MASTERCITY'}}}); note(f"ad MASTERCITY ({loc['attributes']['locale']})")
         except RuntimeError as e: note('AD DEĞİŞMEDİ: '+str(e)[:200])
-# 5) eski gönderim (sürüm hâlâ ona bağlı) yeniden gönderilir; boş kalan yeni gönderimler iptal
+# 5) eski gönderimin iptali bitince sürüm yeni gönderime eklenir ve gönderilir
 OLD='c61ea46e-8350-458c-809c-3107d2209981'
-o=api('GET',f'/v1/reviewSubmissions/{OLD}?include=items')
-note('eski gönderim durumu: '+o['data']['attributes']['state']+' öğe='+str(len(o['data']['relationships']['items'].get('data') or [])))
-for s2 in api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=READY_FOR_REVIEW&limit=5')['data']:
-    if s2['id']!=OLD:
-        try: api('PATCH',f"/v1/reviewSubmissions/{s2['id']}",{'data':{'type':'reviewSubmissions','id':s2['id'],'attributes':{'canceled':True}}}); note('boş gönderim iptal '+s2['id'])
-        except RuntimeError as e: note('boş iptal: '+str(e)[:300])
+st=api('GET',f'/v1/reviewSubmissions/{OLD}')['data']['attributes']['state']; note('eski gönderim: '+st)
+if st=='CANCELING':
+    note('Apple iptali henüz bitirmedi — sonra tekrar denenecek'); sys.exit(0)
+subs=api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=READY_FOR_REVIEW&filter[platform]=IOS&limit=5')['data']
+sub=subs[0] if subs else api('POST','/v1/reviewSubmissions',{'data':{'type':'reviewSubmissions','attributes':{'platform':'IOS'},'relationships':{'app':{'data':{'type':'apps','id':APP}}}}})['data']
 try:
-    api('PATCH',f'/v1/reviewSubmissions/{OLD}',{'data':{'type':'reviewSubmissions','id':OLD,'attributes':{'submitted':True}}}); note('yeniden gönderildi')
-except RuntimeError as e: note('GÖNDERİLEMEDİ: '+str(e)[:3000])
+    api('POST','/v1/reviewSubmissionItems',{'data':{'type':'reviewSubmissionItems','relationships':{'reviewSubmission':{'data':{'type':'reviewSubmissions','id':sub['id']}},'appStoreVersion':{'data':{'type':'appStoreVersions','id':v['id']}}}}}); note('sürüm gönderime eklendi')
+except RuntimeError as e: note('öğe: '+str(e)[:1500])
+try:
+    api('PATCH',f"/v1/reviewSubmissions/{sub['id']}",{'data':{'type':'reviewSubmissions','id':sub['id'],'attributes':{'submitted':True}}}); note('İNCELEMEYE GÖNDERİLDİ')
+except RuntimeError as e: note('GÖNDERİLEMEDİ: '+str(e)[:1500])
 time.sleep(10); v=ver(); note(f"SON: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
