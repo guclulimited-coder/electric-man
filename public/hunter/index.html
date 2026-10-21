@@ -285,6 +285,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
+import { clone as skelClone } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/SkeletonUtils.js';
 import { mergeGeometries, mergeVertices } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js';
 import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/RenderPass.js';
@@ -1016,11 +1017,13 @@ function buildIsland(k){
   campSpots.slice(0, 5).forEach(([x, z], i) => {
     const mix = mixes[(order[i] + lvl) % mixes.length].slice();
     if (lvl >= 2 && i % 2 === 0) mix[mix.length - 1] = 'akrep'; if (lvl >= 4 && i % 2 === 1) mix[0] = 'yarasa'; if (lvl >= 6 && i === 4) mix.push('akrep', 'yarasa');
-    for (let n = 0; n < lvl; n++) mix.push(mix[n % mix.length]);
+    // Mixamo creatures (skinned models) take the first slots; the extra copies below stay procedural so a camp never holds more than three models
+    const horde = HORDE.filter(h => lvl >= h[1]); if (horde.length){ mix[0] = horde[(lvl + i) % horde.length][0]; if (lvl >= 3) mix[1] = horde[(lvl * 3 + i + 1) % horde.length][0]; if (lvl >= 8 && i % 2 === 1) mix[2] = horde[(lvl * 5 + i + 2) % horde.length][0]; }
+    const filler = mix.filter(t => !TYPES[t].model); if (!filler.length) filler.push('surungen'); for (let n = 0; n < lvl; n++) mix.push(filler[n % filler.length]);
     addCamp(isl, c.x + x, c.z + z, 6.5, mix.map(t => ({type: t})));
   });
-  // commanders: tougher, crowned; each one gives Serhat a new weapon
-  const cmdTypes = [['tank', 'tukurucu'], ['surungen', 'goz'], ['tukurucu', 'tank'], ['goz', 'surungen']][lvl % 4];
+  // commanders: tougher, crowned; each one gives Serhat a new weapon — from planet 2 on they are the big Mixamo creatures
+  const cmdTypes = lvl === 0 ? ['tank', 'tukurucu'] : [TITANS[(lvl * 2) % TITANS.length], TITANS[(lvl * 2 + 1) % TITANS.length]];
   [[-8, -13], [8, -13]].forEach(([x, z], i) => {
     addCamp(isl, c.x + x, c.z + z, 6, [{type: cmdTypes[i], elite: true, tool: TOOL_ORDER[(lvl * 2 + i) % TOOL_ORDER.length]}, {type: 'surungen'}, {type: 'surungen'}]); isl.commanders++;
   });
@@ -1368,6 +1371,7 @@ const camQ = new THREE.Quaternion(), qInv = new THREE.Quaternion();
 const meBar = makeBar(1.3, .12, 'me', 2.45); player.root.add(meBar);
 const meShBar = makeBar(1.3, .06, 'sh', 2.3); meShBar.visible = false; player.root.add(meShBar);
 const BAR_Y = {surungen: 1.55, tukurucu: 2.5, tank: 3.25, goz: 3.0, akrep: 1.9, yarasa: 2.8, sifa: 4.1, ofke: 4.1, boss: 5.6};
+const barOf = type => BAR_Y[type] || (TYPES[type].model ? TYPES[type].model.height + .45 : 2);
 
 // ---------------------------------------------------------------- power ("güç") numbers
 const fmtPow = v => v >= 1e6 ? (v / 1e6).toFixed(1).replace('.0', '') + 'M' : v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '') + 'K' : String(Math.round(v));
@@ -1423,11 +1427,13 @@ const castCache = {};
 function loadCast(id){
   if (!castCache[id]) castCache[id] = fetch('boss-' + id + '.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(b64 => {
     const bin = atob(b64.trim()), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; });
-  return castCache[id].then(buf => new Promise((res, rej) => {
+  if (!castParsed[id]) castParsed[id] = castCache[id].then(buf => new Promise((res, rej) => {
     const cib = window.createImageBitmap; window.createImageBitmap = undefined;
     try { new GLTFLoader().parse(buf, '', res, rej); } finally { window.createImageBitmap = cib; }
   }));
+  return castParsed[id].then(gltf => ({scene: skelClone(gltf.scene), animations: gltf.animations}));
 }
+const castParsed = {};
 function makeWing(style, col){
   const g = new THREE.Group();
   const mem = new THREE.MeshStandardMaterial({color: col, emissive: col, emissiveIntensity: style === 'crystal' ? .9 : .25, side: THREE.DoubleSide, transparent: true, opacity: style === 'insect' ? .55 : style === 'crystal' ? .75 : .92, roughness: .5, metalness: style === 'crystal' ? .4 : 0, flatShading: style === 'crystal'});
@@ -1448,12 +1454,13 @@ function dressBoss(e, cast){
   loadCast(cast.id).then(gltf => {
     if (e.dead) return;
     const sc = gltf.scene; sc.traverse(o => { if (o.isMesh){ o.frustumCulled = false; if (GFX.shadows) o.castShadow = true; } });
-    const box = new THREE.Box3().setFromObject(sc); const h = box.max.y - box.min.y || 1.8; const S = 4.3 / h; sc.scale.setScalar(S);
+    sc.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(sc); const h = box.max.y - box.min.y || 1.8; const S = (cast.height || 4.3) / h; sc.scale.setScalar(S); sc.position.y = -box.min.y * S;
     // mutate: alien skin, glowing eyes
     let skinMat = null;
     sc.traverse(o => { if (!o.isMesh) return; const mats = Array.isArray(o.material) ? o.material : [o.material];
       const out = mats.map(m => { const n = m.name || ''; const c = m.clone();
-        if (/skin|face|Hands|Ears/i.test(n)){ c.color.set(cast.skin); c.emissive = new THREE.Color(cast.skin); c.emissiveIntensity = .18; c.map = m.map; if (c.map) c.color.lerp(new THREE.Color(0xffffff), .25); if (!skinMat) skinMat = c; }
+        if (cast.raw){ c.emissive = new THREE.Color(cast.skin); c.emissiveIntensity = .08; if (!skinMat) skinMat = c; }
+        else if (/skin|face|Hands|Ears/i.test(n)){ c.color.set(cast.skin); c.emissive = new THREE.Color(cast.skin); c.emissiveIntensity = .18; c.map = m.map; if (c.map) c.color.lerp(new THREE.Color(0xffffff), .25); if (!skinMat) skinMat = c; }
         else if (/iris|eye|sclera/i.test(n)){ c.color.set(cast.eye); c.emissive = new THREE.Color(cast.eye); c.emissiveIntensity = 2.5; c.map = null; }
         else { c.color.multiplyScalar(.75).lerp(new THREE.Color(cast.skin), .25); }
         return c; });
@@ -1462,10 +1469,10 @@ function dressBoss(e, cast){
     for (const ch of [...e.body.children]) if (!ch.userData.keep) ch.visible = false;
     e.body.add(sc);
     // wings on the back
-    for (const side of [-1, 1]){ const w = makeWing(cast.wing, cast.wingCol); w.position.set(side * .25, 2.95, -.45); w.scale.set(side * 1.25, 1.25, 1.25); w.rotation.y = side * -.35; w.userData.side = side; e.body.add(w); (e.wings = e.wings || []).push(w); }
+    if (cast.wing) for (const side of [-1, 1]){ const w = makeWing(cast.wing, cast.wingCol); w.position.set(side * .25, 2.95, -.45); w.scale.set(side * 1.25, 1.25, 1.25); w.rotation.y = side * -.35; w.userData.side = side; e.body.add(w); (e.wings = e.wings || []).push(w); }
     // horns on the head bone
     const head = sc.getObjectByName('mixamorigHead');
-    if (head){ sc.updateMatrixWorld(true); const ws = head.getWorldScale(new THREE.Vector3()).x || 1;
+    if (head && cast.horn){ sc.updateMatrixWorld(true); const ws = head.getWorldScale(new THREE.Vector3()).x || 1;
       for (const side of [-1, 1]){ const hm = new THREE.Mesh(new THREE.ConeGeometry(.05, .3, 8), new THREE.MeshStandardMaterial({color: cast.horn, roughness: .4})); hm.position.set(side * .07 / ws * S, .2 / ws * S, -.01); hm.scale.setScalar(S / ws); hm.rotation.z = -side * .45; head.add(hm); } }
     if (skinMat){ e.mat = skinMat; e.baseEm = skinMat.emissive.clone(); }
     e.mixer = new THREE.AnimationMixer(sc); e.acts = {}; for (const cl of gltf.animations) e.acts[cl.name] = e.mixer.clipAction(cl);
@@ -1486,6 +1493,44 @@ const TYPES = {
   ofke:     {name: 'Öfke Böceği', hp: 10, speed: 0, dmg: 0, r: .45, tree: true, gain: p => { player.dmg += .004; return T('gHit'); }},
   boss:     {name: 'Kaçırıcı Ana', hp: 10000, speed: 2.1, dmg: 22, r: 2.2, boss: true, gain: p => { player.maxHp += 40; player.hp = player.maxHp; player.dmg += .25; return T('gBoss'); }}
 };
+// Mixamo creature cast (Adobe Mixamo characters, converted in-house; textures kept) — see HORDE / TITANS for where they appear
+const gSpeed = p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); };
+const gDmg = p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.dmg += .0007; return T('gDmg'); };
+const gHp = p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.maxHp += .4; return T('gHp'); };
+const gRate = p => { player.dmg += .002; player.maxHp += .6; player.hp += .6; player.rate = Math.max(.5, player.rate * .999); return T('gRate'); };
+const mob = (name, id, hp, speed, dmg, r, height, skin, gain, extra = {}) => Object.assign({name, hp, speed, dmg, r, model: {id, skin, height}, gain}, extra);
+Object.assign(TYPES, {
+  zombi:     mob('Çürük Asker', 'warzombie', 58, 3.1, 12, .7, 2.1, 0x6a7a4a, gDmg),
+  iskelet:   mob('İskelet', 'skeletonzombie', 40, 4.2, 9, .6, 2.1, 0xb0a890, gSpeed),
+  kizzombi:  mob('Çürük Kız', 'zombiegirl', 44, 3.6, 10, .62, 2.05, 0x7a6a7a, gRate),
+  poliszombi:mob('Çürük Polis', 'copzombie', 70, 2.9, 14, .72, 2.05, 0x3a4a6a, gHp),
+  parazit:   mob('Parazit', 'parasite', 52, 3.9, 11, .66, 2.0, 0x8a4a5a, gDmg),
+  hortlak:   mob('Hortlak', 'mremireh', 36, 4.6, 8, .58, 2.0, 0x5a8a4a, gSpeed),
+  palyaco:   mob('Palyaço', 'whiteclown', 64, 3.4, 13, .66, 2.05, 0xf0f0f0, gRate),
+  goblin:    mob('Dağ Goblini', 'goblin', 84, 3.8, 14, .8, 2.3, 0x8a6a3a, gSpeed),
+  vampir:    mob('Vampir', 'vampire', 96, 4.0, 16, .72, 2.2, 0x6a2a3a, gDmg),
+  gececi:    mob('Gece Avcısı', 'nightshade', 110, 3.3, 18, .85, 2.4, 0x5a3a6a, gHp),
+  yaku:      mob('Yaku', 'yaku', 78, 4.4, 14, .66, 2.1, 0x7a7a6a, gSpeed),
+  okcu:      mob('Okçu', 'erika', 60, 3.5, 12, .62, 2.0, 0x4a5a3a, gRate, {keep: 7.5}),
+  siber:     mob('Siber Asker', 'ely', 120, 3.6, 19, .7, 2.1, 0x3a5a7a, gDmg),
+  muhafiz:   mob('Kale Muhafızı', 'castle-guard-02', 150, 2.8, 22, .85, 2.3, 0x8a8a9a, gHp),
+  muhafiz2:  mob('Zırhlı Muhafız', 'castle-guard-01', 150, 2.8, 22, .85, 2.3, 0x9a8a7a, gHp),
+  lejyoner:  mob('Lejyoner', 'heraklios', 130, 3.4, 20, .74, 2.15, 0x7a6a5a, gDmg),
+  // titans: commander-size creatures (crowned, each guards a weapon)
+  balkabak:  mob('Balkabağı Dev', 'pumpkinhulk', 160, 2.4, 24, 1.1, 3.0, 0xd07a2a, gHp),
+  warrok:    mob('Warrok', 'warrok', 150, 2.9, 23, 1.05, 3.0, 0x4a6a3a, gDmg),
+  maw:       mob('Boynuzlu Maw', 'maw', 140, 3.1, 22, 1.05, 3.1, 0x5a4a7a, gSpeed),
+  ganfaul:   mob('Ganfaul', 'ganfaul', 150, 3.0, 24, .95, 2.9, 0x6a3a3a, gDmg),
+  iblis:     mob('İblis', 'demon', 170, 2.6, 26, 1.05, 3.0, 0x4a7aaa, gRate),
+  sovalye:   mob('Kızıl Şövalye', 'knight', 180, 2.6, 25, .95, 2.9, 0x8a2a2a, gHp),
+  paladin:   mob('Kara Paladin', 'paladin', 190, 2.5, 26, .95, 2.8, 0x2a2a3a, gHp),
+  vanguard:  mob('Öncü', 'vanguard', 160, 3.2, 23, .95, 2.9, 0x9a8a6a, gSpeed),
+  uriel:     mob('Altın Uriel', 'uriel', 200, 2.4, 28, 1.0, 3.0, 0xc0a040, gDmg),
+  mutant:    mob('Mutant', 'mutant', 180, 2.7, 26, 1.1, 3.1, 0x8a6a4a, gRate)
+});
+// [type, first planet (0-based)] — the horde gets uglier the deeper Serhat goes
+const HORDE = [['zombi', 1], ['goblin', 1], ['iskelet', 3], ['kizzombi', 3], ['parazit', 4], ['poliszombi', 6], ['hortlak', 6], ['palyaco', 7], ['vampir', 9], ['gececi', 10], ['yaku', 11], ['okcu', 12], ['siber', 16], ['muhafiz', 17], ['muhafiz2', 18], ['lejyoner', 19]];
+const TITANS = ['balkabak', 'warrok', 'maw', 'ganfaul', 'iblis', 'sovalye', 'paladin', 'vanguard', 'uriel', 'mutant'];
 const M = (c, e = 0, ei = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({color: c, emissive: e || 0x000000, emissiveIntensity: ei, roughness: .55, metalness: .05}, extra));
 function eyes(g, n, y, z, spread, size = .11){
   const white = M(0xffffff, 0xffffff, .2), pupil = M(0x111111);
@@ -1496,6 +1541,7 @@ function eyes(g, n, y, z, spread, size = .11){
 }
 function buildEnemy(type){
   const g = new THREE.Group();
+  if (TYPES[type].model){ const body = new THREE.Group(); g.add(body); const mat = M(TYPES[type].model.skin, TYPES[type].model.skin, .2); const ph = new THREE.Mesh(new THREE.CapsuleGeometry(.3, .8, 4, 8), mat); ph.position.y = .9; body.add(ph); g.add(blob(TYPES[type].r * 1.15, .38)); return {g, body, mat, baseEm: mat.emissive.clone(), anim: null}; }
   if (type !== 'boss'){ const sp = buildSpecies(type); g.add(sp.body); g.add(blob(TYPES[type].r * 1.15, .38)); return {g, body: sp.body, mat: sp.mat, baseEm: sp.mat.emissive.clone(), anim: sp.anim}; }
   const body = new THREE.Group(); g.add(body); let mat;
   if (false){
@@ -1556,13 +1602,14 @@ function spawn(type, at, opt = {}){
   if (elite){
     e.body.scale.multiplyScalar(1.45);
     const crown = new THREE.Group();
-    for (let i = 0; i < 5; i++){ const sp = new THREE.Mesh(new THREE.ConeGeometry(.12, .45, 4), M(0xffc94a, 0xffa000, 1.2)); const a = i / 5 * Math.PI * 2; sp.position.set(Math.cos(a) * .35, 0, Math.sin(a) * .35); crown.add(sp); }
-    crown.position.y = type === 'tank' ? 2.75 : type === 'goz' ? 2.55 : type === 'tukurucu' ? 2.25 : 1.2; e.body.add(crown);
+    for (let i = 0; i < 5; i++){ const sp = new THREE.Mesh(new THREE.ConeGeometry(.12, .45, 4), M(0xffc94a, 0xffa000, 1.2)); const a = i / 5 * Math.PI * 2; sp.position.set(Math.cos(a) * .35, 0, Math.sin(a) * .35); crown.add(sp); } crown.userData.keep = true;
+    crown.position.y = spec.model ? spec.model.height / 1.45 + .15 : type === 'tank' ? 2.75 : type === 'goz' ? 2.55 : type === 'tukurucu' ? 2.25 : 1.2; e.body.add(crown);
     const halo = new THREE.Mesh(new THREE.RingGeometry(spec.r * 1.6, spec.r * 1.75, 36), new THREE.MeshBasicMaterial({color: 0xffc94a, transparent: true, opacity: .7, side: THREE.DoubleSide})); halo.rotation.x = -Math.PI / 2; halo.position.y = .05; e.g.add(halo);
   }
   if (spec.tree){ e.body.position.y = 3.35; e.perch = 3.35; }
-  if (!spec.boss) e.mat.color.set(themeOf(lv).monTint);
-  e.bar = makeBar(spec.boss ? 3 : elite ? 1.6 : spec.tree ? .7 : 1.1, spec.boss ? .2 : .11, spec.boss ? 'boss' : elite ? 'elite' : spec.tree ? 'bug' : 'foe', (BAR_Y[type] || 2) * (elite ? 1.4 : 1)); e.g.add(e.bar);
+  if (!spec.boss && !spec.model) e.mat.color.set(themeOf(lv).monTint);
+  if (spec.model) dressBoss(e, Object.assign({raw: true, wing: null, horn: null}, spec.model));
+  e.bar = makeBar(spec.boss ? 3 : elite ? 1.6 : spec.tree ? .7 : 1.1, spec.boss ? .2 : .11, spec.boss ? 'boss' : elite ? 'elite' : spec.tree ? 'bug' : 'foe', barOf(type) * (elite ? 1.4 : 1)); e.g.add(e.bar);
   if (spec.boss){ e.gate = bossGate(lv); e.hp = e.maxHp = e.gate * 12; e.baseDmgMul = e.dmgMul; }
   e.r = spec.r * (elite ? 1.45 : 1);
   e.power = e.gate || enemyPower(e); labelEnemy(e);
@@ -2576,7 +2623,7 @@ function updateEnemies(dt, t){
     }
     if (e.knock.lengthSq() > .01){ e.pos.addScaledVector(e.knock, dt); e.knock.multiplyScalar(Math.pow(.02, dt)); }
     // contact damage
-    if (e.state === 'chase' && dist < e.r + .5 && !e.hooked && e.stun <= 0 && e.atk <= 0){ hurtPlayer(e.spec.dmg * e.dmgMul); e.atk = .8; e.slamT = .5; }
+    if (e.state === 'chase' && dist < e.r + .5 && !e.hooked && e.stun <= 0 && e.atk <= 0){ hurtPlayer(e.spec.dmg * e.dmgMul); e.atk = .8; e.slamT = .5; if (e.playClip && !e.spec.boss) e.playClip(Math.random() < .5 ? 'Punch' : 'Kick', true); }
     e.atk -= dt;
     if (!walkable(e.pos.x, e.pos.z) && camp){ const d = camp.c.clone().sub(e.pos).setY(0).normalize(); e.pos.addScaledVector(d, .2); }
   }
@@ -2600,8 +2647,8 @@ function updateEnemies(dt, t){
     if (e.anim) e.anim(t + e.phase, e.mv, e);
     if (e.mixer){
       e.onceT = (e.onceT || 0) - dt;
-      if (e.onceT <= 0) e.playClip(e.state === 'chase' ? (e.charge > 0 ? 'Run' : 'Walk') : e.state === 'return' ? 'Walk' : 'Idle');
-      e.mixer.update(dt); e.body.scale.y = 1;
+      if (e.onceT <= 0) e.playClip(e.state === 'chase' ? (e.charge > 0 || !e.spec.boss ? 'Run' : 'Walk') : e.state === 'return' ? 'Walk' : 'Idle');
+      e.mixer.update(dt); e.body.scale.y = e.spec.model ? e.body.scale.x : 1;
       if (e.wings) for (const w of e.wings) w.rotation.y = w.userData.side * (-.35 - Math.sin(t * (e.state === 'chase' ? 9 : 3)) * .35);
     }
     if (e.flash > 0){ e.flash -= dt; e.mat.emissive.setRGB(1, .92, .85); e.mat.emissiveIntensity = GFX.post ? .22 : .5; }
