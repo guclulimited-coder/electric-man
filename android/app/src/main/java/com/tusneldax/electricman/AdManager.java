@@ -40,6 +40,16 @@ final class AdManager {
 
     AdManager(Activity act) { this.act = act; }
 
+    /* 21 Ekim 2026: AdMob hesabı "kendi reklamını tıklama" nedeniyle 29 gün askıya alındı. Geliştirici telefonlarında
+       (USB hata ayıklama açık) yalnız Google'ın resmi test reklamları yüklenir; sahibin ve test cihazlarının gerçek reklama dokunması imkânsızlaşır. */
+    private boolean developerDevice() {
+        try { return android.provider.Settings.Global.getInt(act.getContentResolver(), android.provider.Settings.Global.ADB_ENABLED, 0) == 1; }
+        catch (Exception e) { return true; }
+    }
+    private String appOpenUnit() { return developerDevice() ? "ca-app-pub-3940256099942544/9257395921" : BuildConfig.AD_APP_OPEN; }
+    private String interstitialUnit() { return developerDevice() ? "ca-app-pub-3940256099942544/1033173712" : BuildConfig.AD_INTERSTITIAL; }
+    private String rewardedUnit() { return developerDevice() ? "ca-app-pub-3940256099942544/5224354917" : BuildConfig.AD_REWARDED; }
+
     private static JSONObject result(boolean shown, boolean earned, boolean dismissed) {
         try { return new JSONObject().put("shown", shown).put("earned", earned).put("dismissed", dismissed); }
         catch (Exception e) { return new JSONObject(); }
@@ -73,14 +83,14 @@ final class AdManager {
     }
 
     private void loadInterstitial(Runnable after) {
-        InterstitialAd.load(act, BuildConfig.AD_INTERSTITIAL, new AdRequest.Builder().build(), new InterstitialAdLoadCallback() {
+        InterstitialAd.load(act, interstitialUnit(), new AdRequest.Builder().build(), new InterstitialAdLoadCallback() {
             @Override public void onAdLoaded(@NonNull InterstitialAd ad) { interstitial = ad; if (after != null) after.run(); }
             @Override public void onAdFailedToLoad(@NonNull LoadAdError e) { interstitial = null; if (after != null) after.run(); }
         });
     }
 
     private void loadRewarded(Runnable after) {
-        RewardedAd.load(act, BuildConfig.AD_REWARDED, new AdRequest.Builder().build(), new RewardedAdLoadCallback() {
+        RewardedAd.load(act, rewardedUnit(), new AdRequest.Builder().build(), new RewardedAdLoadCallback() {
             @Override public void onAdLoaded(@NonNull RewardedAd ad) { rewarded = ad; if (after != null) after.run(); }
             @Override public void onAdFailedToLoad(@NonNull LoadAdError e) { rewarded = null; if (after != null) after.run(); }
         });
@@ -106,7 +116,7 @@ final class AdManager {
         final boolean[] settled = {false};
         // only show at launch: give up if the ad is not ready within a few seconds
         main.postDelayed(() -> { if (!settled[0]) { settled[0] = true; cb.done(null, result(false, false, false)); } }, 4500);
-        AppOpenAd.load(act, BuildConfig.AD_APP_OPEN, new AdRequest.Builder().build(), new AppOpenAd.AppOpenAdLoadCallback() {
+        AppOpenAd.load(act, appOpenUnit(), new AdRequest.Builder().build(), new AppOpenAd.AppOpenAdLoadCallback() {
             @Override public void onAdLoaded(@NonNull AppOpenAd ad) {
                 if (settled[0]) return;
                 settled[0] = true; showing = true;
