@@ -27,8 +27,8 @@ def ver():
     return v[0] if v else None
 v=ver(); note(f"başlangıç: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
 # 1) bekleyen incelemeyi geri çek
-for s in api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=WAITING_FOR_REVIEW,READY_FOR_REVIEW,UNRESOLVED_ISSUES&limit=5')['data']:
-    if s['attributes']['state']=='WAITING_FOR_REVIEW':
+for s in []:
+    if 0:
         api('PATCH',f"/v1/reviewSubmissions/{s['id']}",{'data':{'type':'reviewSubmissions','id':s['id'],'attributes':{'canceled':True}}}); note('eski inceleme geri çekildi '+s['id'])
 for i in range(40):
     v=ver(); st=v['attributes']['appStoreState']
@@ -47,18 +47,20 @@ api('PATCH',f"/v1/appStoreVersions/{v['id']}/relationships/build",{'data':{'type
 # 4) uygulama adı MASTERCITY (düzenlenebilir appInfo)
 infos=api('GET',f'/v1/apps/{APP}/appInfos')['data']
 info=next((i for i in infos if i['attributes'].get('appStoreState') not in ('READY_FOR_DISTRIBUTION','READY_FOR_SALE','REPLACED_WITH_NEW_INFO')),infos[0])
-for loc in api('GET',f"/v1/appInfos/{info['id']}/appInfoLocalizations")['data']:
+for loc in []:
     if loc['attributes'].get('name')!='MASTERCITY':
         try:
             api('PATCH',f"/v1/appInfoLocalizations/{loc['id']}",{'data':{'type':'appInfoLocalizations','id':loc['id'],'attributes':{'name':'MASTERCITY'}}}); note(f"ad MASTERCITY ({loc['attributes']['locale']})")
         except RuntimeError as e: note('AD DEĞİŞMEDİ: '+str(e)[:200])
-# 5) yeniden incelemeye gönder
-sub=None
-for s in api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=READY_FOR_REVIEW&limit=3')['data']: sub=s
-if not sub:
-    sub=api('POST','/v1/reviewSubmissions',{'data':{'type':'reviewSubmissions','attributes':{'platform':'IOS'},'relationships':{'app':{'data':{'type':'apps','id':APP}}}}})['data']
+# 5) eski gönderim (sürüm hâlâ ona bağlı) yeniden gönderilir; boş kalan yeni gönderimler iptal
+OLD='c61ea46e-8350-458c-809c-3107d2209981'
+o=api('GET',f'/v1/reviewSubmissions/{OLD}?include=items')
+note('eski gönderim durumu: '+o['data']['attributes']['state']+' öğe='+str(len(o['data']['relationships']['items'].get('data') or [])))
+for s2 in api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=READY_FOR_REVIEW&limit=5')['data']:
+    if s2['id']!=OLD:
+        try: api('PATCH',f"/v1/reviewSubmissions/{s2['id']}",{'data':{'type':'reviewSubmissions','id':s2['id'],'attributes':{'canceled':True}}}); note('boş gönderim iptal '+s2['id'])
+        except RuntimeError as e: note('boş iptal: '+str(e)[:300])
 try:
-    api('POST','/v1/reviewSubmissionItems',{'data':{'type':'reviewSubmissionItems','relationships':{'reviewSubmission':{'data':{'type':'reviewSubmissions','id':sub['id']}},'appStoreVersion':{'data':{'type':'appStoreVersions','id':v['id']}}}}})
-except RuntimeError as e: note('öğe: '+str(e)[:3000])
-note('gönderim deneniyor');api('PATCH',f"/v1/reviewSubmissions/{sub['id']}",{'data':{'type':'reviewSubmissions','id':sub['id'],'attributes':{'submitted':True}}})
+    api('PATCH',f'/v1/reviewSubmissions/{OLD}',{'data':{'type':'reviewSubmissions','id':OLD,'attributes':{'submitted':True}}}); note('yeniden gönderildi')
+except RuntimeError as e: note('GÖNDERİLEMEDİ: '+str(e)[:3000])
 time.sleep(10); v=ver(); note(f"SON: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
