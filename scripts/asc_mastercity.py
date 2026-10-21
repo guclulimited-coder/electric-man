@@ -21,7 +21,7 @@ def api(method,path,body=None):
         with urllib.request.urlopen(req,timeout=60) as r:
             raw=r.read(); return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
-        raise RuntimeError(f'{method} {path.split("?")[0]} -> {e.code} {e.read().decode(errors="replace")[:500]}')
+        raise RuntimeError(f'{method} {path.split("?")[0]} -> {e.code} {e.read().decode(errors="replace")[:3000]}')
 def ver():
     v=[x for x in api('GET',f'/v1/apps/{APP}/appStoreVersions?filter[platform]=IOS&limit=5')['data'] if x['attributes']['appStoreState'] not in ('READY_FOR_SALE','REPLACED_WITH_NEW_INFO')]
     return v[0] if v else None
@@ -51,7 +51,7 @@ for loc in api('GET',f"/v1/appInfos/{info['id']}/appInfoLocalizations")['data']:
     if loc['attributes'].get('name')!='MASTERCITY':
         try:
             api('PATCH',f"/v1/appInfoLocalizations/{loc['id']}",{'data':{'type':'appInfoLocalizations','id':loc['id'],'attributes':{'name':'MASTERCITY'}}}); note(f"ad MASTERCITY ({loc['attributes']['locale']})")
-        except RuntimeError as e: note('AD DEĞİŞMEDİ: '+str(e)[:300])
+        except RuntimeError as e: note('AD DEĞİŞMEDİ: '+str(e)[:200])
 # 5) yeniden incelemeye gönder
 sub=None
 for s in api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=READY_FOR_REVIEW&limit=3')['data']: sub=s
@@ -59,6 +59,6 @@ if not sub:
     sub=api('POST','/v1/reviewSubmissions',{'data':{'type':'reviewSubmissions','attributes':{'platform':'IOS'},'relationships':{'app':{'data':{'type':'apps','id':APP}}}}})['data']
 try:
     api('POST','/v1/reviewSubmissionItems',{'data':{'type':'reviewSubmissionItems','relationships':{'reviewSubmission':{'data':{'type':'reviewSubmissions','id':sub['id']}},'appStoreVersion':{'data':{'type':'appStoreVersions','id':v['id']}}}}})
-except RuntimeError as e: note('öğe: '+str(e)[:300])
-api('PATCH',f"/v1/reviewSubmissions/{sub['id']}",{'data':{'type':'reviewSubmissions','id':sub['id'],'attributes':{'submitted':True}}})
+except RuntimeError as e: note('öğe: '+str(e)[:3000])
+note('gönderim deneniyor');api('PATCH',f"/v1/reviewSubmissions/{sub['id']}",{'data':{'type':'reviewSubmissions','id':sub['id'],'attributes':{'submitted':True}}})
 time.sleep(10); v=ver(); note(f"SON: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
