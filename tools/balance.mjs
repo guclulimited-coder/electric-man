@@ -17,7 +17,7 @@ function clearGain(k){ let d = D, h = H, sl = slots;
   return {d, h, sl}; }
 const rows = [];
 for (let k = 0; k < 36; k++){
-  const entry = P(); const g = clearGain(k); const gate = entry + TURNS(k) * (g.d + g.h - entry);
+  const entry = P(); let gd = D, gh = H, gs = slots; { const D0 = D, H0 = H, s0 = slots; for (let i = 0; i < TURNS(k); i++){ const r = clearGain(k); D = r.d; H = r.h; slots = r.sl; } gd = D; gh = H; D = D0; H = H0; slots = s0; } const gate = (gd + gh) * .97;
   const hpMul = D / 80 * (1 + .05 * k); // enemy hp follows Serhat's dps, their damage follows his hp
   let t = 0, turns = 0;
   while (P() < gate && turns < 40){

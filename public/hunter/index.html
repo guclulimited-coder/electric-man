@@ -1089,7 +1089,7 @@ function restoreCamp(camp){
 function saveCamp(camp){ const all = store.get('camps', {}) || {}; all[campKey(camp)] = [camp.clears || 0, camp.readyAt || 0]; store.set('camps', all); }
 function populate(camp){
   camp.members = camp.roster.map((o, i) => {
-    const a = i / camp.roster.length * Math.PI * 2, rr = camp.roster.length > 1 ? camp.r * .45 : 0;
+    const n = camp.roster.length, a = i / n * Math.PI * 2 + (i % 2) * .3, rr = n > 1 ? camp.r * Math.min(.9, .35 + .04 * n) * (i % 2 ? 1 : .55) : 0;
     const e = spawn(o.type, new THREE.Vector3(camp.c.x + Math.cos(a) * rr, 0, camp.c.z + Math.sin(a) * rr), {elite: o.elite, camp}); e.tool = o.tool;
     return e;
   });
@@ -1389,7 +1389,7 @@ const barOf = type => BAR_Y[type] || (TYPES[type].model ? TYPES[type].model.heig
 
 // ---------------------------------------------------------------- power ("güç") numbers
 const POW_SFX = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
-const fmtPow = v => { if (!(v >= 1000)) return String(Math.round(v)); const i = Math.min(POW_SFX.length - 1, Math.floor(Math.log10(v) / 3)); return (v / Math.pow(1000, i)).toFixed(i >= POW_SFX.length - 1 ? 0 : 1).replace('.0', '') + POW_SFX[i]; };
+const fmtPow = v => { if (!(v >= 10000)) return String(Math.round(v)); if (v >= 1e36) return v.toExponential(2).replace('+', ''); const i = Math.min(POW_SFX.length - 1, Math.floor(Math.log10(v) / 3)); const m = v / Math.pow(1000, i); return (m >= 100 ? m.toFixed(0) : m >= 10 ? m.toFixed(1) : m.toFixed(2)) + POW_SFX[i]; };
 // everything Serhat gains is relative to what he already has, so planet 30 grows as fast as planet 1
 const SD = () => Math.max(1, player.dmg), SH = () => Math.max(1, player.maxHp / 100);
 const BASE_POWER = 212; // a fresh Serhat (pliers lv1, 100 hp)
@@ -1407,17 +1407,18 @@ function playerPower(){
 const TURNS = k => Math.min(7, 5 + .1 * k);
 const islStore = () => store.get('isl', {}) || {};
 // how much power one full clear of this island gives Serhat right now (simulated on a copy of his stats)
-function clearGain(isl, first = true){
+// the power Serhat has after clearing this island `turns` times from where he stands now (simulated on a copy of his stats)
+function powerAfterClears(isl, turns){
   const keep = {dmg: player.dmg, maxHp: player.maxHp, hp: player.hp, speed: player.speed, rate: player.rate, regen: player.regen}, g0 = gear; gear = gear.map(w => ({...w}));
   const p0 = playerPower();
-  for (const c of isl.camps) for (const o of c.roster){ if (o.type === 'boss') continue; TYPES[o.type].gain();
-    if (o.elite){ player.dmg += .015 * SD(); player.maxHp += 1 * SH(); const id = o.tool || DROP_OF[o.type]; const h = gear.find(w => w.id === id); if (h) h.lv++; else if (first && gear.length < 4) gear.push({id, lv: 1, t: 0}); else player.dmg += .02 * SD(); } }
-  const p1 = playerPower(); Object.assign(player, keep); gear = g0; return Math.max(p0 * .05, p1 - p0);
+  for (let t = 0; t < turns; t++) for (const c of isl.camps) for (const o of c.roster){ if (o.type === 'boss') continue; TYPES[o.type].gain();
+    if (o.elite){ player.dmg += .015 * SD(); player.maxHp += 1 * SH(); const id = o.tool || DROP_OF[o.type]; const h = gear.find(w => w.id === id); if (h) h.lv++; else if (gear.length < 4) gear.push({id, lv: 1, t: 0}); else player.dmg += .02 * SD(); } }
+  const p1 = playerPower(); Object.assign(player, keep); gear = g0; return Math.max(p0 * 1.2, p1);
 }
 // fix the island's numbers to Serhat's power the first time he sets foot on it (kept in the save so a reload changes nothing)
 function scaleIsland(isl, persist = true){
   const all = islStore(), k = isl.k; let st = all[k];
-  if (!st){ const p = playerPower(); st = {p, dps: Math.max(1, playerDps() / 20), hp: Math.max(1, player.maxHp / 100), gate: Math.round(p + clearGain(isl) + (TURNS(k) - 1) * clearGain(isl, false))}; if (persist){ all[k] = st; store.set('isl', all); } }
+  if (!st){ const p = playerPower(); st = {p, dps: Math.max(1, playerDps() / 20), hp: Math.max(1, player.maxHp / 100), gate: Math.round(powerAfterClears(isl, TURNS(k)) * .97)}; if (persist){ all[k] = st; store.set('isl', all); } }
   isl.entry = st.p; isl.gate = st.gate; isl.hpMul = (st.dps || playerDps() / 20) * (1 + .05 * k); isl.dmgMul = (st.hp || player.maxHp / 100) * (1 + .03 * k); isl.scaled = true;
   for (const c of isl.camps) for (const e of c.members) if (!e.dead) applyScale(e);
 }
@@ -1425,7 +1426,7 @@ function applyScale(e){
   const isl = e.camp.isl, spec = e.spec, elite = e.elite;
   if (spec.boss){ e.gate = isl.gate; e.hp = e.maxHp = e.gate * 12; e.dmgMul = e.baseDmgMul = isl.dmgMul * 2.2; }
   else { const f = e.hp / e.maxHp; e.maxHp = spec.hp * isl.hpMul * (elite ? 4 : 1); e.hp = e.maxHp * f; e.dmgMul = isl.dmgMul * (elite ? 1.5 : 1); }
-  e.power = e.gate || enemyPower(e); labelEnemy(e);
+  e.power = e.gate || enemyPower(e); e.labelCol = null; labelEnemy(e);
 }
 // camps come back fast on Mars and slower the deeper Serhat goes (seconds)
 function campWait(camp, clears){ const k = camp.isl.k, cmd = camp.roster.some(o => o.elite); return Math.min(14400, 1080 * (1 + .1 * k) * Math.max(1, clears) * (cmd ? 1.5 : 1)); }
@@ -1669,7 +1670,7 @@ function damage(e, amt, color = '#efe9ff'){
   if (e.dead) return;
   burst(e.pos, 5, hitColor);
   if (e.gate){ const r = gateRatio(e); amt *= gateHit(r); if (r < .9 && clock.elapsedTime - (e.warnT || -99) > 6){ e.warnT = clock.elapsedTime; toast(T('weakBoss', {p: fmtPow(e.gate)})); } }
-  e.hp -= amt; e.flash = .12; e.calm = 4; floatText(Math.round(amt), e.pos, color, e.spec.boss ? 3.6 : e.spec.tree ? 4.2 : 1.8);
+  e.hp -= amt; e.flash = .08; e.calm = 4; floatText(Math.round(amt), e.pos, color, e.spec.boss ? 3.6 : e.spec.tree ? 4.2 : 1.8);
   if (e.state === 'patrol' && !e.spec.tree) aggroCamp(e.camp);
   if (Math.random() < .5) sfx.hit();
   if (e.hp <= 0) kill(e);
@@ -2709,7 +2710,7 @@ function updateEnemies(dt, t){
       e.mixer.update(dt); e.body.scale.y = e.spec.model ? e.body.scale.x : 1;
       if (e.wings) for (const w of e.wings) w.rotation.y = w.userData.side * (-.35 - Math.sin(t * (e.state === 'chase' ? 9 : 3)) * .35);
     }
-    if (e.flash > 0){ e.flash -= dt; e.mat.emissive.setRGB(1, .92, .85); e.mat.emissiveIntensity = GFX.post ? .22 : .5; }
+    if (e.flash > 0){ e.flash -= dt; e.mat.emissive.setRGB(1, .92, .85); e.mat.emissiveIntensity = GFX.post ? .1 : .22; }
     else { e.mat.emissive.copy(e.baseEm); e.mat.emissiveIntensity = e.spec.tree ? .9 : e.mixer ? .18 : e.spec.boss ? .5 : .4; }
     setBar(e.bar, e.hp / e.maxHp, !e.spec.boss && !e.elite); qInv.copy(e.g.quaternion).invert(); e.bar.quaternion.copy(qInv).multiply(camera.quaternion);
     if (e.stun > 0 && !e.hooked) e.body.rotation.z = Math.sin(t * 30) * .08; else e.body.rotation.z = 0;
