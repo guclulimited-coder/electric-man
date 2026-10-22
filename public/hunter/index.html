@@ -1429,7 +1429,9 @@ function applyScale(e){
   e.power = e.gate || enemyPower(e); e.labelCol = null; labelEnemy(e);
 }
 // camps come back fast on Mars and slower the deeper Serhat goes (seconds)
-function campWait(camp, clears){ const k = camp.isl.k, cmd = camp.roster.some(o => o.elite); return Math.min(14400, 1080 * (1 + .1 * k) * Math.max(1, clears) * (cmd ? 1.5 : 1)); }
+// weak camps come back sooner (by the toughest creature in them): ~7/14/21 min for a lizard camp, ~12 for zombies, ~18/36/54 for rock giants, ~27 for commanders
+function campWait(camp, clears){ const k = camp.isl.k, cmd = camp.roster.some(o => o.elite); const top = Math.max(...camp.roster.map(o => TYPES[o.type].hp || 24)); const f = Math.min(1.5, Math.max(.5, Math.sqrt(top / 60)));
+  return Math.min(14400, 720 * f * (1 + .1 * k) * Math.max(1, clears) * (cmd ? 1.5 : 1)); }
 function gateRatio(e){ return e.gate ? playerPower() / e.gate : 1; }
 const gateHit = r => r >= 1 ? 1 : Math.max(.05, r * r), gateHurt = r => r >= 1 ? 1 : Math.min(3, Math.pow(r, -1.2));
 function enemyPower(e){ return Math.round(e.maxHp * .8 + (e.spec.dmg || 0) * e.dmgMul * 10); }
@@ -2672,13 +2674,18 @@ function updateEnemies(dt, t){
           const r = Math.random();
           if (r < .45){ if (e.playClip) e.playClip('Punch', true); for (let k = 0; k < 14; k++){ const a = k / 14 * Math.PI * 2 + t; shoot(e.pos, new THREE.Vector3(Math.cos(a), 0, Math.sin(a)), 8, 10 * e.dmgMul, true, 1.6); } }
           else if (r < .75){ e.charge = .9; e.chargeDir = to.clone(); sfx.roar(); if (e.playClip) e.playClip('Kick', true); }
-          else { for (let k = 0; k < 3 + curIsl; k++){ const m = spawn('surungen', e.pos.clone().add(new THREE.Vector3(rand(-3, 3), 0, rand(-3, 3))), {camp}); m.state = 'chase'; camp.members.push(m); } }
+          else { for (let k = 0; k < Math.min(8, 3 + curIsl); k++){ const m = spawn('surungen', e.pos.clone().add(new THREE.Vector3(rand(-3, 3), 0, rand(-3, 3))), {camp}); m.state = 'chase'; camp.members.push(m); } }
           e.cd = rand(2.6, 3.8);
         }
         if (e.charge > 0){ e.charge -= dt; e.pos.addScaledVector(e.chargeDir, 13 * dt); sp = 0; }
       }
       if (e.spec.keep && e.cd <= 0 && dist < 13){ shoot(e.pos, to, 9, e.spec.dmg * e.dmgMul, true); e.cd = rand(1.6, 2.6); e.mouthT = .45; }
-      e.pos.addScaledVector(to, sp * dt);
+      if (sp < 0 || dist > e.r + .35) e.pos.addScaledVector(to, sp * dt); // stop at arm's length instead of standing on Serhat
+    }
+    // shoulder room: creatures of the same camp push each other apart so a pack spreads around Serhat
+    if (camp && !e.spec.boss && !e.spec.tree && (e.state === 'chase' || e.state === 'patrol')){
+      for (const m of camp.members){ if (m === e || m.dead || m.spec.boss) continue; const dx = e.pos.x - m.pos.x, dz = e.pos.z - m.pos.z, dd = dx * dx + dz * dz, min = e.r + m.r + .15;
+        if (dd < min * min && dd > 1e-6){ const d = Math.sqrt(dd), push = (min - d) * .5; e.pos.x += dx / d * push; e.pos.z += dz / d * push; } else if (dd <= 1e-6){ e.pos.x += (Math.random() - .5) * .2; e.pos.z += (Math.random() - .5) * .2; } }
     }
     if (e.knock.lengthSq() > .01){ e.pos.addScaledVector(e.knock, dt); e.knock.multiplyScalar(Math.pow(.02, dt)); }
     // contact damage

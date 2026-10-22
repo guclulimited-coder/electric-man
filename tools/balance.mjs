@@ -5,7 +5,7 @@ const TURNS = k => Math.min(7, 5 + .1 * k);
 const campSize = k => 10 + Math.min(4, Math.floor(k / 2));
 const CAMPS = 10;
 // a cleared camp comes back after 5 min, then 10, 15 … (linear in clears); deeper planets wait longer
-const campWait = (k, clears, kind) => Math.min(7200, 1080 * (1 + .1 * k) * clears * (kind === 'cmd' ? 1.5 : 1));
+const campWait = (k, clears, kind) => Math.min(14400, 720 * (kind === 'cmd' ? 2.2 : 1) * (1 + .1 * k) * clears); // f≈1 average over weak (0.6) and strong (1.5) camps
 // power = D (weapon dps × 4) + H (hp × 1.2); a fresh Serhat: D 80, H 120
 let D = 80, H = 120, slots = 1;
 const P = () => D + H;
