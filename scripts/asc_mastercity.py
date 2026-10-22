@@ -4,7 +4,7 @@ uygulama adını MASTERCITY yap, yeniden incelemeye gönder. Sahip onayı: 21 Ek
 import json, sys, time, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
-APP='6817973176'; VSTR='1.0.28'; BUILD='29'
+APP='6817973176'; VSTR='1.0.30'; BUILD='31'
 BASE='https://api.appstoreconnect.apple.com'
 LOG=[]
 def note(m): LOG.append(str(m).replace('\n',' ')); print(m, flush=True)
@@ -27,9 +27,10 @@ def ver():
     return v[0] if v else None
 v=ver(); note(f"başlangıç: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
 # 1) bekleyen incelemeyi geri çek
-for s in []:
-    if 0:
-        api('PATCH',f"/v1/reviewSubmissions/{s['id']}",{'data':{'type':'reviewSubmissions','id':s['id'],'attributes':{'canceled':True}}}); note('eski inceleme geri çekildi '+s['id'])
+CANCELLED=[]
+for s in api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=WAITING_FOR_REVIEW&limit=5')['data']:
+    if s['attributes']['state']=='WAITING_FOR_REVIEW':
+        api('PATCH',f"/v1/reviewSubmissions/{s['id']}",{'data':{'type':'reviewSubmissions','id':s['id'],'attributes':{'canceled':True}}}); CANCELLED.append(s['id']); note('eski inceleme geri çekildi '+s['id'])
 for i in range(40):
     v=ver(); st=v['attributes']['appStoreState']
     if st in ('DEVELOPER_REJECTED','PREPARE_FOR_SUBMISSION','REJECTED','METADATA_REJECTED'): break
@@ -47,14 +48,15 @@ api('PATCH',f"/v1/appStoreVersions/{v['id']}/relationships/build",{'data':{'type
 # 4) uygulama adı MASTERCITY (düzenlenebilir appInfo)
 infos=api('GET',f'/v1/apps/{APP}/appInfos')['data']
 info=next((i for i in infos if i['attributes'].get('appStoreState') not in ('READY_FOR_DISTRIBUTION','READY_FOR_SALE','REPLACED_WITH_NEW_INFO')),infos[0])
-for loc in []:
-    if loc['attributes'].get('name')!='MASTERCITY':
+for loc in api('GET',f"/v1/appInfos/{info['id']}/appInfoLocalizations")['data']:
+    want='MASTERCITY: City Life' if loc['attributes']['locale'].startswith('en') else 'MASTERCITY: Şehir Hayatı'
+    if loc['attributes'].get('name')!=want:
         try:
-            api('PATCH',f"/v1/appInfoLocalizations/{loc['id']}",{'data':{'type':'appInfoLocalizations','id':loc['id'],'attributes':{'name':'MASTERCITY'}}}); note(f"ad MASTERCITY ({loc['attributes']['locale']})")
+            api('PATCH',f"/v1/appInfoLocalizations/{loc['id']}",{'data':{'type':'appInfoLocalizations','id':loc['id'],'attributes':{'name':want}}}); note(f"ad {want} ({loc['attributes']['locale']})")
         except RuntimeError as e: note('AD DEĞİŞMEDİ: '+str(e)[:200])
 # 5) eski gönderimin iptali bitince sürüm yeni gönderime eklenir ve gönderilir
-OLD='c61ea46e-8350-458c-809c-3107d2209981'
-st=api('GET',f'/v1/reviewSubmissions/{OLD}')['data']['attributes']['state']; note('eski gönderim: '+st)
+OLD=CANCELLED[-1] if CANCELLED else None
+st=api('GET',f'/v1/reviewSubmissions/{OLD}')['data']['attributes']['state'] if OLD else 'YOK'; note('eski gönderim: '+st)
 if st=='CANCELING':
     note('Apple iptali henüz bitirmedi — sonra tekrar denenecek'); sys.exit(0)
 subs=api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&filter[state]=READY_FOR_REVIEW&filter[platform]=IOS&limit=5')['data']
