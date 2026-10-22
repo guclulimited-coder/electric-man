@@ -1021,18 +1021,18 @@ function buildIsland(k){
   isl.gate = gate;
   // territory layout: four monster camps, two commander camps, trees, boss arena at the far end
   const lvl = k;
-  const campSpots = [[-15, 9], [15, 9], [-17, -4], [17, -4], [0, 4], [-9, 14], [9, 14], [0, -8]];
+  const campSpots = [[-15, 9], [15, 9], [-17, -4], [17, -4], [0, 4], [-9, 14], [9, 14], [0, -8], [-17, -14], [17, -14]];
   const mixes = [
     ['surungen', 'surungen', 'surungen'], ['goz', 'goz', 'surungen'], ['tukurucu', 'tukurucu', 'surungen'],
     ['tank', 'surungen', 'surungen'], ['tukurucu', 'goz', 'tank']
   ];
-  const order = [0, 1, 2, 3, 4, 2, 1, 3];
-  const campSize = 5 + Math.min(4, Math.floor(lvl / 3));
+  const order = [0, 1, 2, 3, 4, 2, 1, 3, 4, 0];
+  const campSize = 10 + Math.min(4, Math.floor(lvl / 2));
   campSpots.forEach(([x, z], i) => {
     const mix = mixes[(order[i] + lvl) % mixes.length].slice();
     if (lvl >= 2 && i % 2 === 0) mix[mix.length - 1] = 'akrep'; if (lvl >= 4 && i % 2 === 1) mix[0] = 'yarasa'; if (lvl >= 6 && i === 4) mix.push('akrep', 'yarasa');
     // Mixamo creatures (skinned models) take the first slots; the extra copies below stay procedural so a camp never holds more than three models
-    const horde = HORDE.filter(h => lvl >= h[1]); if (horde.length){ mix[0] = horde[(lvl + i) % horde.length][0]; if (lvl >= 3) mix[1] = horde[(lvl * 3 + i + 1) % horde.length][0]; if (lvl >= 8 && i % 2 === 1) mix[2] = horde[(lvl * 5 + i + 2) % horde.length][0]; }
+    const horde = HORDE.filter(h => lvl >= h[1]); if (horde.length){ mix[0] = horde[(lvl + i) % horde.length][0]; if (lvl >= 3) mix[1] = horde[(lvl * 3 + i + 1) % horde.length][0]; if (lvl >= 8 && i % 2 === 1) mix[2] = horde[(lvl * 5 + i + 2) % horde.length][0]; if (lvl >= 12 && i % 3 === 0) mix.push(horde[(lvl * 7 + i) % horde.length][0]); }
     const filler = mix.filter(t => !TYPES[t].model); if (!filler.length) filler.push('surungen'); for (let n = mix.length; n < campSize; n++) mix.push(filler[n % filler.length]);
     addCamp(isl, c.x + x, c.z + z, 6.5, mix.map(t => ({type: t})));
   });
@@ -1083,7 +1083,7 @@ function showTimer(camp){
 const campKey = c => c.isl.k + ':' + c.isl.camps.indexOf(c);
 function restoreCamp(camp){
   const st = (store.get('camps', {}) || {})[campKey(camp)];
-  if (st && !camp.isBoss){ camp.clears = st[0]; camp.readyAt = Math.min(st[1], Date.now() + campWait(camp, 99) * 1000); if (st[1] > Date.now()){ camp.respawn = (st[1] - Date.now()) / 1000; camp.members = []; camp.shownSec = -1; return; } }
+  if (st && !camp.isBoss){ camp.clears = st[0]; camp.readyAt = Math.min(st[1], Date.now() + campWait(camp, 4) * 1000); if (st[1] > Date.now()){ camp.respawn = (st[1] - Date.now()) / 1000; camp.members = []; camp.shownSec = -1; return; } }
   populate(camp);
 }
 function saveCamp(camp){ const all = store.get('camps', {}) || {}; all[campKey(camp)] = [camp.clears || 0, camp.readyAt || 0]; store.set('camps', all); }
@@ -1401,10 +1401,10 @@ function playerPower(){
 /* Pacing (agreed): without coins the first boss takes about a day of play, with all daily ads about 12 hours,
    with the biggest pack about an hour (see tools/balance). Each boss needs a power level; below it Serhat's hits barely
    scratch it and its hits land harder, so the fight is only winnable once the ⚡ number is close. */
-/* Pacing (agreed 2026-10-22): no waiting walls. The boss of a planet needs the power Serhat gets from clearing that planet
-   TURNS(k) times over (2.5 turns on Mars, +0.25 per planet, 6 at most); camps come back within minutes, later planets have
-   more and tougher creatures and slower camps, so each planet takes longer than the one before. See tools/balance.mjs. */
-const TURNS = k => Math.min(6, 2.5 + .25 * k);
+/* Pacing (agreed 2026-10-22): every planet is at least an hour of play and no empty waiting. The boss needs the power Serhat
+   gets from clearing the planet TURNS(k) times over (5 turns on Mars, 7 at most). A cleared camp comes back after 18 min, then 36,
+   54 … so by the time he has cleared the rest the first camp is back; deeper planets have more creatures and longer waits. See tools/balance.mjs. */
+const TURNS = k => Math.min(7, 5 + .1 * k);
 const islStore = () => store.get('isl', {}) || {};
 // how much power one full clear of this island gives Serhat right now (simulated on a copy of his stats)
 function clearGain(isl, first = true){
@@ -1428,7 +1428,7 @@ function applyScale(e){
   e.power = e.gate || enemyPower(e); labelEnemy(e);
 }
 // camps come back fast on Mars and slower the deeper Serhat goes (seconds)
-function campWait(camp, clears){ const k = camp.isl.k, g = Math.pow(1.12, k), cmd = camp.roster.some(o => o.elite); const base = (camp.tree ? 30 : cmd ? 30 : 15) * g, cap = (camp.tree ? 180 : cmd ? 240 : 120) * g; return Math.min(cap, base * Math.pow(1.4, clears - 1)); }
+function campWait(camp, clears){ const k = camp.isl.k, cmd = camp.roster.some(o => o.elite); return Math.min(14400, 1080 * (1 + .1 * k) * Math.max(1, clears) * (cmd ? 1.5 : 1)); }
 function gateRatio(e){ return e.gate ? playerPower() / e.gate : 1; }
 const gateHit = r => r >= 1 ? 1 : Math.max(.05, r * r), gateHurt = r => r >= 1 ? 1 : Math.min(3, Math.pow(r, -1.2));
 function enemyPower(e){ return Math.round(e.maxHp * .8 + (e.spec.dmg || 0) * e.dmgMul * 10); }
