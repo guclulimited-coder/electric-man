@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""MASTERCITY derleme 30'u TestFlight iç + dış test gruplarına ekler, dış test incelemesine gönderir (canlı web 633)."""
+"""MASTERCITY derleme 31'i TestFlight iç + dış test gruplarına ekler, dış test incelemesine gönderir (canlı web 633)."""
 import json, sys, time, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
-APP='6817973176'; BUILD='30'; GROUPS=['e1897fb0-9574-48e3-ba4e-6787c660fa5f','caf9413a-ca85-4f9e-b55a-adf29b7834fa']
+APP='6817973176'; BUILD='31'; GROUPS=['e1897fb0-9574-48e3-ba4e-6787c660fa5f','caf9413a-ca85-4f9e-b55a-adf29b7834fa']
 BASE='https://api.appstoreconnect.apple.com'; LOG=[]
 def note(m): LOG.append(str(m)); print(m, flush=True)
 import atexit; atexit.register(lambda: print('::notice title=TestFlight::'+'%0A'.join(LOG)))
