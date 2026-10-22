@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
 permissions:
-  contents: read
+  contents: write
 env:
   TEAM_ID: YMAU5R6AA4
   BUNDLE_ID: com.tusneldax.electrichunter
@@ -25,6 +25,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: hunter-builds
+          path: prev-cert
+          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -97,11 +102,22 @@ jobs:
           subprocess.run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(k), '-out', str(csr), '-subj', '/CN=Electric Man CI/O=TusneldaX/C=TR'], check=True, capture_output=True)
           csr_b64 = ''.join(l for l in csr.read_text().splitlines() if not l.startswith('-----'))
           cert = None; sign_id = 'Apple Distribution'
-          for ctype, ident in [('DISTRIBUTION', 'Apple Distribution'), ('IOS_DISTRIBUTION', 'iPhone Distribution')]:
-              try:
-                  cert = api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': ctype, 'csrContent': csr_b64}}})['data']; sign_id = ident; break
-              except urllib.error.HTTPError as e:
-                  if e.code != 409: raise
+          def make():
+              global cert, sign_id
+              for ctype, ident in [('DISTRIBUTION', 'Apple Distribution'), ('IOS_DISTRIBUTION', 'iPhone Distribution')]:
+                  try:
+                      cert = api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': ctype, 'csrContent': csr_b64}}})['data']; sign_id = ident; return True
+                  except urllib.error.HTTPError as e:
+                      if e.code != 409: raise
+              return False
+          if not make():
+              # both slots taken: revoke the certificate of the previous Electric Hunter upload (recorded on the hunter-builds branch;
+              # that older build is superseded by this one) and try again
+              prev = pathlib.Path('prev-cert/eh-ios-cert.txt'); pid = prev.read_text().strip() if prev.exists() else ''
+              if pid:
+                  try: api('DELETE', '/v1/certificates/' + pid); print('::warning::revoked the previous Electric Hunter CI certificate ' + pid + ' (its build is replaced by this one)')
+                  except Exception as e: print('::warning::could not revoke ' + pid + ': ' + str(e))
+                  time.sleep(5); make()
           if not cert: print('::error::Apple distribution certificate limit reached (both types)'); sys.exit(1)
           (temp / 'em-sign-id').write_text(sign_id)
           (temp / 'em-cert-id').write_text(cert['id'])
@@ -144,6 +160,9 @@ jobs:
             || { set +e; tail -25 export.log | while read -r l; do echo "::error::$l"; done; exit 1; }
           touch "$RUNNER_TEMP/em-uploaded"
           echo "::notice::Uploaded build $GITHUB_RUN_NUMBER to App Store Connect"
+          # remember which certificate this build was signed with, so the next upload can free its slot
+          cd "$GITHUB_WORKSPACE/prev-cert" && cp "$RUNNER_TEMP/em-cert-id" eh-ios-cert.txt && git config user.name ci && git config user.email ci@tusneldax.com \
+            && git add eh-ios-cert.txt && git commit -qm "Electric Hunter iOS build $GITHUB_RUN_NUMBER certificate" && git push -q || echo "::warning::could not record the certificate id"
       - name: Clean up signing files (revoke the certificate only if nothing was uploaded)
         if: always()
         env:
