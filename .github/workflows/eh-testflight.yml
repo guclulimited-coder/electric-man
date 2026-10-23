@@ -5,6 +5,7 @@ on:
 permissions: { contents: read }
 jobs:
   status:
+    if: contains(github.event.head_commit.message, '[tf]')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -24,5 +25,5 @@ jobs:
           open(sys.argv[1], 'w').write('-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n')
           PY
           python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
-          "$RUNNER_TEMP/v/bin/python" scripts/eh_testflight.py "$KEY" "$KEY_ID" "$ISSUER" "${EH_BUILD:-}"
+          "$RUNNER_TEMP/v/bin/python" scripts/eh_testflight.py "$KEY" "$KEY_ID" "$ISSUER" "$(git log -1 --pretty=%B | grep -o 'build=[0-9]*' | cut -d= -f2)"
           rm -f "$KEY"
