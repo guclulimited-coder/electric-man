@@ -260,6 +260,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
     </dl>
     <div class="btns"><button class="go" id="startBtn" type="button" disabled data-t="loadingSerhat">Serhat yükleniyor…</button><a class="getapp" id="getApp" hidden href="https://play.google.com/store/apps/details?id=com.tusneldax.electrichunter" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#00d7fe" d="M3.6 2.3 13.3 12l-9.7 9.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1z"/><path fill="#ffce00" d="m16.6 15.3-3.3-3.3 3.3-3.3 3.7 2.1c1 .6 1 2 0 2.5z"/><path fill="#ff3a44" d="M16.6 15.3 13.3 12l-9.7 9.7c.4.2.8.2 1.2 0z"/><path fill="#00f076" d="M16.6 8.7 4.8 2c-.4-.2-.8-.2-1.2 0L13.3 12z"/></svg><span><small>UYGULAMAYI İNDİR</small>Google Play</span></a></div>
     <div class="loading" id="loadTxt" data-t="loadingModel">Karakter modeli yükleniyor</div>
+    <div class="note" id="buildTag" style="opacity:.55;font-size:11px;margin-top:6px"></div>
   </div>
 </div>
 
@@ -308,6 +309,8 @@ let LANG = LANG_NAMES[lsGet('lang')] ? lsGet('lang') : detectLang();
 const loadLang = c => fetch('i18n/' + c + '.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 let L = {}, LTR = {};
 try { [L, LTR] = await Promise.all([loadLang(LANG), LANG === 'tr' ? null : loadLang('tr')]); if (!LTR) LTR = L; } catch(e){ try { LANG = 'en'; [L, LTR] = await Promise.all([loadLang('en'), loadLang('tr')]); } catch(e2){ try { LANG = 'tr'; L = LTR = await loadLang('tr'); } catch(e3){} } }
+const BUILD = '2026-10-23.4'; // bump on every deploy so a cached copy is easy to spot
+$('buildTag').textContent = 'v' + BUILD; console.log('Electric Hunter build', BUILD);
 const T = (k, v = {}) => { let s = L[k]; if (typeof s !== 'string') s = LTR[k]; if (typeof s !== 'string') s = k; return s.replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m); };
 const UP = s => String(s).toLocaleUpperCase(LANG);
 const pct = v => T('pct', {v});
