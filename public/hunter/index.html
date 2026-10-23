@@ -309,7 +309,7 @@ let LANG = LANG_NAMES[lsGet('lang')] ? lsGet('lang') : detectLang();
 const loadLang = c => fetch('i18n/' + c + '.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 let L = {}, LTR = {};
 try { [L, LTR] = await Promise.all([loadLang(LANG), LANG === 'tr' ? null : loadLang('tr')]); if (!LTR) LTR = L; } catch(e){ try { LANG = 'en'; [L, LTR] = await Promise.all([loadLang('en'), loadLang('tr')]); } catch(e2){ try { LANG = 'tr'; L = LTR = await loadLang('tr'); } catch(e3){} } }
-const BUILD = '2026-10-23.5'; // bump on every deploy so a cached copy is easy to spot
+const BUILD = '2026-10-23.6'; // bump on every deploy so a cached copy is easy to spot
 $('buildTag').textContent = 'v' + BUILD; console.log('Electric Hunter build', BUILD);
 const T = (k, v = {}) => { let s = L[k]; if (typeof s !== 'string') s = LTR[k]; if (typeof s !== 'string') s = k; return s.replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m); };
 const UP = s => String(s).toLocaleUpperCase(LANG);

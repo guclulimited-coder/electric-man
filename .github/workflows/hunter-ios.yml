@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: hunter-builds
+          ref: eh-ios-cert
           path: prev-cert
           persist-credentials: true
       - uses: actions/setup-node@v4
