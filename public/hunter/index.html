@@ -1419,14 +1419,14 @@ function powerAfterClears(isl, turns){
 function scaleIsland(isl, persist = true){
   const all = islStore(), k = isl.k; let st = all[k];
   if (!st){ const p = playerPower(); st = {p, dps: Math.max(1, playerDps() / 20), hp: Math.max(1, player.maxHp / 100), gate: Math.round(powerAfterClears(isl, TURNS(k)) * .97)}; if (persist){ all[k] = st; store.set('isl', all); } }
-  isl.entry = st.p; isl.gate = st.gate; isl.hpMul = (st.dps || playerDps() / 20) * (1 + .05 * k); isl.dmgMul = (st.hp || player.maxHp / 100) * (1 + .03 * k); isl.scaled = true;
-  // the boss is sized for Serhat AT the gate: ~60 s of his damage to kill, each hit ~8 % of his health (ring shots ~3.5 %)
-  const grow = Math.max(1, st.gate / st.p); isl.bossHp = Math.round((st.dps || 1) * 20 * Math.pow(grow, .6) * 60); isl.bossHit = .08 * (st.hp || 1) * 100 * Math.pow(grow, .5); // dps grows ~grow^0.6 and health ~grow^0.5 on the way to the gate
+  isl.entry = st.p; isl.gatePower = st.gate; isl.hpMul = (st.dps || playerDps() / 20) * (1 + .05 * k); isl.dmgMul = (st.hp || player.maxHp / 100) * (1 + .03 * k); isl.scaled = true;
+  // the boss is sized for Serhat AT the gate: ~35 s of his damage to kill, each contact hit ~2.5 % of his health (ring shots ~1 %), its brood at most 3 and half as hard
+  const grow = Math.max(1, st.gate / st.p); isl.bossHp = Math.round((st.dps || 1) * 20 * Math.pow(grow, .6) * 35); isl.bossHit = .025 * (st.hp || 1) * 100 * Math.pow(grow, .5); // dps grows ~grow^0.6 and health ~grow^0.5 on the way to the gate
   for (const c of isl.camps) for (const e of c.members) if (!e.dead) applyScale(e);
 }
 function applyScale(e){
   const isl = e.camp.isl, spec = e.spec, elite = e.elite;
-  if (spec.boss){ e.gate = isl.gate; e.hp = e.maxHp = isl.bossHp; e.dmgMul = e.baseDmgMul = isl.bossHit / spec.dmg; }
+  if (spec.boss){ e.gate = isl.gatePower; e.hp = e.maxHp = isl.bossHp; e.dmgMul = e.baseDmgMul = isl.bossHit / spec.dmg; }
   else { const f = e.hp / e.maxHp; e.maxHp = spec.hp * isl.hpMul * (elite ? 2.5 : 1); e.hp = e.maxHp * f; e.dmgMul = isl.dmgMul * (elite ? 1.2 : 1); }
   e.power = e.gate || enemyPower(e); e.labelCol = null; labelEnemy(e);
 }
@@ -1435,7 +1435,7 @@ function applyScale(e){
 function campWait(camp, clears){ const k = camp.isl.k, cmd = camp.roster.some(o => o.elite); const top = Math.max(...camp.roster.map(o => TYPES[o.type].hp || 24)); const f = Math.min(1.5, Math.max(.5, Math.sqrt(top / 60)));
   return Math.min(14400, 720 * f * (1 + .1 * k) * Math.max(1, clears) * (cmd ? 1.5 : 1)); }
 function gateRatio(e){ return e.gate ? playerPower() / e.gate : 1; }
-const gateHit = r => r >= 1 ? 1 : Math.max(.05, r * r), gateHurt = r => r >= 1 ? 1 : Math.min(3, Math.pow(r, -1.2));
+const gateHit = r => r >= 1 ? Math.min(1.5, r) : Math.max(.05, r * r), gateHurt = r => r >= 1 ? Math.max(.6, 1 / r) : Math.min(3, Math.pow(r, -1.2)); // above the gate Serhat hits harder and is hit softer
 function enemyPower(e){ return Math.round(e.maxHp * .8 + (e.spec.dmg || 0) * e.dmgMul * 10); }
 function powerLabel(text, color){
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
@@ -1662,7 +1662,7 @@ function spawn(type, at, opt = {}){
   if (!spec.boss && !spec.model) e.mat.color.set(themeOf(lv).monTint);
   if (spec.model) dressBoss(e, Object.assign({raw: true, wing: null, horn: null}, spec.model));
   e.bar = makeBar(spec.boss ? 3 : elite ? 1.6 : spec.tree ? .7 : 1.1, spec.boss ? .2 : .11, spec.boss ? 'boss' : elite ? 'elite' : spec.tree ? 'bug' : 'foe', barOf(type) * (elite ? 1.4 : 1)); e.g.add(e.bar);
-  if (spec.boss){ e.gate = isl && isl.scaled ? isl.gate : 1e9; e.hp = e.maxHp = isl && isl.scaled ? isl.bossHp : e.gate * 12; e.dmgMul = e.baseDmgMul = isl && isl.scaled ? isl.bossHit / spec.dmg : 2.2; }
+  if (spec.boss){ e.gate = isl && isl.scaled ? isl.gatePower : 1e9; e.hp = e.maxHp = isl && isl.scaled ? isl.bossHp : e.gate * 12; e.dmgMul = e.baseDmgMul = isl && isl.scaled ? isl.bossHit / spec.dmg : 2.2; }
   e.r = spec.r * (elite ? 1.45 : 1);
   e.power = e.gate || enemyPower(e); labelEnemy(e);
   e.g.position.copy(e.pos); e.g.scale.setScalar(.01); e.spawnT = .35;
@@ -2676,7 +2676,7 @@ function updateEnemies(dt, t){
           const r = Math.random();
           if (r < .45){ if (e.playClip) e.playClip('Punch', true); for (let k = 0; k < 14; k++){ const a = k / 14 * Math.PI * 2 + t; shoot(e.pos, new THREE.Vector3(Math.cos(a), 0, Math.sin(a)), 8, 10 * e.dmgMul, true, 1.6); } }
           else if (r < .75){ e.charge = .9; e.chargeDir = to.clone(); sfx.roar(); if (e.playClip) e.playClip('Kick', true); }
-          else { for (let k = 0; k < Math.min(8, 3 + curIsl); k++){ const m = spawn('surungen', e.pos.clone().add(new THREE.Vector3(rand(-3, 3), 0, rand(-3, 3))), {camp}); m.state = 'chase'; camp.members.push(m); } }
+          else { const brood = camp.members.filter(m => !m.dead && !m.spec.boss).length; for (let k = brood; k < 3; k++){ const m = spawn('surungen', e.pos.clone().add(new THREE.Vector3(rand(-3, 3), 0, rand(-3, 3))), {camp}); m.state = 'chase'; m.dmgMul *= .4; m.maxHp *= .5; m.hp = m.maxHp; m.power = enemyPower(m); m.labelCol = null; labelEnemy(m); camp.members.push(m); } }
           e.cd = rand(2.6, 3.8);
         }
         if (e.charge > 0){ e.charge -= dt; e.pos.addScaledVector(e.chargeDir, 13 * dt); sp = 0; }
