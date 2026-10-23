@@ -1420,12 +1420,14 @@ function scaleIsland(isl, persist = true){
   const all = islStore(), k = isl.k; let st = all[k];
   if (!st){ const p = playerPower(); st = {p, dps: Math.max(1, playerDps() / 20), hp: Math.max(1, player.maxHp / 100), gate: Math.round(powerAfterClears(isl, TURNS(k)) * .97)}; if (persist){ all[k] = st; store.set('isl', all); } }
   isl.entry = st.p; isl.gate = st.gate; isl.hpMul = (st.dps || playerDps() / 20) * (1 + .05 * k); isl.dmgMul = (st.hp || player.maxHp / 100) * (1 + .03 * k); isl.scaled = true;
+  // the boss is sized for Serhat AT the gate: ~60 s of his damage to kill, each hit ~8 % of his health (ring shots ~3.5 %)
+  const grow = Math.max(1, st.gate / st.p); isl.bossHp = Math.round((st.dps || 1) * 20 * Math.pow(grow, .6) * 60); isl.bossHit = .08 * (st.hp || 1) * 100 * Math.pow(grow, .5); // dps grows ~grow^0.6 and health ~grow^0.5 on the way to the gate
   for (const c of isl.camps) for (const e of c.members) if (!e.dead) applyScale(e);
 }
 function applyScale(e){
   const isl = e.camp.isl, spec = e.spec, elite = e.elite;
-  if (spec.boss){ e.gate = isl.gate; e.hp = e.maxHp = e.gate * 12; e.dmgMul = e.baseDmgMul = isl.dmgMul * 2.2; }
-  else { const f = e.hp / e.maxHp; e.maxHp = spec.hp * isl.hpMul * (elite ? 4 : 1); e.hp = e.maxHp * f; e.dmgMul = isl.dmgMul * (elite ? 1.5 : 1); }
+  if (spec.boss){ e.gate = isl.gate; e.hp = e.maxHp = isl.bossHp; e.dmgMul = e.baseDmgMul = isl.bossHit / spec.dmg; }
+  else { const f = e.hp / e.maxHp; e.maxHp = spec.hp * isl.hpMul * (elite ? 2.5 : 1); e.hp = e.maxHp * f; e.dmgMul = isl.dmgMul * (elite ? 1.2 : 1); }
   e.power = e.gate || enemyPower(e); e.labelCol = null; labelEnemy(e);
 }
 // camps come back fast on Mars and slower the deeper Serhat goes (seconds)
@@ -1535,7 +1537,7 @@ function dressBoss(e, cast){
 const TYPES = {
   surungen: {name: 'Sürüngen', hp: 24, speed: 4.3, dmg: 7, r: .55, gain: p => { player.dmg += .001 * SD(); player.maxHp += .2 * SH(); player.hp += .2 * SH(); player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); }},
   tukurucu: {name: 'Tükürücü', hp: 32, speed: 2.6, dmg: 9, r: .6, keep: 7.5, gain: p => { player.dmg += .001 * SD(); player.maxHp += .2 * SH(); player.hp += .2 * SH(); player.dmg += .0005 * SD(); return T('gDmg'); }},
-  tank:     {name: 'Kaya Dev', hp: 130, speed: 1.75, dmg: 18, r: 1.05, gain: p => { player.dmg += .001 * SD(); player.maxHp += .2 * SH(); player.hp += .2 * SH(); player.maxHp += .15 * SH(); return T('gHp'); }},
+  tank:     {name: 'Kaya Dev', hp: 130, speed: 1.75, dmg: 14, r: 1.05, gain: p => { player.dmg += .001 * SD(); player.maxHp += .2 * SH(); player.hp += .2 * SH(); player.maxHp += .15 * SH(); return T('gHp'); }},
   akrep:    {name: 'Zehir Akrep', hp: 46, speed: 3.5, dmg: 11, r: .75, gain: p => { player.dmg += .001 * SD(); player.maxHp += .2 * SH(); player.hp += .2 * SH(); player.dmg += .0005 * SD(); return T('gDmg'); }},
   yarasa:   {name: 'Gece Kanadı', hp: 18, speed: 5, dmg: 5, r: .5, fly: true, gain: p => { player.dmg += .001 * SD(); player.maxHp += .2 * SH(); player.hp += .2 * SH(); player.speed = Math.min(7.5, player.speed + .004); return T('gSpeed'); }},
   goz:      {name: 'Uçan Göz', hp: 20, speed: 3.2, dmg: 6, r: .5, fly: true, gain: p => { player.dmg += .001 * SD(); player.maxHp += .2 * SH(); player.hp += .2 * SH(); player.rate = Math.max(.5, player.rate * .999); return T('gRate'); }},
@@ -1647,7 +1649,7 @@ function spawn(type, at, opt = {}){
   const spec = TYPES[type], m = buildEnemy(type); shadeTree(m.g); if (GFX.tier !== 'high'){ let big = null, bt = 0; m.g.traverse(o => { if (o.castShadow){ const g = o.geometry, n = g.index ? g.index.count : g.attributes.position.count; if (n > bt){ bt = n; big = o; } o.castShadow = false; } }); if (big) big.castShadow = true; }
   const lv = opt.camp ? opt.camp.isl.k : 0, isl = opt.camp ? opt.camp.isl : null, mul = isl && isl.scaled ? isl.hpMul : Math.pow(1.75, lv), elite = !!opt.elite;
   const e = {type, spec, ...m, pos: at.clone(), home: at.clone(), camp: opt.camp || null, elite, state: 'patrol', wp: null, idle: rand(0, 2),
-    hp: spec.hp * mul * (elite ? 4 : 1), maxHp: 0, dmgMul: (isl && isl.scaled ? isl.dmgMul : Math.pow(1.45, lv)) * (elite ? 1.5 : 1), flash: 0, stun: 0, hooked: false, cd: rand(.5, 2), knock: new THREE.Vector3(), atk: 0, phase: Math.random() * 7, dead: false};
+    hp: spec.hp * mul * (elite ? 2.5 : 1), maxHp: 0, dmgMul: (isl && isl.scaled ? isl.dmgMul : Math.pow(1.45, lv)) * (elite ? 1.2 : 1), flash: 0, stun: 0, hooked: false, cd: rand(.5, 2), knock: new THREE.Vector3(), atk: 0, phase: Math.random() * 7, dead: false};
   e.maxHp = e.hp;
   if (elite){
     e.body.scale.multiplyScalar(1.45);
@@ -1660,7 +1662,7 @@ function spawn(type, at, opt = {}){
   if (!spec.boss && !spec.model) e.mat.color.set(themeOf(lv).monTint);
   if (spec.model) dressBoss(e, Object.assign({raw: true, wing: null, horn: null}, spec.model));
   e.bar = makeBar(spec.boss ? 3 : elite ? 1.6 : spec.tree ? .7 : 1.1, spec.boss ? .2 : .11, spec.boss ? 'boss' : elite ? 'elite' : spec.tree ? 'bug' : 'foe', barOf(type) * (elite ? 1.4 : 1)); e.g.add(e.bar);
-  if (spec.boss){ e.gate = isl && isl.scaled ? isl.gate : 1e9; e.hp = e.maxHp = e.gate * 12; e.dmgMul = e.baseDmgMul = (isl && isl.scaled ? isl.dmgMul : 1) * 2.2; }
+  if (spec.boss){ e.gate = isl && isl.scaled ? isl.gate : 1e9; e.hp = e.maxHp = isl && isl.scaled ? isl.bossHp : e.gate * 12; e.dmgMul = e.baseDmgMul = isl && isl.scaled ? isl.bossHit / spec.dmg : 2.2; }
   e.r = spec.r * (elite ? 1.45 : 1);
   e.power = e.gate || enemyPower(e); labelEnemy(e);
   e.g.position.copy(e.pos); e.g.scale.setScalar(.01); e.spawnT = .35;
