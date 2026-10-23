@@ -3,7 +3,7 @@
 import json, sys, time, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
-APP='6817973176'; BUILD='33'; GROUPS=['e1897fb0-9574-48e3-ba4e-6787c660fa5f','caf9413a-ca85-4f9e-b55a-adf29b7834fa']
+APP='6817973176'; BUILD='34'; GROUPS=['e1897fb0-9574-48e3-ba4e-6787c660fa5f','caf9413a-ca85-4f9e-b55a-adf29b7834fa']
 BASE='https://api.appstoreconnect.apple.com'; LOG=[]
 def note(m): LOG.append(str(m)); print(m, flush=True)
 import atexit; atexit.register(lambda: print('::notice title=TestFlight::'+'%0A'.join(LOG)))
@@ -21,7 +21,7 @@ def api(method,path,body=None):
         raise RuntimeError(f'{method} {path.split("?")[0]} -> {e.code} {e.read().decode(errors="replace")[:800]}')
 b=None
 for x in api('GET',f'/v1/builds?filter[app]={APP}&sort=-uploadedDate&limit=5&fields[builds]=version,processingState,uploadedDate')['data']: note('son: '+str(x['attributes']))
-for i in range(40):
+for i in range(80):
     bs=api('GET',f'/v1/builds?filter[app]={APP}&filter[version]={BUILD}&limit=3')['data']
     if bs and bs[0]['attributes']['processingState']=='VALID': b=bs[0]; break
     note(f'bekleniyor: {[x["attributes"]["processingState"] for x in bs]}') if i%8==0 else None
