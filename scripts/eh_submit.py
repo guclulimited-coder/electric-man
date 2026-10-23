@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Electric Hunter (com.tusneldax.electrichunter): bekleyen 1.0 (derleme 18) incelemesini geri çek, derleme 23'ü bağla, yeniden incelemeye gönder.
+"""Electric Hunter (com.tusneldax.electrichunter): bekleyen 1.0 (derleme 23) incelemesini geri çek, derleme 30'u bağla, yeniden incelemeye gönder.
 Sahip onayı: 22 Ekim 2026 "Tamam yap" (derleme 23'e çevir)."""
 import json, sys, time, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
-APP='6819712674'; BUILD='23'
+APP='6819712674'; BUILD='30'
 BASE='https://api.appstoreconnect.apple.com'
 LOG=[]
 def note(m): LOG.append(str(m).replace('\n',' ')); print(m, flush=True)
@@ -38,8 +38,12 @@ for i in range(40):
 note('durum: '+st)
 # 2) sürüm numarası
 # 3) derleme 29
-bs=api('GET',f'/v1/builds?filter[app]={APP}&filter[version]={BUILD}&filter[processingState]=VALID&limit=5')['data']
-if not bs: note('derleme '+BUILD+' henüz VALID değil (Apple işliyor) — sonra tekrar'); sys.exit(0)
+bs=[]
+for i in range(50):
+    bs=api('GET',f'/v1/builds?filter[app]={APP}&filter[version]={BUILD}&filter[processingState]=VALID&limit=5')['data']
+    if bs: break
+    note('derleme '+BUILD+' işleniyor…'); time.sleep(30)
+if not bs: note('derleme '+BUILD+' VALID olmadı'); sys.exit(1)
 b=bs[0]
 if b['attributes'].get('usesNonExemptEncryption') is None:
     api('PATCH',f"/v1/builds/{b['id']}",{'data':{'type':'builds','id':b['id'],'attributes':{'usesNonExemptEncryption':False}}})
