@@ -25,5 +25,5 @@ jobs:
           PY
           python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
           "$RUNNER_TEMP/v/bin/python" scripts/asc_status.py "$KEY" "$KEY_ID" "$ISSUER"
-          "$RUNNER_TEMP/v/bin/python" scripts/asc_crash.py "$KEY" "$KEY_ID" "$ISSUER"
+          "$RUNNER_TEMP/v/bin/python" scripts/asc_audit.py "$KEY" "$KEY_ID" "$ISSUER"
           rm -f "$KEY"
