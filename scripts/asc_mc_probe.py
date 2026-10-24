@@ -16,7 +16,7 @@ for x in v: out.append(f"version {x['id']} {x['attributes']['versionString']} {x
 rd=api(f"/v1/appStoreVersions/{v[0]['id']}/appStoreReviewDetail").get('data') or {}
 a=rd.get('attributes',{})
 out.append(f"review demoRequired={a.get('demoAccountRequired')} demoName={a.get('demoAccountName')} pwSet={bool(a.get('demoAccountPassword'))} pwLen={len(a.get('demoAccountPassword') or '')} contact={a.get('contactFirstName')} {a.get('contactLastName')}")
-out.append('NOTES: '+(a.get('notes') or '').replace('\n',' | '))
+out.append('NOTES: '+(a.get('notes') or '')[:160].replace('\n',' | '))
 for i in api(f'/v1/apps/{APP}/inAppPurchasesV2?limit=50').get('data',[]):
     at=i['attributes']; out.append(f"IAP {i['id']} {at.get('productId')} name={at.get('name')} state={at.get('state')} note={bool(at.get('reviewNote'))}")
     locs=api(f"/v2/inAppPurchases/{i['id']}/inAppPurchaseLocalizations").get('data',[])
@@ -29,4 +29,4 @@ for s in api(f'/v1/reviewSubmissions?filter[app]={APP}&limit=3&include=items').g
 try:
     with urllib.request.urlopen('https://oyun.tusneldax.com/api/currency/config',timeout=20) as r: out.append('live config '+r.read().decode()[-200:])
 except Exception as e: out.append('live config error '+str(e)[:200])
-print('::notice title=MCPROBE::'+'%0A'.join(out))
+[print('::notice title=MCPROBE %d::'%i+'%0A'.join(out[i:i+10])) for i in range(0,len(out),10)]

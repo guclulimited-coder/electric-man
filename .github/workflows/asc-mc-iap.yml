@@ -24,5 +24,5 @@ jobs:
           open(sys.argv[1], 'w').write('-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n')
           PY
           python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
-          "$RUNNER_TEMP/v/bin/python" scripts/asc_mc_probe2.py "$KEY" "$KEY_ID" "$ISSUER"
+          "$RUNNER_TEMP/v/bin/python" scripts/asc_mc_probe.py "$KEY" "$KEY_ID" "$ISSUER"
           rm -f "$KEY"
