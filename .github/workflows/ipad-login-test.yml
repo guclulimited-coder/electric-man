@@ -45,7 +45,7 @@ jobs:
       - name: Run on iPad Air 11-inch and iPhone Pro Max
         run: |
           set -uo pipefail
-          mkdir -p results
+          mkdir -p results; rm -f results/*
           pick(){ xcrun simctl list devices available -j | python3 -c '
           import json, sys, re
           want = sys.argv[1]; d = json.load(sys.stdin)["devices"]
@@ -55,7 +55,7 @@ jobs:
           run(){ # udid bundle mode tag waits...
             U=$1; B=$2; M=$3; T=$4; shift 4
             xcrun simctl terminate "$U" "$B" >/dev/null 2>&1 || true
-            xcrun simctl launch "$U" "$B" -emTest "$M" >/dev/null
+            xcrun simctl launch "$U" "$B" -emTest "$M" </dev/null >/dev/null 2>&1
             i=0; for w in "$@"; do sleep "$w"; i=$((i+1)); xcrun simctl io "$U" screenshot "results/$T-$M-$i.png" >/dev/null 2>&1; done
           }
           IPAD=$(pick 'iPad Air 11-inch \(M3\)' || pick 'iPad Air'); IPHONE=$(pick 'Pro Max')
@@ -70,7 +70,9 @@ jobs:
           run "$IPAD" com.tusneldax.electricman sheet em-ipad 14
           run "$IPAD" com.tusneldax.electricman apple em-ipad 10 6 10
           run "$IPAD" com.tusneldax.electricman browser em-ipad 12 12
-          xcrun simctl launch "$IPAD" com.tusneldax.electrichunter >/dev/null; sleep 45
+          xcrun simctl spawn "$IPAD" log show --start "$START" --style compact --predicate 'eventMessage CONTAINS "EMTEST" OR eventMessage CONTAINS "Sign in with Apple"' </dev/null > results/log-em-ipad.txt 2>&1
+          grep -E "EMTEST|Sign in with Apple" results/log-em-ipad.txt | cut -c1-300 | head -30 | while read -r l; do echo "::notice::EM $l"; done
+          xcrun simctl launch "$IPAD" com.tusneldax.electrichunter </dev/null >/dev/null 2>&1; sleep 45
           run "$IPAD" com.tusneldax.electrichunter sheet eh-ipad 16
           run "$IPAD" com.tusneldax.electrichunter apple eh-ipad 12 10
           run "$IPAD" com.tusneldax.electrichunter browser eh-ipad 14
@@ -79,7 +81,7 @@ jobs:
           # the live sign-in page on iPad Safari, as the new app versions open it (apple=native)
           xcrun simctl openurl "$IPAD" "https://electricman.tusneldax.com/app-login?challenge=$(printf 'a%.0s' $(seq 64))&state=$(printf 'b%.0s' $(seq 32))&lang=en&platform=ios&apple=native"; sleep 15
           xcrun simctl io "$IPAD" screenshot results/safari-ipad-app-login.png >/dev/null 2>&1
-          for U in $IPAD $IPHONE; do xcrun simctl spawn "$U" log show --start "$START" --style compact --predicate 'eventMessage CONTAINS "EMTEST" OR eventMessage CONTAINS "Sign in with Apple" OR eventMessage CONTAINS "AuthenticationServices" OR (process == "ElectricMan" AND messageType == fault) OR (process == "ElectricHunter" AND messageType == fault)' > "results/log-$U.txt" 2>&1; done
+          for U in $IPAD $IPHONE; do xcrun simctl spawn "$U" log show --start "$START" --style compact --predicate 'eventMessage CONTAINS "EMTEST" OR eventMessage CONTAINS "Sign in with Apple" OR eventMessage CONTAINS "AuthenticationServices" OR (process == "ElectricMan" AND messageType == fault) OR (process == "ElectricHunter" AND messageType == fault)' </dev/null > "results/log-$U.txt" 2>&1; done
           for U in $IPAD $IPHONE; do ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i -E "electric" && echo "::warning::crash report found"; done
           cat results/log-*.txt | grep -E "EMTEST|Sign in with Apple" | cut -c1-300 | head -60 | while read -r l; do echo "::notice::$l"; done
           ls results
