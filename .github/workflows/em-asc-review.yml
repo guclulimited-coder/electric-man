@@ -1,0 +1,37 @@
+name: Electric Man/Hunter App Store review
+on:
+  push:
+    branches: [em-asc-review]
+permissions: { contents: read }
+jobs:
+  asc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          set -euo pipefail
+          KEY="$RUNNER_TEMP/AuthKey.p8"
+          python3 - "$KEY" <<'PY'
+          import os, re, sys, textwrap
+          raw = os.environ['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw))
+          open(sys.argv[1], 'w').write('-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n')
+          PY
+          python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/v/bin/python" scripts/em_asc_review.py "$KEY" "$KEY_ID" "$ISSUER" || code=$?
+          rm -f "$KEY"; exit ${code:-0}
+      - name: Web sign-in probe (Apple web flow configuration)
+        run: |
+          set +e
+          H=$(curl -sS -o /dev/null -D - "https://electricman.tusneldax.com/api/em/auth/apple/start?back=%2F" | tr -d '\r')
+          LOC=$(echo "$H" | grep -i '^location:' | cut -d' ' -f2-)
+          echo "::notice::apple start: $(echo "$H" | head -1) cookie=$(echo "$H" | grep -ic 'set-cookie: __Host-em-apple') -> $(echo "$LOC" | sed -E 's/(state|nonce)=[^&]*/\1=X/g')"
+          P=$(curl -sS -L "$LOC" -A 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' | head -c 200000)
+          echo "::notice::appleid authorize page: $(echo "$P" | grep -o -i -E 'invalid_client|invalid_request|invalid_redirect|redirect_uri|<title>[^<]*' | sort | uniq -c | tr '\n' ' ' | head -c 400)"
+          curl -sS "https://electricman.tusneldax.com/api/em/config" | head -c 400 | sed 's/^/::notice::config /'

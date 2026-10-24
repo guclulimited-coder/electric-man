@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""Electric Man / Electric Hunter — App Store review resubmission (24 Oct 2026).
+Owner approval: "diğer uygulamaların hepsini kontrol et ... ona göre aksiyon al".
+Modes (store/em-asc-mode.txt):
+  check                 read-only: versions, builds, review submissions + items, IAPs, review details, bundle capabilities, certificates
+  submit <app> <build>  app = em | eh. Cancels a pending submission (eh), attaches <build>, AFTER_APPROVAL, reviewer note,
+                        submits the version together with every READY_TO_SUBMIT in-app purchase, verifies the item count.
+Never prints keys or passwords."""
+import json, sys, time, urllib.request, urllib.error
+import jwt
+KEY, KID, ISS = sys.argv[1:4]
+MODE = open('store/em-asc-mode.txt').read().split()
+APPS = {'em': ('6819511421', 'com.tusneldax.electricman', 'Electric Man'), 'eh': ('6819712674', 'com.tusneldax.electrichunter', 'Electric Hunter')}
+BASE = 'https://api.appstoreconnect.apple.com'
+LOG = []
+def note(m): LOG.append(str(m).replace('\n', ' ')); print(m, flush=True)
+import atexit
+atexit.register(lambda: print('::notice title=ASC ' + ' '.join(MODE) + '::' + '%0A'.join(LOG[-150:])))
+_t = [None, 0]
+def tok():
+    if time.time() - _t[1] > 600:
+        n = int(time.time()); _t[0] = jwt.encode({'iss': ISS, 'iat': n, 'exp': n + 1100, 'aud': 'appstoreconnect-v1'}, open(KEY).read(), algorithm='ES256', headers={'kid': KID, 'typ': 'JWT'}); _t[1] = time.time()
+    return _t[0]
+def api(method, path, body=None):
+    req = urllib.request.Request(BASE + path, method=method, data=None if body is None else json.dumps(body).encode(), headers={'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            raw = r.read(); return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f'{method} {path.split("?")[0]} -> {e.code} {e.read().decode(errors="replace")[:1500]}')
+def safe(f, *a):
+    try: return f(*a)
+    except RuntimeError as e: note('  ! ' + str(e)[:600]); return None
+
+def versions(app):
+    return [x for x in api('GET', f'/v1/apps/{app}/appStoreVersions?filter[platform]=IOS&limit=5')['data'] if x['attributes']['appStoreState'] not in ('READY_FOR_SALE', 'REPLACED_WITH_NEW_INFO')]
+def iaps(app):
+    out = []
+    r = safe(api, 'GET', f'/v1/apps/{app}/inAppPurchasesV2?limit=50')
+    for x in (r or {}).get('data', []): out.append(x)
+    return out
+def items(sub):
+    r = safe(api, 'GET', f'/v1/reviewSubmissions/{sub}/items?limit=50&include=appStoreVersion')
+    return (r or {}).get('data', [])
+
+def check():
+    for key, (app, bid_name, name) in APPS.items():
+        note(f'== {name} {app}')
+        for v in versions(app):
+            va = v['attributes']; b = (safe(api, 'GET', f"/v1/appStoreVersions/{v['id']}/build") or {}).get('data')
+            note(f"  version {va['versionString']} {va['appStoreState']} release={va.get('releaseType')} build={(b or {}).get('attributes', {}).get('version')}")
+            rd = (safe(api, 'GET', f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail") or {}).get('data')
+            if rd:
+                a = rd['attributes']
+                note(f"  review detail: demoRequired={a.get('demoAccountRequired')} demoUser={a.get('demoAccountName')} demoPassSet={bool(a.get('demoAccountPassword'))}")
+                note('  notes: ' + (a.get('notes') or '')[:900])
+        for b in api('GET', f'/v1/builds?filter[app]={app}&sort=-uploadedDate&limit=4')['data']:
+            note(f"  build {b['attributes']['version']} {b['attributes']['processingState']} {b['attributes'].get('uploadedDate', '')[:16]}")
+        for s in api('GET', f'/v1/reviewSubmissions?filter[app]={app}&limit=4')['data']:
+            its = items(s['id'])
+            note(f"  submission {s['id']} {s['attributes']['state']} submitted={str(s['attributes'].get('submittedDate'))[:16]} items={len(its)} " + ','.join(i['attributes'].get('state', '') for i in its))
+        for x in iaps(app):
+            note(f"  iap {x['id']} {x['attributes'].get('productId')} {x['attributes'].get('state')}")
+        bid = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + bid_name)['data'] if b['attributes']['identifier'] == bid_name]
+        if bid:
+            caps = safe(api, 'GET', f"/v1/bundleIds/{bid[0]['id']}/bundleIdCapabilities?limit=50") or {'data': []}
+            note('  capabilities: ' + ','.join(c['attributes'].get('capabilityType', '') for c in caps['data']))
+    certs = safe(api, 'GET', '/v1/certificates?limit=50') or {'data': []}
+    for c in certs['data']:
+        a = c['attributes']
+        if a.get('certificateType') in ('DISTRIBUTION', 'IOS_DISTRIBUTION'):
+            note(f"cert {c['id']} {a.get('certificateType')} {a.get('name')} exp={str(a.get('expirationDate'))[:10]}")
+
+def submit(key, build):
+    app, bid_name, name = APPS[key]
+    bs = api('GET', f'/v1/builds?filter[app]={app}&filter[version]={build}&limit=5')['data']
+    if not bs or bs[0]['attributes']['processingState'] != 'VALID':
+        note(f"{name}: build {build} not ready: {bs[0]['attributes']['processingState'] if bs else 'MISSING'}"); sys.exit(3)
+    b = bs[0]
+    v = versions(app)[0]; note(f"{name}: start {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+    # 1) withdraw a pending submission (Electric Hunter); a rejected one (UNRESOLVED_ISSUES) stays and is reused/replaced
+    old = None
+    for s in api('GET', f'/v1/reviewSubmissions?filter[app]={app}&limit=10')['data']:
+        if s['attributes']['state'] in ('WAITING_FOR_REVIEW', 'IN_REVIEW'):
+            if safe(api, 'PATCH', f"/v1/reviewSubmissions/{s['id']}", {'data': {'type': 'reviewSubmissions', 'id': s['id'], 'attributes': {'canceled': True}}}) is not None:
+                old = s['id']; note('withdrew submission ' + s['id'])
+    for i in range(60):
+        v = versions(app)[0]; st = v['attributes']['appStoreState']
+        if st in ('DEVELOPER_REJECTED', 'PREPARE_FOR_SUBMISSION', 'REJECTED', 'METADATA_REJECTED'): break
+        time.sleep(15)
+    note('version state: ' + st)
+    if st not in ('DEVELOPER_REJECTED', 'PREPARE_FOR_SUBMISSION', 'REJECTED', 'METADATA_REJECTED'): note('version not editable yet'); sys.exit(4)
+    if old:
+        for i in range(40):
+            s2 = api('GET', f'/v1/reviewSubmissions/{old}')['data']['attributes']['state']
+            if s2 != 'CANCELING': break
+            time.sleep(15)
+        note('old submission: ' + s2)
+    # 2) release after approval, build
+    api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'releaseType': 'AFTER_APPROVAL'}}}); note('releaseType AFTER_APPROVAL')
+    if b['attributes'].get('usesNonExemptEncryption') is None:
+        safe(api, 'PATCH', f"/v1/builds/{b['id']}", {'data': {'type': 'builds', 'id': b['id'], 'attributes': {'usesNonExemptEncryption': False}}})
+    api('PATCH', f"/v1/appStoreVersions/{v['id']}/relationships/build", {'data': {'type': 'builds', 'id': b['id']}}); note(f'build {build} attached')
+    # 3) reviewer note
+    rd = (api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail") or {}).get('data')
+    extra = (f"\n\nBuild {build} (24 Oct 2026): Fixed: Sign in with Apple now works on iPad (compatibility mode) and iPhone; tested on iPad Air simulator iPadOS. "
+             "Sign in with Apple now uses the native system sheet: open Account (profile) > Continue with Apple. "
+             "The demo account from App Review Information is under Account > Sign in with Google or e-mail > Sign in with demo account (App Review). "
+             "The coin packs in the shop are consumable in-app purchases and are submitted together with this version; signing in is not required to buy.")
+    if rd:
+        n = rd['attributes'].get('notes') or ''
+        if f'Build {build} (24 Oct 2026)' not in n:
+            api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': (n + extra)[-3900:]}}}); note('reviewer note added')
+    # 4) submission: version + in-app purchases
+    subs = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&limit=10')['data']
+    sub = next((s for s in subs if s['attributes']['state'] in ('READY_FOR_REVIEW', 'UNRESOLVED_ISSUES')), None)
+    if not sub:
+        sub = api('POST', '/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions', 'attributes': {'platform': 'IOS'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']
+    note(f"submission {sub['id']} {sub['attributes'].get('state')}")
+    its = items(sub['id'])
+    if not any((i.get('relationships', {}).get('appStoreVersion', {}).get('data') or {}).get('id') == v['id'] for i in its):
+        safe(api, 'POST', '/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems', 'relationships': {'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': sub['id']}}, 'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': v['id']}}}}})
+    want = [x for x in iaps(app) if x['attributes'].get('state') in ('READY_TO_SUBMIT', 'DEVELOPER_ACTION_NEEDED', 'REJECTED')]
+    for x in want:
+        r = safe(api, 'POST', '/v1/inAppPurchaseSubmissions', {'data': {'type': 'inAppPurchaseSubmissions', 'relationships': {'inAppPurchaseV2': {'data': {'type': 'inAppPurchases', 'id': x['id']}}}}})
+        note(f"iap {x['attributes'].get('productId')}: " + ('added' if r is not None else 'NOT added'))
+    its = items(sub['id']); note(f'items before submit: {len(its)}')
+    r = safe(api, 'PATCH', f"/v1/reviewSubmissions/{sub['id']}", {'data': {'type': 'reviewSubmissions', 'id': sub['id'], 'attributes': {'submitted': True}}})
+    note('SUBMITTED' if r is not None else 'NOT SUBMITTED')
+    time.sleep(15)
+    s = api('GET', f"/v1/reviewSubmissions/{sub['id']}")['data']; its = items(sub['id'])
+    note(f"final submission {s['id']} {s['attributes']['state']} items={len(its)}")
+    for x in iaps(app): note(f"  iap {x['attributes'].get('productId')} {x['attributes'].get('state')}")
+    v = versions(app)[0]; note(f"FINAL {name}: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+
+if MODE[0] == 'check': check()
+elif MODE[0] == 'submit':
+    for i in range(1, len(MODE), 2): submit(MODE[i], MODE[i + 1])
