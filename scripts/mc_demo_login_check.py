@@ -17,6 +17,10 @@ def asc(p):
 v=[x for x in asc(f'/v1/apps/{APP}/appStoreVersions?limit=3')['data']][0]
 rd=asc(f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail")['data']['attributes']
 USER,PASS=rd['demoAccountName'],rd['demoAccountPassword']
+bv=asc('/v1/apps/6817836111/appStoreVersions?limit=1')['data'][0]
+brd=asc(f"/v1/appStoreVersions/{bv['id']}/appStoreReviewDetail")['data']['attributes']
+note(f"Bus Rush demo name={brd.get('demoAccountName')} sameUser={brd.get('demoAccountName')==USER} samePassword={brd.get('demoAccountPassword')==PASS} pwLen={len(brd.get('demoAccountPassword') or '')}")
+CANDIDATES=[('MASTERCITY',USER,PASS),('BusRush',brd.get('demoAccountName'),brd.get('demoAccountPassword'))]
 jar=http.cookiejar.CookieJar()
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*a,**k): return None
@@ -40,13 +44,17 @@ def check(name,cond,detail=''):
 try:
     verifier=secrets.token_hex(32); challenge=hashlib.sha256(verifier.encode()).hexdigest()
     s,d,_=call(O+'/api/auth/device/start',{'challenge':challenge},origin=O); check('app device/start',s==200 and 'id' in d,s); dev=d['id']
-    s,html,_=call(O+'/hesap.html?device='+dev+'&native=3'); check('hesap.html served',s==200)
+    s,html,_=call(O+'/hesap.html?device='+dev+'&native=3'); check('hesap.html served',s==200,s)
     s,js,_=call(O+'/account.js?v=491'); check('live hesap page has review-account button',b'review-login' in (html if isinstance(html,bytes) else b'') or True)
     s,d,_=call(O+'/api/auth/shared/start',{'device':dev,'link':False},origin=O); check('shared/start (Test hesabı / Review account)',s==200 and 'url' in d,s)
     q=parse_qs(urlparse(d['url']).query); state=q['state'][0]; ch=q['challenge'][0]
     check('broker page is the generic TUSNELDAX one (no method => review form visible)','method' not in q)
-    s,d,_=call(B+'/api/bus-rush/auth/nonce',{},origin=B); check('broker nonce',s==200,s)
-    s,d,_=call(B+'/api/bus-rush/auth/review',{'username':USER,'password':PASS},origin=B); check('review account sign-in (demo credentials from App Review Information)',s==200,d if s!=200 else '')
+    good=None
+    for label,u,pw in CANDIDATES:
+        s,d,_=call(B+'/api/bus-rush/auth/nonce',{},origin=B)
+        s,d,_=call(B+'/api/bus-rush/auth/review',{'username':u,'password':pw},origin=B); note(f'review sign-in with {label} credentials: {s} {d if s!=200 else ""}')
+        if s==200: good=label; break
+    check('review account sign-in works with the credentials in App Review Information',good=='MASTERCITY',good)
     s,d,_=call(B+'/api/bus-rush/me'); check('broker player',s==200 and d.get('player'),(d.get('player') or {}).get('name') if isinstance(d,dict) else d)
     s,d,_=call(B+'/api/bus-rush/usta/finish',{'challenge':ch},origin=B); check('"Bu hesabı Usta Şehri’nde kullan"',s==200 and 'ticket' in d,s)
     s,d,h=call(O+'/api/auth/shared/callback?ticket='+d['ticket']+'&state='+state,headers={'Accept':'text/html'}); check('shared callback -> hesap.html?device',s==303 and 'device='+dev in (h.get('location') or ''),s)
