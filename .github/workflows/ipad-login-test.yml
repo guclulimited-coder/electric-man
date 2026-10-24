@@ -1,0 +1,90 @@
+name: iPad sign-in check (simulator)
+on:
+  push:
+    branches: [em-ipad-test]
+    paths: ['.github/workflows/ipad-login-test.yml', 'test-trigger.txt']
+permissions:
+  contents: write
+jobs:
+  sim:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bundle and generate projects
+        run: |
+          set -euo pipefail
+          node scripts/bundle-native.mjs ios/ElectricMan/www
+          node scripts/bundle-native.mjs hunter-app/ios/ElectricHunter/www hunter
+          latest=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest/Contents/Developer"; fi
+          xcodebuild -version | head -1
+          brew install xcodegen >/dev/null
+          (cd ios && xcodegen generate) && (cd hunter-app/ios && xcodegen generate)
+      - name: Build Debug for the simulator (signed to run locally, with the Sign in with Apple entitlement)
+        run: |
+          set +e
+          for P in ElectricMan:ios/ElectricMan.xcodeproj ElectricHunter:hunter-app/ios/ElectricHunter.xcodeproj; do
+            S=${P%%:*}; X=${P##*:}
+            xcodebuild -project "$X" -scheme "$S" -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+              -derivedDataPath "build/$S" CODE_SIGNING_ALLOWED=YES CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= build > "build-$S.log" 2>&1
+            code=$?
+            if [ $code != 0 ]; then
+              grep -E "error:" "build-$S.log" | sort -u | head -10 | while read -r l; do echo "::warning::$S signed build: $l"; done
+              xcodebuild -project "$X" -scheme "$S" -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+                -derivedDataPath "build/$S" CODE_SIGNING_ALLOWED=NO build > "build-$S.log" 2>&1; code=$?
+              echo "::warning::$S built without signing (exit $code)"
+            fi
+            grep -E "error:|BUILD (SUCCEEDED|FAILED)" "build-$S.log" | sort -u | head -20 | while read -r l; do echo "::notice::$S $l"; done
+            [ $code = 0 ] || exit $code
+            codesign -d --entitlements :- build/$S/Build/Products/Debug-iphonesimulator/$S.app 2>/dev/null | grep -q applesignin && echo "::notice::$S simulator binary carries com.apple.developer.applesignin" || echo "::warning::$S entitlement not embedded"
+          done
+      - name: Run on iPad Air 11-inch and iPhone Pro Max
+        run: |
+          set -uo pipefail
+          mkdir -p results
+          pick(){ xcrun simctl list devices available -j | python3 -c '
+          import json, sys, re
+          want = sys.argv[1]; d = json.load(sys.stdin)["devices"]
+          c = [(rt, x) for rt, xs in d.items() if "iOS" in rt for x in xs if re.search(want, x["name"])]
+          c.sort(key=lambda p: [int(n) for n in re.findall(r"\d+", p[0])])
+          print(c[-1][1]["udid"]); print("::notice::device " + c[-1][1]["name"] + " " + c[-1][0], file=sys.stderr)' "$1"; }
+          run(){ # udid bundle mode tag waits...
+            U=$1; B=$2; M=$3; T=$4; shift 4
+            xcrun simctl terminate "$U" "$B" >/dev/null 2>&1 || true
+            xcrun simctl launch "$U" "$B" -emTest "$M" >/dev/null
+            i=0; for w in "$@"; do sleep "$w"; i=$((i+1)); xcrun simctl io "$U" screenshot "results/$T-$M-$i.png" >/dev/null 2>&1; done
+          }
+          IPAD=$(pick 'iPad Air 11-inch \(M3\)' || pick 'iPad Air'); IPHONE=$(pick 'Pro Max')
+          for U in $IPAD $IPHONE; do xcrun simctl boot "$U"; xcrun simctl bootstatus "$U" -b >/dev/null; done
+          START=$(date -u '+%Y-%m-%d %H:%M:%S')
+          for U in $IPAD $IPHONE; do
+            xcrun simctl install "$U" build/ElectricMan/Build/Products/Debug-iphonesimulator/ElectricMan.app
+            xcrun simctl install "$U" build/ElectricHunter/Build/Products/Debug-iphonesimulator/ElectricHunter.app
+          done
+          # warm-up (first WebGL start compiles shaders)
+          xcrun simctl launch "$IPAD" com.tusneldax.electricman >/dev/null; sleep 40
+          run "$IPAD" com.tusneldax.electricman sheet em-ipad 14
+          run "$IPAD" com.tusneldax.electricman apple em-ipad 10 6 10
+          run "$IPAD" com.tusneldax.electricman browser em-ipad 12 12
+          xcrun simctl launch "$IPAD" com.tusneldax.electrichunter >/dev/null; sleep 45
+          run "$IPAD" com.tusneldax.electrichunter sheet eh-ipad 16
+          run "$IPAD" com.tusneldax.electrichunter apple eh-ipad 12 10
+          run "$IPAD" com.tusneldax.electrichunter browser eh-ipad 14
+          xcrun simctl launch "$IPHONE" com.tusneldax.electricman >/dev/null; sleep 40
+          run "$IPHONE" com.tusneldax.electricman apple em-iphone 10 10
+          # the live sign-in page on iPad Safari, as the new app versions open it (apple=native)
+          xcrun simctl openurl "$IPAD" "https://electricman.tusneldax.com/app-login?challenge=$(printf 'a%.0s' $(seq 64))&state=$(printf 'b%.0s' $(seq 32))&lang=en&platform=ios&apple=native"; sleep 15
+          xcrun simctl io "$IPAD" screenshot results/safari-ipad-app-login.png >/dev/null 2>&1
+          for U in $IPAD $IPHONE; do xcrun simctl spawn "$U" log show --start "$START" --style compact --predicate 'eventMessage CONTAINS "EMTEST" OR eventMessage CONTAINS "Sign in with Apple" OR eventMessage CONTAINS "AuthenticationServices" OR (process == "ElectricMan" AND messageType == fault) OR (process == "ElectricHunter" AND messageType == fault)' > "results/log-$U.txt" 2>&1; done
+          for U in $IPAD $IPHONE; do ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i -E "electric" && echo "::warning::crash report found"; done
+          cat results/log-*.txt | grep -E "EMTEST|Sign in with Apple" | cut -c1-300 | head -60 | while read -r l; do echo "::notice::$l"; done
+          ls results
+      - name: Commit results to this branch
+        if: always()
+        run: |
+          git config user.name ci && git config user.email ci@tusneldax.com
+          git add -f results && git commit -qm "iPad sign-in check results run $GITHUB_RUN_ID" && git push -q || echo "::warning::could not push results"
