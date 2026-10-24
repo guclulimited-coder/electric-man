@@ -3,7 +3,7 @@
 import json, sys, time, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
-APP='6817973176'; BUILD='38'; GROUPS=['e1897fb0-9574-48e3-ba4e-6787c660fa5f','caf9413a-ca85-4f9e-b55a-adf29b7834fa']
+APP='6817973176'; BUILD='39'; GROUPS=['e1897fb0-9574-48e3-ba4e-6787c660fa5f','caf9413a-ca85-4f9e-b55a-adf29b7834fa']
 BASE='https://api.appstoreconnect.apple.com'; LOG=[]
 def note(m): LOG.append(str(m)); print(m, flush=True)
 import atexit; atexit.register(lambda: print('::notice title=TestFlight::'+'%0A'.join(LOG)))
