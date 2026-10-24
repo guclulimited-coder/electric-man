@@ -69,3 +69,29 @@ console.log(checks+' Apple login security checks passed');
  r=await post('/native/exchange',{ticket:t2,verifier});assert.equal(r.status,401);ok();
 }
 console.log('handoff/review checks ok');
+
+// 24 Oct 2026 — App Store 2.1a (iPad): native Sign in with Apple in the apps (identity token aud = bundle id)
+{
+ const env3={DB:d1(),EM_APPLE_SERVICE_ID:'test.apple.service'};
+ const api3=req=>emAPI(req,env3,{fetch:fetcher});
+ const post=(path,body)=>api3(new Request(ORIGIN+'/api/em'+path,{method:'POST',headers:{origin:ORIGIN,'content-type':'application/json'},body:JSON.stringify(body)}));
+ const nonce=async()=>{const r=await post('/native/apple/nonce',{});assert.equal(r.status,200);const n=(await r.json()).nonce;assert.match(n,/^[a-f0-9]{64}$/);return n;};
+ let n=await nonce();
+ let r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'com.tusneldax.electricman',sub:'native-user'})});assert.equal(r.status,200);
+ const t1=(await r.json()).token;assert.match(t1,/^[a-f0-9]{64}$/);ok();
+ r=await api3(new Request(ORIGIN+'/api/em/me',{headers:{cookie:'__Host-em-session='+t1}}));const p1=(await r.json()).player;assert.ok(p1&&p1.code);ok();
+ // nonce is single use
+ r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'com.tusneldax.electricman',sub:'native-user'})});assert.equal(r.status,401);ok();
+ // Electric Hunter bundle id, same Apple user -> same TusneldaX account
+ n=await nonce();r=await post('/native/apple',{nonce:n,app:'hunter',token:await token(n,{aud:'com.tusneldax.electrichunter',sub:'native-user'})});assert.equal(r.status,200);
+ r=await api3(new Request(ORIGIN+'/api/em/me',{headers:{cookie:'__Host-em-session='+(await r.json()).token}}));assert.equal((await r.json()).player.code,p1.code);ok();
+ // wrong audience / unknown nonce / mismatched nonce rejected, and a failed check does not burn the nonce
+ n=await nonce();r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'test.apple.service'})});assert.equal(r.status,401);ok();
+ r=await post('/native/apple',{nonce:n,app:'hunter',token:await token(n,{aud:'com.tusneldax.electricman'})});assert.equal(r.status,401);ok();
+ r=await post('/native/apple',{nonce:'d'.repeat(64),token:await token('d'.repeat(64),{aud:'com.tusneldax.electricman'})});assert.equal(r.status,401);ok();
+ r=await post('/native/apple',{nonce:n,token:await token('e'.repeat(64),{aud:'com.tusneldax.electricman'})});assert.equal(r.status,401);ok();
+ r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'com.tusneldax.electricman'})});assert.equal(r.status,200);ok();
+ // the same-origin rule still applies
+ r=await api3(new Request(ORIGIN+'/api/em/native/apple/nonce',{method:'POST',headers:{origin:'https://evil.example','content-type':'application/json'},body:'{}'}));assert.equal(r.status,403);ok();
+}
+console.log('native Apple sign-in checks ok');

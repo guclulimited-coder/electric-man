@@ -668,5 +668,7 @@
  "bo35_1": "Dad! The rift is closing! Everything lit up!",
  "bo35_2": "The cable is done, son. We're going home.",
  "bo35_3": "Dad… there are still islands behind us.",
- "bo35_4": "Let there be. An electrician is always on watch."
+ "bo35_4": "Let there be. An electrician is always on watch.",
+ "o_eAPPLE_FAILED": "Sign-in could not be completed. Please try again.",
+ "o_loginOther": "Sign in with Google or e-mail"
 }

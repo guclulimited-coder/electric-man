@@ -211,5 +211,8 @@
   "reviewLogin": "Mit Demo-Konto anmelden (App Review)",
   "reviewUser": "Benutzername",
   "reviewPass": "Passwort",
-  "eLOGIN_FAILED": "Benutzername oder Passwort falsch."
+  "eLOGIN_FAILED": "Benutzername oder Passwort falsch.",
+  "loginFail": "Anmeldung konnte nicht abgeschlossen werden. Versuch es noch einmal.",
+  "eAPPLE_FAILED": "Anmeldung konnte nicht abgeschlossen werden. Versuch es noch einmal.",
+  "loginOther": "Mit Google oder E-Mail anmelden"
 }

@@ -211,5 +211,8 @@
   "reviewLogin": "Connexion avec un compte démo (App Review)",
   "reviewUser": "Nom d'utilisateur",
   "reviewPass": "Mot de passe",
-  "eLOGIN_FAILED": "Nom d'utilisateur ou mot de passe incorrect."
+  "eLOGIN_FAILED": "Nom d'utilisateur ou mot de passe incorrect.",
+  "loginFail": "La connexion n'a pas pu aboutir. Réessaie.",
+  "eAPPLE_FAILED": "La connexion n'a pas pu aboutir. Réessaie.",
+  "loginOther": "Se connecter avec Google ou e-mail"
 }

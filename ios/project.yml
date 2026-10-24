@@ -25,6 +25,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.tusneldax.electricman
         PRODUCT_NAME: ElectricMan
         INFOPLIST_FILE: ElectricMan/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ElectricMan/ElectricMan.entitlements
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         MARKETING_VERSION: "1.0.0"

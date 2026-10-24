@@ -62,6 +62,16 @@ struct GameView: UIViewRepresentable {
         try{window.__EM_RESTORE=JSON.parse(\(literal)[0])}catch(_){}})();
         """
         config.userContentController.addUserScript(WKUserScript(source: shim, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #if DEBUG
+        // simulator checks only (Debug builds): page errors go to the unified log as "EMTEST ..."
+        config.userContentController.add(context.coordinator, name: "emlog")
+        config.userContentController.addUserScript(WKUserScript(source: """
+        (()=>{const s=m=>{try{window.webkit.messageHandlers.emlog.postMessage(String(m).slice(0,500))}catch(_){}};
+        addEventListener('error',e=>s('js-error '+e.message+' @'+(e.filename||'')+':'+(e.lineno||'')));
+        addEventListener('unhandledrejection',e=>s('js-rejection '+((e.reason&&e.reason.message)||e.reason)));
+        const ce=console.error.bind(console);console.error=(...a)=>{s('console.error '+a.join(' '));ce(...a)};})();
+        """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #endif
         let view = WKWebView(frame: .zero, configuration: config)
         view.isOpaque = false
         view.backgroundColor = UIColor(red: 0.07, green: 0.04, blue: 0.12, alpha: 1)
@@ -82,15 +92,22 @@ struct GameView: UIViewRepresentable {
     static func dismantleUIView(_ view: WKWebView, coordinator: Coordinator) {
         view.configuration.userContentController.removeScriptMessageHandler(forName: "em", contentWorld: .page)
         coordinator.auth?.cancel()
+        #if DEBUG
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "emlog")
+        #endif
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandlerWithReply, ASWebAuthenticationPresentationContextProviding, URLSessionTaskDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandlerWithReply, WKScriptMessageHandler, ASWebAuthenticationPresentationContextProviding,
+                             ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding, URLSessionTaskDelegate {
         let origin = "https://electricman.tusneldax.com"
         let files = BundleSchemeHandler()
         let ads = AdManager()
         let store = StoreManager()
         weak var view: WKWebView?
         var auth: ASWebAuthenticationSession?
+        var appleReply: ((Any?, String?) -> Void)?
+        var appleNonce: String?
+        var appleController: ASAuthorizationController?
         lazy var network: URLSession = {
             let c = URLSessionConfiguration.ephemeral
             c.httpShouldSetCookies = false; c.httpCookieStorage = nil; c.timeoutIntervalForRequest = 20
@@ -111,7 +128,42 @@ struct GameView: UIViewRepresentable {
             return nil
         }
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
-        func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor { view?.window ?? ASPresentationAnchor() }
+        /// Window for the system sign-in sheets. The web view's window first; otherwise the foreground scene's key window
+        /// (iPad, iPhone app in iPad compatibility mode), never a detached window when a scene exists.
+        func anchor() -> ASPresentationAnchor {
+            if let w = view?.window { return w }
+            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
+            if let w = scene?.windows.first(where: { $0.isKeyWindow }) ?? scene?.windows.first { return w }
+            if let scene = scene { return UIWindow(windowScene: scene) }
+            return ASPresentationAnchor()
+        }
+        func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor { anchor() }
+        func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor { anchor() }
+        /// "emlog" handler; registered only in Debug (simulator checks)
+        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            #if DEBUG
+            NSLog("EMTEST %@", String(describing: message.body))
+            #endif
+        }
+        #if DEBUG
+        private var testStarted = false
+        static let openAccountJS = "(()=>{document.getElementById('profBtn').click();setTimeout(()=>document.querySelector('[data-tab=account]').click(),400);return 'profile/account'})()"
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            // `-emTest apple|browser|sheet` (simulator only): open the account sheet and press a sign-in button
+            guard !testStarted, let mode = UserDefaults.standard.string(forKey: "emTest") else { return }
+            testStarted = true
+            NSLog("EMTEST page loaded, mode %@", mode)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                webView.evaluateJavaScript(Self.openAccountJS) { r, e in NSLog("EMTEST open account: %@ %@", String(describing: r), String(describing: e)) }
+                guard mode != "sheet" else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    let id = mode == "apple" ? "appleLogin" : "appLogin"
+                    webView.evaluateJavaScript("(()=>{const b=document.getElementById('\(id)');if(!b)return 'missing \(id)';b.click();return 'clicked \(id)'})()") { r, e in NSLog("EMTEST tap: %@ %@", String(describing: r), String(describing: e)) }
+                }
+            }
+        }
+        #endif
 
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
             guard message.frameInfo.isMainFrame, message.frameInfo.request.url?.scheme == BundleSchemeHandler.scheme,
@@ -122,6 +174,7 @@ struct GameView: UIViewRepresentable {
                 UserDefaults.standard.set(data, forKey: "emStore"); replyHandler(["ok": true], nil)
             case "api": api(body, replyHandler)
             case "login": login(lang: body["lang"] as? String ?? "tr", replyHandler)
+            case "apple": appleLogin(replyHandler)
             case "ad":
                 guard let root = view?.window?.rootViewController else { replyHandler(nil, "SCREEN_UNAVAILABLE"); return }
                 ads.show(kind: body["kind"] as? String ?? "", from: root, reply: replyHandler)
@@ -175,7 +228,7 @@ struct GameView: UIViewRepresentable {
             var c = URLComponents(string: origin + "/app-login")!
             c.queryItems = [URLQueryItem(name: "challenge", value: challenge), URLQueryItem(name: "state", value: state),
                             URLQueryItem(name: "lang", value: lang.range(of: "^[a-z]{2}$", options: .regularExpression) != nil ? lang : "tr"),
-                            URLQueryItem(name: "platform", value: "ios"), URLQueryItem(name: "app", value: "hunter")]
+                            URLQueryItem(name: "platform", value: "ios"), URLQueryItem(name: "apple", value: "native"), URLQueryItem(name: "app", value: "hunter")]
             auth = ASWebAuthenticationSession(url: c.url!, callbackURLScheme: "electrichunter") { [weak self] callback, error in
                 guard let self = self else { reply(nil, "LOGIN_CANCELLED"); return }
                 self.auth = nil
@@ -195,8 +248,63 @@ struct GameView: UIViewRepresentable {
                 }
             }
             auth?.presentationContextProvider = self
-            auth?.prefersEphemeralWebBrowserSession = false
+            // ephemeral: no extra system "wants to use ... to sign in" alert (cancelling it looked like a failed login)
+            auth?.prefersEphemeralWebBrowserSession = true
             if auth?.start() != true { auth = nil; reply(nil, "LOGIN_UNAVAILABLE") }
+        }
+
+        /// 24 Oct 2026 — App Store 2.1(a), iPad Air / iPadOS 27: "Continue with Apple failed" through the web flow in the
+        /// browser sheet. Sign in with Apple now uses the native system sheet (ASAuthorizationController): the server issues a
+        /// one-time nonce, Apple signs an identity token for this app's bundle ID with it, the server verifies it and returns
+        /// this app's session token.
+        private func appleLogin(_ reply: @escaping (Any?, String?) -> Void) {
+            guard appleReply == nil, auth == nil else { reply(nil, "LOGIN_BUSY"); return }
+            appleReply = reply
+            Task {
+                do {
+                    let (status, json) = try await self.request("/native/apple/nonce", [String: Any]())
+                    let nonce = (json as? [String: Any])?["nonce"] as? String ?? ""
+                    guard status == 200, nonce.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil else {
+                        await MainActor.run { self.finishApple(nil, status == 429 ? "RATE_LIMIT" : "APPLE_FAILED") }; return
+                    }
+                    await MainActor.run {
+                        let request = ASAuthorizationAppleIDProvider().createRequest()
+                        request.requestedScopes = []
+                        request.nonce = nonce
+                        let controller = ASAuthorizationController(authorizationRequests: [request])
+                        controller.delegate = self
+                        controller.presentationContextProvider = self
+                        self.appleNonce = nonce
+                        self.appleController = controller
+                        controller.performRequests()
+                    }
+                } catch { await MainActor.run { self.finishApple(nil, "CONNECTION_FAILED") } }
+            }
+        }
+        private func finishApple(_ value: Any?, _ error: String?) {
+            let reply = appleReply
+            appleReply = nil; appleNonce = nil; appleController = nil
+            #if DEBUG
+            NSLog("EMTEST apple result %@ %@", String(describing: value), error ?? "-")
+            #endif
+            reply?(value, error)
+        }
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential, let data = credential.identityToken,
+                  let identityToken = String(data: data, encoding: .utf8), let nonce = appleNonce else { finishApple(nil, "APPLE_FAILED"); return }
+            Task {
+                do {
+                    let (status, json) = try await self.request("/native/apple", ["token": identityToken, "nonce": nonce, "app": "hunter"])
+                    let token = (json as? [String: Any])?["token"] as? String ?? ""
+                    if status == 200, token.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil, SessionVault.write(token) {
+                        await MainActor.run { self.finishApple(["ok": true], nil) }
+                    } else { await MainActor.run { self.finishApple(nil, status == 429 ? "RATE_LIMIT" : "APPLE_FAILED") } }
+                } catch { await MainActor.run { self.finishApple(nil, "CONNECTION_FAILED") } }
+            }
+        }
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+            NSLog("Sign in with Apple: %@", String(describing: error))
+            finishApple(nil, (error as? ASAuthorizationError)?.code == .canceled ? "LOGIN_CANCELLED" : "APPLE_FAILED")
         }
     }
 }

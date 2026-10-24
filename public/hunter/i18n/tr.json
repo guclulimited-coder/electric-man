@@ -668,5 +668,7 @@
  "bo35_1": "Baba! Yarık kapanıyor! Her şey aydınlandı!",
  "bo35_2": "Kablo bitti oğlum. Eve gidiyoruz.",
  "bo35_3": "Baba… arkada hâlâ adalar var.",
- "bo35_4": "Olsun. Elektrikçi her zaman nöbette."
+ "bo35_4": "Olsun. Elektrikçi her zaman nöbette.",
+ "o_eAPPLE_FAILED": "Giriş tamamlanamadı, yeniden dene.",
+ "o_loginOther": "Google veya e-posta ile giriş"
 }

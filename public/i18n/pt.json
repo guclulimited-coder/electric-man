@@ -211,5 +211,8 @@
   "reviewLogin": "Entrar com conta demo (App Review)",
   "reviewUser": "Usuário",
   "reviewPass": "Senha",
-  "eLOGIN_FAILED": "Usuário ou senha incorretos."
+  "eLOGIN_FAILED": "Usuário ou senha incorretos.",
+  "loginFail": "Não foi possível concluir o login. Tente novamente.",
+  "eAPPLE_FAILED": "Não foi possível concluir o login. Tente novamente.",
+  "loginOther": "Entrar com Google ou e-mail"
 }

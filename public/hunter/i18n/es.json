@@ -668,5 +668,7 @@
  "bo35_1": "¡Papá! ¡La grieta se cierra! ¡Todo se iluminó!",
  "bo35_2": "Se acabó el cable, hijo. Nos vamos a casa.",
  "bo35_3": "Papá… todavía hay islas detrás de nosotros.",
- "bo35_4": "Que las haya. Un electricista siempre está de guardia."
+ "bo35_4": "Que las haya. Un electricista siempre está de guardia.",
+ "o_eAPPLE_FAILED": "No se pudo completar el inicio de sesión. Inténtalo de nuevo.",
+ "o_loginOther": "Iniciar sesión con Google o correo"
 }

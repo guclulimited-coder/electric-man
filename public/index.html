@@ -1091,7 +1091,7 @@ const Online = (() => {
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); say(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     const login = new URLSearchParams(location.search).get('login');
-    if (login){ history.replaceState(null, '', location.pathname); say(['tiktok','apple'].includes(login) && me ? T('welcome', {name: me.name}) : T('ttFail')); }
+    if (login){ history.replaceState(null, '', location.pathname); say(['tiktok','apple'].includes(login) && me ? T('welcome', {name: me.name}) : T(login === 'fail' ? 'loginFail' : 'ttFail')); }
     document.addEventListener('visibilitychange', () => { if (!document.hidden && me) pollBadges(); });
   }
 
@@ -1130,9 +1130,14 @@ const Online = (() => {
   async function openAccount(){
     if (!cfg){ const b = sheet(T('accTitle'), `<p>${esc(T('accPreview'))}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`); bindLang(b); bindSettings(b); return; }
     if (!me && Native.app){
-      const b = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p><button class="btn" id="appLogin">${esc(T('loginApp'))}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
+      // 24 Ekim 2026 (App Store 2.1a, iPad): iOS'ta Apple ile giriş yerel sistem penceresiyle (ASAuthorization) yapılır;
+      // Google / e-posta / demo hesabı sistem tarayıcı penceresinde açılan giriş sayfasında kalır.
+      const appleNative = Native.platform === 'ios';
+      const b = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p>${appleNative ? `<button class="btn" id="appleLogin" style="background:#000;color:#fff;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="19" viewBox="0 0 814 1000" aria-hidden="true"><path fill="#fff" d="M788 341c-6 4-108 62-108 190 0 149 131 201 135 203-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-166 41s-106-57-156-127C45 792 0 667 0 548c0-191 124-292 246-292 65 0 119 43 160 43 39 0 100-45 174-45 28 0 129 3 208 87zM558 160c31-37 53-88 53-139 0-7-1-14-2-20-50 2-110 34-146 76-28 32-55 83-55 135 0 8 1 16 2 18 3 1 9 2 14 2 45 0 102-30 134-72z"/></svg>${esc(T('apple'))}</button>` : ''}<button class="btn${appleNative ? ' ghost' : ''}" id="appLogin">${esc(T(appleNative ? 'loginOther' : 'loginApp'))}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
       bindLang(b); bindSettings(b);
-      b.querySelector('#appLogin').onclick = async ev => { ev.currentTarget.disabled = true; try { await Native.call({action:'login', lang: LANG}); setMe((await call('/me')).player); if (me){ await sync(); accountView(); say(T('welcome', {name: me.name})); } } catch (e){ if (e.message !== 'LOGIN_CANCELLED') $('loginErr').textContent = msg(e.message); } ev.currentTarget.disabled = false; };
+      const nativeLogin = (sel, req) => { b.querySelector(sel).onclick = async ev => { const btn = ev.currentTarget; btn.disabled = true; $('loginErr').textContent = ''; try { await Native.call(req); setMe((await call('/me')).player); if (me){ await sync(); accountView(); say(T('welcome', {name: me.name})); } } catch (e){ if (e.message !== 'LOGIN_CANCELLED') $('loginErr').textContent = msg(e.message); } btn.disabled = false; }; };
+      if (appleNative) nativeLogin('#appleLogin', {action:'apple'});
+      nativeLogin('#appLogin', {action:'login', lang: LANG});
       return;
     }
     if (me) return accountView();

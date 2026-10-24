@@ -343,6 +343,28 @@ export async function emAPI(req, env, deps = {}){
       await run(db, 'INSERT INTO em_sessions(id,player,expires) VALUES(?,?,?)', await hash(token), t.player, Date.now() + 180 * 86400000);
       return reply({token});
     }
+    /* 24 Ekim 2026 — App Store ret (2.1a, iPad Air / iPadOS 27: "Continue with Apple failed"): uygulamalarda Apple ile giriş
+       artık yerel (ASAuthorizationController) akışla yapılır. Uygulama tek kullanımlık bir nonce alır, Apple kimlik jetonunu
+       (aud = uygulamanın paket kimliği) bu nonce ile gönderir; sunucu imzayı/aud/nonce'u doğrular ve uygulamaya kendi oturumunu verir. */
+    if (path === '/native/apple/nonce' && req.method === 'POST'){
+      await quota(db, 'auth:' + ip, 40, 3600000);
+      const n = random();
+      await db.batch([db.prepare('DELETE FROM em_nonces WHERE expires<?').bind(Date.now()), db.prepare('INSERT INTO em_nonces(id,expires) VALUES(?,?)').bind(await hash('native-apple:' + n), Date.now() + 600000)]);
+      return reply({nonce: n});
+    }
+    if (path === '/native/apple' && req.method === 'POST'){
+      await quota(db, 'exchange:' + ip, 30, 3600000);
+      if (!isTok(body.nonce)) fail('LOGIN_EXPIRED', 401);
+      const aud = body.app === 'hunter' ? (env.EH_IOS_BUNDLE_ID || 'com.tusneldax.electrichunter') : (env.EM_IOS_BUNDLE_ID || 'com.tusneldax.electricman');
+      if (!await one(db, 'SELECT id FROM em_nonces WHERE id=? AND expires>?', await hash('native-apple:' + body.nonce), Date.now())) fail('LOGIN_EXPIRED', 401);
+      const claims = await verifyApple(body.token, aud, body.nonce, fetcher);
+      if (!await one(db, 'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id', await hash('native-apple:' + body.nonce), Date.now())) fail('LOGIN_EXPIRED', 401);
+      await ensureSchema(db);
+      const id = await resolveIdentity(db, 'apple', claims.sub);
+      const token = random();
+      await run(db, 'INSERT INTO em_sessions(id,player,expires) VALUES(?,?,?)', await hash(token), id, Date.now() + 180 * 86400000);
+      return reply({token});
+    }
     if (path === '/me'){ const p = await current(req, db); return reply({player: p ? publicMe(p) : null}); }
 
     const me = await current(req, db); if (!me) fail('LOGIN_REQUIRED', 401);

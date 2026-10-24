@@ -211,5 +211,8 @@
   "reviewLogin": "Sign in with demo account (App Review)",
   "reviewUser": "Username",
   "reviewPass": "Password",
-  "eLOGIN_FAILED": "Wrong username or password."
+  "eLOGIN_FAILED": "Wrong username or password.",
+  "loginFail": "Sign-in could not be completed. Please try again.",
+  "eAPPLE_FAILED": "Sign-in could not be completed. Please try again.",
+  "loginOther": "Sign in with Google or e-mail"
 }

@@ -668,5 +668,7 @@
  "bo35_1": "Papa! Der Riss schließt sich! Alles leuchtet!",
  "bo35_2": "Das Kabel ist am Ende, mein Sohn. Wir gehen nach Hause.",
  "bo35_3": "Papa… hinter uns sind noch Inseln.",
- "bo35_4": "Sollen sie. Ein Elektriker hat immer Bereitschaft."
+ "bo35_4": "Sollen sie. Ein Elektriker hat immer Bereitschaft.",
+ "o_eAPPLE_FAILED": "Anmeldung konnte nicht abgeschlossen werden. Versuch es noch einmal.",
+ "o_loginOther": "Mit Google oder E-Mail anmelden"
 }

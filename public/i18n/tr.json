@@ -211,5 +211,8 @@
   "reviewLogin": "Demo hesap ile giriş (App Review)",
   "reviewUser": "Kullanıcı adı",
   "reviewPass": "Parola",
-  "eLOGIN_FAILED": "Kullanıcı adı veya parola hatalı."
+  "eLOGIN_FAILED": "Kullanıcı adı veya parola hatalı.",
+  "loginFail": "Giriş tamamlanamadı, yeniden dene.",
+  "eAPPLE_FAILED": "Giriş tamamlanamadı, yeniden dene.",
+  "loginOther": "Google veya e-posta ile giriş"
 }

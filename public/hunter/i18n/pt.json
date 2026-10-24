@@ -668,5 +668,7 @@
  "bo35_1": "Pai! A fenda está fechando! Tudo se iluminou!",
  "bo35_2": "O cabo acabou, filho. Vamos pra casa.",
  "bo35_3": "Pai… ainda tem ilhas atrás de nós.",
- "bo35_4": "Deixa ter. Eletricista está sempre de plantão."
+ "bo35_4": "Deixa ter. Eletricista está sempre de plantão.",
+ "o_eAPPLE_FAILED": "Não foi possível concluir o login. Tente novamente.",
+ "o_loginOther": "Entrar com Google ou e-mail"
 }

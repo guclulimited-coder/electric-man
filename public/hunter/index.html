@@ -2214,8 +2214,13 @@ const Online = (() => {
     }
     const done = async () => { setMe((await call('/me')).player); await sync(); score(); await claimWeb(); toast(T('o_welcome', {name: me.name})); render(); };
     if (Native.app){
-      const b = body(`<p class="note">${T('accNote')}</p><button class="buy" type="button" id="appLogin">${T('o_loginApp')}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p>${extras()}`);
-      b.querySelector('#appLogin').onclick = async ev => { ev.currentTarget.disabled = true; try { await Native.call({action: 'login', lang: LANG}); await done(); } catch(e){ if (e.message !== 'LOGIN_CANCELLED') err('loginErr', msg(e.message)); } if ($('appLogin')) $('appLogin').disabled = false; };
+      // 24 Ekim 2026 (App Store 2.1a, iPad): iOS'ta Apple ile giriş yerel sistem penceresiyle (ASAuthorization) yapılır;
+      // Google / e-posta / demo hesabı sistem tarayıcı penceresinde açılan giriş sayfasında kalır.
+      const appleNative = Native.platform === 'ios';
+      const b = body(`<p class="note">${T('accNote')}</p>${appleNative ? `<button class="buy" type="button" id="appleLogin" style="background:#000;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="19" viewBox="0 0 814 1000" aria-hidden="true"><path fill="#fff" d="M788 341c-6 4-108 62-108 190 0 149 131 201 135 203-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-166 41s-106-57-156-127C45 792 0 667 0 548c0-191 124-292 246-292 65 0 119 43 160 43 39 0 100-45 174-45 28 0 129 3 208 87zM558 160c31-37 53-88 53-139 0-7-1-14-2-20-50 2-110 34-146 76-28 32-55 83-55 135 0 8 1 16 2 18 3 1 9 2 14 2 45 0 102-30 134-72z"/></svg>${esc(T('apple'))}</button>` : ''}<button class="buy${appleNative ? ' alt' : ''}" type="button" id="appLogin">${T(appleNative ? 'o_loginOther' : 'o_loginApp')}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p>${extras()}`);
+      const nativeLogin = (sel, req) => { b.querySelector(sel).onclick = async ev => { const btn = ev.currentTarget; btn.disabled = true; err('loginErr'); try { await Native.call(req); await done(); } catch(e){ if (e.message !== 'LOGIN_CANCELLED') err('loginErr', msg(e.message)); } if (btn.isConnected) btn.disabled = false; }; };
+      if (appleNative) nativeLogin('#appleLogin', {action: 'apple'});
+      nativeLogin('#appLogin', {action: 'login', lang: LANG});
       return;
     }
     const b = body(`<p class="note">${T('accNote')}</p>

@@ -97,6 +97,13 @@ jobs:
           bid_name = env['BUNDLE_ID']
           found = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + bid_name)['data'] if b['attributes']['identifier'] == bid_name]
           bid = found[0] if found else api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': bid_name, 'name': 'Electric Hunter', 'platform': 'IOS'}}})['data']
+          # Sign in with Apple (native, 24 Oct 2026): the App ID needs the capability so the App Store profile carries the entitlement
+          caps = api('GET', '/v1/bundleIds/' + bid['id'] + '/bundleIdCapabilities?limit=50')['data']
+          if any(c['attributes'].get('capabilityType') == 'APPLE_ID_AUTH' for c in caps): print('::notice::Sign in with Apple already enabled on ' + bid_name)
+          else:
+              api('POST', '/v1/bundleIdCapabilities', {'data': {'type': 'bundleIdCapabilities', 'attributes': {'capabilityType': 'APPLE_ID_AUTH',
+                  'settings': [{'key': 'APPLE_ID_AUTH_APP_CONSENT', 'options': [{'key': 'PRIMARY_APP_CONSENT'}]}]}, 'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': bid['id']}}}}})
+              print('::notice::enabled Sign in with Apple on ' + bid_name)
           # temporary certificate
           k = temp / 'em.key'; csr = temp / 'em.csr'
           subprocess.run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(k), '-out', str(csr), '-subj', '/CN=Electric Man CI/O=TusneldaX/C=TR'], check=True, capture_output=True)

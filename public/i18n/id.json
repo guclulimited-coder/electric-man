@@ -211,5 +211,8 @@
   "reviewLogin": "Masuk dengan akun demo (App Review)",
   "reviewUser": "Nama pengguna",
   "reviewPass": "Kata sandi",
-  "eLOGIN_FAILED": "Nama pengguna atau kata sandi salah."
+  "eLOGIN_FAILED": "Nama pengguna atau kata sandi salah.",
+  "loginFail": "Masuk tidak dapat diselesaikan. Coba lagi.",
+  "eAPPLE_FAILED": "Masuk tidak dapat diselesaikan. Coba lagi.",
+  "loginOther": "Masuk dengan Google atau email"
 }

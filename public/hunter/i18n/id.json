@@ -668,5 +668,7 @@
  "bo35_1": "Ayah! Celahnya menutup! Semuanya terang!",
  "bo35_2": "Kabelnya sudah tuntas, Nak. Kita pulang.",
  "bo35_3": "Ayah… di belakang masih ada pulau-pulau.",
- "bo35_4": "Biar saja. Tukang listrik selalu siaga."
+ "bo35_4": "Biar saja. Tukang listrik selalu siaga.",
+ "o_eAPPLE_FAILED": "Masuk tidak dapat diselesaikan. Coba lagi.",
+ "o_loginOther": "Masuk dengan Google atau email"
 }

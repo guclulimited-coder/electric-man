@@ -668,5 +668,7 @@
  "bo35_1": "Papa ! La faille se ferme ! Tout s'est allumé !",
  "bo35_2": "Le câble est au bout, fiston. On rentre à la maison.",
  "bo35_3": "Papa… il y a encore des îles derrière nous.",
- "bo35_4": "Qu'il y en ait. Un électricien est toujours de garde."
+ "bo35_4": "Qu'il y en ait. Un électricien est toujours de garde.",
+ "o_eAPPLE_FAILED": "La connexion n'a pas pu aboutir. Réessaie.",
+ "o_loginOther": "Se connecter avec Google ou e-mail"
 }

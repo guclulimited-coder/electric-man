@@ -98,7 +98,9 @@ async function showLogin(){
   $('gbtn').hidden = !cfg.googleClientId; $('or').hidden = !cfg.googleClientId && !cfg.appleClientId && !cfg.tiktok;
   // TikTok girişi henüz geliştirici (sandbox) modunda: uygulamada gösterilmez, yalnız onaylı test hesapları girebiliyor.
   if (cfg.tiktok && q.get('platform') !== 'ios' && q.get('platform') !== 'android'){ const t = $('ttbtn'); t.hidden = false; t.textContent = T('tiktok'); t.href = '/api/em/auth/tiktok/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
-  if (cfg.appleClientId){ const t = $('applebtn'); t.hidden = false; t.textContent = T('apple'); t.href = '/api/em/auth/apple/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
+  // 24 Ekim 2026: yeni uygulama sürümleri Apple ile girişi yerel (ASAuthorization) yapar ve bu sayfayı apple=native ile açar;
+  // burada yalnız Google / e-posta / demo hesabı kalır. Eski sürümler (parametresiz) web Apple girişini görmeye devam eder.
+  if (cfg.appleClientId && q.get('apple') !== 'native'){ const t = $('applebtn'); t.hidden = false; t.textContent = T('apple'); t.href = '/api/em/auth/apple/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
   const after = async () => { const me = (await call('/me')).player; if (me) handBack(); };
   if (cfg.review){ $('review').hidden = false; $('reviewSum').textContent = T('reviewLogin'); $('reviewUserLbl').textContent = T('reviewUser'); $('reviewPassLbl').textContent = T('reviewPass'); $('reviewGo').textContent = T('loginBtn');
     $('reviewGo').onclick = async () => { err(''); $('reviewGo').disabled = true; try { await call('/auth/review', {username: $('reviewUser').value, password: $('reviewPass').value}); $('reviewPass').value = ''; await after(); } catch (e){ err(msg(e.message)); } $('reviewGo').disabled = false; }; }
@@ -125,7 +127,7 @@ async function showLogin(){
 }
 try {
   cfg = await call('/config'); const me = (await call('/me')).player;
-  if (q.get('login') === 'fail') err(T('ttFail'));
+  if (q.get('login') === 'fail') err(L.loginFail ? T('loginFail') : T('ttFail'));
   if (me && ['tiktok','apple','google','email','review'].includes(q.get('login'))){ showSignedIn(me); location.replace(handoffURL()); } else me ? showSignedIn(me) : showLogin();
 }
 catch (e){ err(msg(e.message)); }
