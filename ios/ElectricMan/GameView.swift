@@ -176,6 +176,9 @@ struct GameView: UIViewRepresentable {
             case "login": login(lang: body["lang"] as? String ?? "tr", replyHandler)
             case "apple": appleLogin(replyHandler)
             case "ad":
+                #if DEBUG
+                if UserDefaults.standard.string(forKey: "emTest") != nil { replyHandler(nil, "AD_DISABLED_IN_TEST"); return }  // simulator sign-in checks: no consent form
+                #endif
                 guard let root = view?.window?.rootViewController else { replyHandler(nil, "SCREEN_UNAVAILABLE"); return }
                 ads.show(kind: body["kind"] as? String ?? "", from: root, reply: replyHandler)
             case "products": Task { await store.products(ids: body["ids"] as? [String] ?? [], reply: replyHandler) }
