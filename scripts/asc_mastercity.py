@@ -126,9 +126,19 @@ for pid in IAP_IDS:
     x=iaps.get(pid)
     if not x: note('IAP yok: '+pid); continue
     if x['attributes']['state'] not in ('READY_TO_SUBMIT','DEVELOPER_ACTION_NEEDED','REJECTED'): note(f"IAP {pid} {x['attributes']['state']} (eklenmedi)"); continue
+    # İlk tüketilebilir IAP'ler sürümle aynı gönderimde olmalı (FIRST_CONSUMABLE_MUST_BE_SUBMITTED_ON_VERSION):
+    # önce gönderim öğesi olarak, olmazsa inAppPurchaseSubmissions ile denenir.
+    try:
+        api('POST','/v1/reviewSubmissionItems',{'data':{'type':'reviewSubmissionItems','relationships':{'reviewSubmission':{'data':{'type':'reviewSubmissions','id':sub['id']}},'inAppPurchaseV2':{'data':{'type':'inAppPurchases','id':x['id']}}}}}); note('IAP öğe olarak eklendi '+pid); continue
+    except RuntimeError as e: note(f'IAP öğe {pid}: '+str(e)[:300])
     try: api('POST','/v1/inAppPurchaseSubmissions',{'data':{'type':'inAppPurchaseSubmissions','relationships':{'inAppPurchaseV2':{'data':{'type':'inAppPurchases','id':x['id']}}}}}); note('IAP gönderime eklendi '+pid)
-    except RuntimeError as e: note(f'IAP {pid}: '+str(e)[:600])
+    except RuntimeError as e: note(f'IAP {pid}: '+str(e)[:300])
 its=api('GET',f"/v1/reviewSubmissions/{sub['id']}/items?limit=20")['data']; note(f'gönderim öğeleri: {len(its)}')
+iap_after={i['attributes']['productId']:i['attributes']['state'] for i in api('GET',f'/v1/apps/{APP}/inAppPurchasesV2?limit=50')['data']}
+if len(its)<1+len(IAP_IDS) and not all(iap_after.get(p) in ('WAITING_FOR_REVIEW','IN_REVIEW') for p in IAP_IDS):
+    note('GÖNDERİLMEDİ: 5 IAP sürüm gönderimine eklenemedi. Sürüm 1.0.39 (40) gönderime hazır (READY_FOR_REVIEW) bekliyor; '
+         'App Store Connect web: Uygulama > iOS 1.0.39 > "In-App Purchases and Subscriptions" bölümünden 5 paketi seçip "Add for Review / Submit" gerekir.')
+    sys.exit(0)
 try:
     api('PATCH',f"/v1/reviewSubmissions/{sub['id']}",{'data':{'type':'reviewSubmissions','id':sub['id'],'attributes':{'submitted':True}}}); note('İNCELEMEYE GÖNDERİLDİ')
 except RuntimeError as e: note('GÖNDERİLEMEDİ: '+str(e)[:1500])
