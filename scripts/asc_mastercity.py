@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""MASTERCITY (com.tusnelda.ustasehri) — 1.0.38 (39) App Store gönderimi. Sahip onayı 24 Ekim 2026 11:25:
+"""MASTERCITY (com.tusnelda.ustasehri) — 1.0.39 (40) App Store gönderimi: sürüm + 5 uygulama içi satın alma (mc_cash_*) birlikte.
+24 Ekim 2026: 1.0.38 (39) IAP'siz bekliyordu; IAP meta verisi tamamlandı (READY_TO_SUBMIT), sunucu iOS satın almayı açtı,
+demo hesap bilgisi düzeltildi (çalışan TUSNELDAX test hesabı), inceleme notu yeniden yazıldı. Önceki not: Sahip onayı 24 Ekim 2026 11:25:
 "Usta şehri için reklam kapat, herkese açık o şekilde AppStore incelemesine gönder, iPad simülatör kullan ekran fotoğraflarını koy".
 Adımlar: bekleyen 1.0.30 incelemesini geri çek → sürüm 1.0.38, onaydan sonra otomatik yayın → derleme 39 → yaş derecelendirmesi
 (simüle kumar: casino/bahis yalnız oyun parasıyla; reklam yok) → iPad 13" ve iPhone 6.9" simülatör ekran görüntüleri → inceleme notu → gönder."""
 import json, sys, time, glob, hashlib, os, struct, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
-APP='6817973176'; VSTR='1.0.38'; BUILD='39'
+APP='6817973176'; VSTR='1.0.39'; BUILD='40'; BUSRUSH='6817836111'
+IAP_IDS=['mc_cash_5000','mc_cash_12000','mc_cash_30000','mc_cash_70000','mc_cash_150000']
 BASE='https://api.appstoreconnect.apple.com'
 LOG=[]
 def note(m): LOG.append(str(m).replace('\n',' ')); print(m, flush=True)
 import atexit
-atexit.register(lambda: print('::notice title=MASTERCITY::'+'%0A'.join(LOG)))
+atexit.register(lambda: [print('::notice title=MASTERCITY %d::'%(k//12)+'%0A'.join(LOG[k:k+12])) for k in range(0,len(LOG),12)])
 _t=[None,0]
 def tok():
     if time.time()-_t[1]>600:
@@ -76,19 +79,36 @@ for loc in api('GET',f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizatio
     sets={s['attributes']['screenshotDisplayType']:s for s in api('GET',f"/v1/appStoreVersionLocalizations/{loc['id']}/appScreenshotSets?limit=30")['data']}
     for dt,files in SHOTS.items():
         s=sets.get(dt) or api('POST','/v1/appScreenshotSets',{'data':{'type':'appScreenshotSets','attributes':{'screenshotDisplayType':dt},'relationships':{'appStoreVersionLocalization':{'data':{'type':'appStoreVersionLocalizations','id':loc['id']}}}}})['data']
-        for old in api('GET',f"/v1/appScreenshotSets/{s['id']}/appScreenshots?limit=20")['data']:
+        have=api('GET',f"/v1/appScreenshotSets/{s['id']}/appScreenshots?limit=20")['data']
+        if len(have)==len(files) and all((x['attributes'].get('assetDeliveryState') or {}).get('state')=='COMPLETE' for x in have):
+            note(f"{loc['attributes']['locale']} {dt}: {len(have)} görüntü zaten yüklü"); continue
+        for old in have:
             api('DELETE',f"/v1/appScreenshots/{old['id']}")
         for f in files: upload(s['id'],f)
         note(f"{loc['attributes']['locale']} {dt}: {len(files)} görüntü")
-# 6) inceleme notu
+# 6) inceleme bilgisi: çalışan demo hesap (Bus Rush ile aynı TUSNELDAX test hesabı, değerler yazdırılmaz) + yeni not
+brv=api('GET',f'/v1/apps/{BUSRUSH}/appStoreVersions?limit=1')['data'][0]
+brd=api('GET',f"/v1/appStoreVersions/{brv['id']}/appStoreReviewDetail")['data']['attributes']
+NOTES=("MASTERCITY is a 3D city-life / electrician career game (Turkish UI). An internet connection and a game account are required (cloud save, shared multiplayer city).\n\n"
+"SIGN IN WITH THE DEMO ACCOUNT (iPhone and iPad):\n"
+"1) On the start screen tap \"Hesabınla giriş yap\" (Sign in). The sign-in sheet (oyun.tusneldax.com) opens.\n"
+"2) Tap \"Test hesabıyla giriş / Sign in with review account\" (section 4 · Test hesabı / Review account).\n"
+"3) On the TUSNELDAX page open \"Test hesabı / Review account\", enter the username and password above and tap \"Test hesabına giriş / Sign in\".\n"
+"4) Tap \"Bu hesabı Usta Şehri’nde kullan\" (Use this account), then \"Onayla ve MASTERCITY uygulamasına dön\" (Approve and return). The app opens the game.\n"
+"Sign in with Apple is offered on the same sheet (\"2 · Apple ile giriş\"), equal to Google and e-mail.\n\n"
+"IN-APP PURCHASES (5 consumables, mc_cash_5000 … mc_cash_150000): in the city tap \"Menü\" (top right) → \"Mağaza · Oyun parası\" (Shop · Game cash). "
+"All five packs show App Store prices; tap \"Satın al\" (Buy) to open the App Store purchase sheet. The cash is added to the balance right after purchase; "
+"\"Bekleyen satın almaları kontrol et\" re-checks unfinished purchases.\n"
+"Purchases are virtual in-game currency only: it cannot be withdrawn or exchanged for real money or prizes. The casino, horse-race and sports-betting features "
+"use only this virtual currency; the age rating declares frequent simulated gambling.\n\n"
+"No advertising in this build (ad SDK not initialized). Supports iPhone and iPad, landscape. Account deletion: account sheet → \"Hesabımı ve verilerimi sil\".")
 rd=api('GET',f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail").get('data')
-extra=("\n\nVersion 1.0.38 notes for the reviewer: This build contains no advertising (ad SDK is not initialized). "
-       "The casino, horse-race and sports betting features use only virtual in-game currency that cannot be withdrawn or exchanged for real money or prizes; "
-       "the age rating declares frequent simulated gambling. The game is landscape and supports iPhone and iPad.")
-if rd:
-    n=rd['attributes'].get('notes') or ''
-    if 'Version 1.0.38 notes' not in n:
-        api('PATCH',f"/v1/appStoreReviewDetails/{rd['id']}",{'data':{'type':'appStoreReviewDetails','id':rd['id'],'attributes':{'notes':(n+extra)[:3900]}}}); note('inceleme notu eklendi')
+attrs={'notes':NOTES[:3900],'demoAccountRequired':True}
+if brd.get('demoAccountName') and brd.get('demoAccountPassword'):
+    attrs.update(demoAccountName=brd['demoAccountName'],demoAccountPassword=brd['demoAccountPassword'])
+if rd: api('PATCH',f"/v1/appStoreReviewDetails/{rd['id']}",{'data':{'type':'appStoreReviewDetails','id':rd['id'],'attributes':attrs}})
+else: api('POST','/v1/appStoreReviewDetails',{'data':{'type':'appStoreReviewDetails','attributes':attrs,'relationships':{'appStoreVersion':{'data':{'type':'appStoreVersions','id':v['id']}}}}})
+note(f"inceleme bilgisi: demo hesap={attrs.get('demoAccountName','(değişmedi)')} not={len(NOTES)} karakter")
 # 7) gönder
 if OLD:
     for i in range(40):
@@ -101,7 +121,17 @@ sub=subs[0] if subs else api('POST','/v1/reviewSubmissions',{'data':{'type':'rev
 try:
     api('POST','/v1/reviewSubmissionItems',{'data':{'type':'reviewSubmissionItems','relationships':{'reviewSubmission':{'data':{'type':'reviewSubmissions','id':sub['id']}},'appStoreVersion':{'data':{'type':'appStoreVersions','id':v['id']}}}}}); note('sürüm gönderime eklendi')
 except RuntimeError as e: note('öğe: '+str(e)[:1500])
+iaps={i['attributes']['productId']:i for i in api('GET',f'/v1/apps/{APP}/inAppPurchasesV2?limit=50')['data']}
+for pid in IAP_IDS:
+    x=iaps.get(pid)
+    if not x: note('IAP yok: '+pid); continue
+    if x['attributes']['state'] not in ('READY_TO_SUBMIT','DEVELOPER_ACTION_NEEDED','REJECTED'): note(f"IAP {pid} {x['attributes']['state']} (eklenmedi)"); continue
+    try: api('POST','/v1/inAppPurchaseSubmissions',{'data':{'type':'inAppPurchaseSubmissions','relationships':{'inAppPurchaseV2':{'data':{'type':'inAppPurchases','id':x['id']}}}}}); note('IAP gönderime eklendi '+pid)
+    except RuntimeError as e: note(f'IAP {pid}: '+str(e)[:600])
+its=api('GET',f"/v1/reviewSubmissions/{sub['id']}/items?limit=20")['data']; note(f'gönderim öğeleri: {len(its)}')
 try:
     api('PATCH',f"/v1/reviewSubmissions/{sub['id']}",{'data':{'type':'reviewSubmissions','id':sub['id'],'attributes':{'submitted':True}}}); note('İNCELEMEYE GÖNDERİLDİ')
 except RuntimeError as e: note('GÖNDERİLEMEDİ: '+str(e)[:1500])
-time.sleep(10); v=ver(); note(f"SON: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+time.sleep(20); v=ver(); note(f"SON: {v['attributes']['versionString']} {v['attributes']['appStoreState']} derleme={api('GET',f"/v1/appStoreVersions/{v['id']}/build")['data']['attributes']['version']}")
+for x in api('GET',f'/v1/reviewSubmissions?filter[app]={APP}&limit=3&include=items')['data']: note(f"gönderim {x['id']} {x['attributes']['state']} öğe={len(x['relationships']['items']['data'])}")
+for i in api('GET',f'/v1/apps/{APP}/inAppPurchasesV2?limit=50')['data']: note(f"IAP {i['attributes']['productId']} {i['attributes']['state']}")
