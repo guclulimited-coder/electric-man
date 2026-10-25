@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-25",
+  "verdict": "MISMATCH: previous preview omitted routed live catalog, appended patches and 3D renderer",
+  "previousGitBase": "electric-man/busrush-live@e0b2bb7a9dc1855928f51c894cf8d313efd46cb7",
+  "previousBaseDecodedHtmlSha256": "d3e5c4e45a7fccfd912ca89021508aae05438d2dacdb66119470cbdae5cbfdd2",
+  "liveUrl": "https://tusneldax.com/bus-rush/play.html",
+  "liveDecodedHtmlSha256": "1ec9b4c8af86836cf463fe83bc1c84b1b184af20cc5c8a546694e90b3e744830",
+  "liveBytes": 18664543,
+  "installedReleaseInBoth": "cd316f64a6fdc16a",
+  "liveScriptTags": 16,
+  "oldScriptTags": 3,
+  "correctedBaselineCommit": "fc8a9ea",
+  "firstLevel": {
+    "passengers": 2400,
+    "buses": 90
+  },
+  "assets": [
+    {
+      "file": "catalog-first.js",
+      "url": "https://d284af3d.tusneldax-site.pages.dev/catalog-first.js",
+      "bytes": 499688,
+      "sha256": "c2f90d92c923199b2bc15b3cfaedbce17657966901778cd53face8428f784d51",
+      "preserved": true
+    },
+    {
+      "file": "passenger3d.js",
+      "url": "https://1f4cbf68.tusneldax-site.pages.dev/passenger3d.js",
+      "bytes": 581689,
+      "sha256": "d79e6afc59ca16226219e26e4a5bfdfd8a61fcb645627ee2b4dffa31aa902143",
+      "preserved": true
+    },
+    {
+      "file": "revenue-policy.js",
+      "url": "https://1f4cbf68.tusneldax-site.pages.dev/revenue-policy.js",
+      "bytes": 5707,
+      "sha256": "06e32d00d2b5a794d54549da3a8502cbd9f52b26690d0216125cd1d51ce1f52d",
+      "preserved": true
+    }
+  ],
+  "liveApiAccess": "All tusneldax.com/api/* blocked before loading audited page; HTML fetch credentials omitted",
+  "productionWrites": false,
+  "inlineScripts": [
+    {
+      "index": 0,
+      "src": null,
+      "type": "classic",
+      "bytes": 193,
+      "sha256": "ea783ab3cd80797d5e0f72c4d1a83dc21244c027e745954f403347e37cb407be"
+    },
+    {
+      "index": 1,
+      "src": "https://d284af3d.tusneldax-site.pages.dev/catalog-first.js",
+      "type": "classic",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 2,
+      "src": null,
+      "type": "classic",
+      "bytes": 15198060,
+      "sha256": "25ba1b43a0d891e70551e5d96e638d1cccb76eacbef2e518935557c8a73f927d"
+    },
+    {
+      "index": 3,
+      "src": null,
+      "type": "classic",
+      "bytes": 6074,
+      "sha256": "38fb026cf359a468305b1ae8c46e2b16716483db02181ddbc9a29221f340458e"
+    },
+    {
+      "index": 4,
+      "src": "https://static.cloudflareinsights.com/beacon.min.js",
+      "type": "classic",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 5,
+      "src": "https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920",
+      "type": "module",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 6,
+      "src": null,
+      "type": "classic",
+      "bytes": 7523,
+      "sha256": "58b8b81f0ce8312d1360856d39c93441f6ceaa96ea9e0934ecf4c8523d2b7a0b"
+    },
+    {
+      "index": 7,
+      "src": null,
+      "type": "classic",
+      "bytes": 143,
+      "sha256": "f62e57970029efb1bc78fd09f2cf5bc9f6f761e3944d62f39765a2367e818dc1"
+    },
+    {
+      "index": 8,
+      "src": null,
+      "type": "classic",
+      "bytes": 179,
+      "sha256": "df1cf6bb8053a9f2cc982755bd3d5beb1aeb08bbc2fb76c0951bbb184a41e32c"
+    },
+    {
+      "index": 9,
+      "src": "https://1f4cbf68.tusneldax-site.pages.dev/passenger3d.js",
+      "type": "module",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 10,
+      "src": null,
+      "type": "classic",
+      "bytes": 3079,
+      "sha256": "b98d83954d1cc0a614102969aea18b749433d70d0e10ce60ae73d91a2c6a8349"
+    },
+    {
+      "index": 11,
+      "src": null,
+      "type": "classic",
+      "bytes": 15174,
+      "sha256": "bbb769ca2f15b83b1e0e7dee4cc8e5b9adc8f571cce8dc046129a6d7beb5f9c0"
+    },
+    {
+      "index": 12,
+      "src": null,
+      "type": "classic",
+      "bytes": 10402,
+      "sha256": "762d4b21b702fb77b36c81b354e96c653a2b6399495056ba20e98995a553e8bc"
+    },
+    {
+      "index": 13,
+      "src": null,
+      "type": "module",
+      "bytes": 610382,
+      "sha256": "c34885212fd0b82606f5ebdb3719c5bf8ccc9857743fe3d5f81b5e2a77bb1179"
+    },
+    {
+      "index": 14,
+      "src": "https://1f4cbf68.tusneldax-site.pages.dev/revenue-policy.js",
+      "type": "module",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 15,
+      "src": null,
+      "type": "classic",
+      "bytes": 317,
+      "sha256": "8721ccfd085d64fe979fbba5ef9a32d5642d5a78105aeee666f761426d6b3b3d"
+    }
+  ],
+  "validation": "10/10 Node tests; live engine, colour/bay data, scoring/save functions and exact 610382-byte inline 3D module protected",
+  "correctedPreview": "https://81d35fce.tusneldax-site.pages.dev/bus-rush/play",
+  "supersededPreview": "https://20c01193.tusneldax-site.pages.dev/bus-rush/play",
+  "screenshots": "reklam-medya/busrush-dil-test-en.png and busrush-dil-test-tr.png replaced with verified 2400-passenger/90-bus 3D screenshots",
+  "browserVerification": "Same corrected preview artifact served from isolated localhost origin: EN/TR, 2400 passengers, 90 buses, large angled 3D buses, tunnels and passenger loop verified. Old erroneous preview tab hung; corrected immutable preview is a new deployment.",
+  "correctedHtmlDecodedSha256": "64c71bccab68a28c83071836cc8aa4f9458a081ee9fa79dcb00470ff9250c36e"
+}
