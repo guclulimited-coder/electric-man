@@ -1,0 +1,191 @@
+{
+  "budgetUSD": 5,
+  "invoiceVerified": false,
+  "pricingSource": "https://docs.github.com/en/billing/reference/actions-runner-pricing",
+  "artifactRetentionDays": 3,
+  "runs": [
+    {
+      "id": 40290139590,
+      "sourceCommit": "0b1216c92b386a05fc648b995b9c0906bbfce3b4",
+      "conclusion": "success",
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40290139590",
+      "jobs": [
+        {
+          "name": "ipad-unsigned-check",
+          "conclusion": "success",
+          "seconds": 465.0,
+          "roundedMinutes": 8,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.496
+        }
+      ],
+      "billableReported": {
+        "MACOS": {
+          "total_ms": 0,
+          "jobs": 2,
+          "job_runs": [
+            {
+              "job_id": 121462998317,
+              "duration_ms": 0
+            },
+            {
+              "job_id": 121462999974,
+              "duration_ms": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 40291450525,
+      "sourceCommit": "0fbd24e2f491c343f34d150b2e3ef30126606fca",
+      "conclusion": "cancelled",
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40291450525",
+      "jobs": [
+        {
+          "name": "ipad-unsigned-check",
+          "conclusion": "cancelled",
+          "seconds": 1109.0,
+          "roundedMinutes": 19,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 1.178
+        }
+      ],
+      "billableReported": {
+        "MACOS": {
+          "total_ms": 0,
+          "jobs": 2,
+          "job_runs": [
+            {
+              "job_id": 121467240141,
+              "duration_ms": 0
+            },
+            {
+              "job_id": 121467242236,
+              "duration_ms": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 40294040637,
+      "sourceCommit": "6c98fc5f8a3ff04797faf9c0af26a24ca8fc2d86",
+      "conclusion": "success",
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40294040637",
+      "jobs": [
+        {
+          "name": "ipad-unsigned-check",
+          "conclusion": "success",
+          "seconds": 155.0,
+          "roundedMinutes": 3,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.186
+        }
+      ],
+      "billableReported": {
+        "MACOS": {
+          "total_ms": 0,
+          "jobs": 2,
+          "job_runs": [
+            {
+              "job_id": 121475651753,
+              "duration_ms": 0
+            },
+            {
+              "job_id": 121475654089,
+              "duration_ms": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 40294389042,
+      "sourceCommit": "ea268a494a5fd6c2ac0041999f2b592cb4ee5aa3",
+      "conclusion": "failure",
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40294389042",
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "failure",
+          "seconds": 6.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ],
+      "billableReported": {
+        "UBUNTU": {
+          "total_ms": 0,
+          "jobs": 1,
+          "job_runs": [
+            {
+              "job_id": 121476784497,
+              "duration_ms": 0
+            }
+          ]
+        },
+        "MACOS": {
+          "total_ms": 0,
+          "jobs": 2,
+          "job_runs": [
+            {
+              "job_id": 121476786649,
+              "duration_ms": 0
+            },
+            {
+              "job_id": 121476787941,
+              "duration_ms": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 40294716880,
+      "sourceCommit": "0e8696e06e3380b3ab1f89b107400544597ff52f",
+      "conclusion": "failure",
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40294716880",
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "failure",
+          "seconds": 7.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ],
+      "billableReported": {
+        "UBUNTU": {
+          "total_ms": 0,
+          "jobs": 1,
+          "job_runs": [
+            {
+              "job_id": 121477853420,
+              "duration_ms": 0
+            }
+          ]
+        },
+        "MACOS": {
+          "total_ms": 0,
+          "jobs": 2,
+          "job_runs": [
+            {
+              "job_id": 121477855591,
+              "duration_ms": 0
+            },
+            {
+              "job_id": 121477855717,
+              "duration_ms": 0
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "runnerRateEstimateUSD": 1.872,
+  "actualInvoiceUSD": null,
+  "storageChargesNotVerified": true
+}

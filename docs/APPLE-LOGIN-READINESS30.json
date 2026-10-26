@@ -1,0 +1,123 @@
+{
+  "observedOn": "2026-10-26",
+  "bundleId": "com.tusneldax.electricman",
+  "version": "1.0.0",
+  "build": 30,
+  "sourceBase": "a7608a2ec283ba1a6b4efab0803dfbea99af7c42",
+  "testedCommit": "0fbd24e",
+  "engineSourceUnchanged": true,
+  "web": {
+    "publicConfigStatus": 200,
+    "servicesId": "com.tusneldax.electricman.web",
+    "callback": "https://electricman.tusneldax.com/api/em/auth/apple/callback",
+    "developerPortalRegistrationVerified": false
+  },
+  "productionNativeNonce": {
+    "status": 401,
+    "error": "LOGIN_REQUIRED",
+    "nonceStored": false,
+    "playerCreated": false
+  },
+  "entitlement": {
+    "sourceConfigured": true,
+    "appIdCapabilityVerifiedInPortal": false,
+    "signedDistributionBinaryVerified": false
+  },
+  "tests": {
+    "generalAPI": 58,
+    "appleSecurityAPI": 39,
+    "nativeSourceAndGuestJS": 36,
+    "syntheticOnly": true
+  },
+  "realAppleAccountLoginVerified": false,
+  "productionWorkerDeployed": false,
+  "appStoreUploaded": false,
+  "testFlightUploaded": false,
+  "signingKeyOrCertificateFilesOpened": false,
+  "simulator": {
+    "device": "iPad Air 11-inch (M3)",
+    "runtime": "iPadOS 26.2",
+    "targetReviewRuntime": "iPadOS 27.0",
+    "targetReviewRuntimeTested": false,
+    "gameAPIResponses": "OFFLINE_FIXTURE",
+    "appleFramework": "REAL_SYSTEM_FRAMEWORK",
+    "realAppleAccountLoginVerified": false,
+    "uiAcceptancePassed": true,
+    "guestMovesBefore": 0,
+    "guestMovesAfter": 5,
+    "nativeAppleRequestReachedForeground": true,
+    "nativeAppleErrorCode": 1000,
+    "captureLanguage": "en",
+    "note": "sheet-tr filename is English because app saved language takes precedence; not presented as Turkish proof."
+  },
+  "runs": [
+    {
+      "id": 40290139590,
+      "automatedUIResult": "pass",
+      "visualAcceptance": false,
+      "reason": "first capture blank; first-run character picker covered sign-in and board",
+      "runDurationMs": 470000,
+      "billableMacTotalMsReported": 0,
+      "invoiceVerified": false
+    },
+    {
+      "id": 40291450525,
+      "status": "cancelled during archive, UI checks passed",
+      "uiAcceptance": true
+    },
+    {
+      "id": 40294040637,
+      "status": "archive succeeded"
+    },
+    {
+      "id": 40294389042,
+      "status": "team API 401"
+    },
+    {
+      "id": 40294716880,
+      "status": "team and individual API 401"
+    }
+  ],
+  "acceptanceReadyForStore": false,
+  "openItems": [
+    "Native Apple system request returned error 1000 in unsigned simulator; successful real Apple account login not verified.",
+    "Production native nonce endpoint returned 401 LOGIN_REQUIRED; backend release required.",
+    "Existing ASC identity returned 401 with team and individual token forms; portal App ID capability could not be verified.",
+    "Target iPadOS 27.0 unavailable; tested runtime is 26.2."
+  ],
+  "archive": {
+    "passed": true,
+    "scope": "UNSIGNED_RELEASE_IPHONEOS_ARCHIVE",
+    "commit": "6c98fc5f8a3ff04797faf9c0af26a24ca8fc2d86",
+    "bundleId": "com.tusneldax.electricman",
+    "version": "1.0.0",
+    "build": "30",
+    "unsigned": true,
+    "storeUpload": false,
+    "realAppleAccountLoginVerified": false,
+    "bytes": 10322432,
+    "sha256": "b06d4f8b6b9f8af47019a85591651908a6062aae233fcb547b5a1154391dd921"
+  },
+  "capabilityAudit": {
+    "scope": "READ_ONLY_APP_ID_CAPABILITY_AUDIT",
+    "bundleId": "com.tusneldax.electricman",
+    "privateKeyFilesOpened": false,
+    "privateKeyFilesWritten": false,
+    "certificateOperations": false,
+    "storeUpload": false,
+    "requestedIdentityMatchesConfigured": true,
+    "authenticationModes": [
+      {
+        "mode": "team",
+        "httpStatus": 401
+      },
+      {
+        "mode": "individual",
+        "httpStatus": 401
+      }
+    ],
+    "passed": false,
+    "failedStage": "identity-check"
+  },
+  "privateKeyUsage": "Existing approved CI secret used in RAM only for read-only ASC JWT; no key/certificate files opened or written."
+}
