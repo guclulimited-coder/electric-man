@@ -4,20 +4,24 @@
 import os, pathlib, plistlib, subprocess, json, re, textwrap
 temp=pathlib.Path(os.environ['RUNNER_TEMP'])
 out=pathlib.Path('evidence/sign30');out.mkdir(parents=True,exist_ok=True)
-report={'build':30,'version':'1.0.0','storeUpload':False,'certificateRevocation':False,'keyContentsInspected':False,'credentialFile':'ephemeral CI file, Xcode only, excluded from artifact'}
+approved_upload=os.environ.get('ASC_APPROVED_UPLOAD')=='true'
+report={'build':30,'version':'1.0.0','storeUpload':approved_upload,'certificateRevocation':False,'keyContentsInspected':False,'credentialFile':'ephemeral CI file, Xcode only, excluded from artifact'}
 raw=os.environ['ASC_PRIVATE_KEY'].replace('\\n','\n')
 body=re.sub(r'-----(BEGIN|END)[A-Z ]*-----|\s','',raw)
 key=temp/'em-export30-auth.p8'
 fd=os.open(key,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
 with os.fdopen(fd,'w') as f:f.write('-----BEGIN PRIVATE KEY-----\n'+'\n'.join(textwrap.wrap(body,64))+'\n-----END PRIVATE KEY-----\n')
 options=temp/'Export30.plist'
-options.write_bytes(plistlib.dumps({'method':'app-store-connect','destination':'export','signingStyle':'automatic','teamID':'YMAU5R6AA4','manageAppVersionAndBuildNumber':False,'uploadSymbols':False}))
+options.write_bytes(plistlib.dumps({'method':'app-store-connect','destination':'upload' if approved_upload else 'export','signingStyle':'automatic','teamID':'YMAU5R6AA4','manageAppVersionAndBuildNumber':False,'uploadSymbols':False}))
 # An unsigned archive has no embedded requested entitlements. Seed them using
 # ad-hoc signing; the export then replaces that signature with distribution
 # signing. Without this, Xcode silently drops Sign in with Apple on export.
 entitlements=temp/'Apple30.entitlements'
 entitlements.write_bytes(plistlib.dumps({'com.apple.developer.applesignin':['Default'],'application-identifier':'YMAU5R6AA4.com.tusneldax.electricman','com.apple.developer.team-identifier':'YMAU5R6AA4','get-task-allow':False}))
 app='build30/ElectricMan30.xcarchive/Products/Applications/ElectricMan.app'
+for framework in (pathlib.Path(app)/'Frameworks').glob('*.framework'):
+ meta=plistlib.loads((framework/'Info.plist').read_bytes())
+ subprocess.run(['codesign','--force','--sign','-','--identifier',meta['CFBundleIdentifier'],str(framework)],check=True,capture_output=True)
 subprocess.run(['codesign','--force','--sign','-','--entitlements',str(entitlements),'--generate-entitlement-der',app],check=True,capture_output=True)
 cmd=['xcodebuild','-exportArchive','-archivePath','build30/ElectricMan30.xcarchive','-exportPath',str(out),'-exportOptionsPlist',str(options),'-allowProvisioningUpdates','-authenticationKeyPath',str(key),'-authenticationKeyID','AMWHRWY3U4','-authenticationKeyIssuerID','cab75b07-a305-412b-a205-a91b4280d965']
 try:
@@ -25,7 +29,8 @@ try:
  # Keep only generic result/error categories; raw export logs can contain
  # provisioning payloads and are deliberately not uploaded.
  report['exportExitCode']=r.returncode
- report['diagnostics']=[line.strip()[:400] for line in r.stdout.splitlines() if any(x in line for x in ['error: exportArchive','EXPORT SUCCEEDED','EXPORT FAILED'])][:15]
+ if approved_upload: report['uploadSucceeded']=r.returncode==0
+ report['diagnostics']=[line.strip()[:400] for line in r.stdout.splitlines() if any(x in line for x in ['error: exportArchive','EXPORT SUCCEEDED','EXPORT FAILED','UPLOAD SUCCEEDED','UPLOAD FAILED','Invalid Signature'])][:15]
  ipas=list(out.glob('*.ipa'));report['signedIPAReady']=r.returncode==0 and bool(ipas)
  if report['signedIPAReady']:
   import zipfile,hashlib
@@ -51,4 +56,4 @@ except Exception as e:
 finally:
  (out/'result.json').write_text(json.dumps(report,indent=2)+'\n')
  print(json.dumps(report))
-if not report.get('signedIPAReady'):raise SystemExit(1)
+if not (report.get('uploadSucceeded') if approved_upload else report.get('signedIPAReady')):raise SystemExit(1)
