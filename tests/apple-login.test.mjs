@@ -46,6 +46,8 @@ for(const extra of [{iss:'https://accounts.google.com'},{nonce:'wrong'},{exp:1},
 async function verifyAppleToken(extra){return verifyApple(await token('n',extra),env.EM_APPLE_SERVICE_ID,'n',fetcher);}
 const good=await token('n');await assert.rejects(()=>verifyApple(good.slice(0,-10)+'AAAAAAAAAA',env.EM_APPLE_SERVICE_ID,'n',fetcher));ok();
 const disabled=await emAPI(new Request(ORIGIN+'/api/em/auth/apple/start'),{DB:env.DB});assert.equal(disabled.status,503);ok();
+f=await start();r=await finish(f,{id_token:await token(f.url.searchParams.get('nonce'),{aud:'com.tusneldax.electricman'})});assert.equal(r.headers.get('location'),'/?login=apple');ok();
+for(const aud of ['', ['test.apple.service'], 'com.tusneldax.electrichunter']){await assert.rejects(async()=>verifyApple(await token('n',{aud}),['com.tusneldax.electricman','test.apple.service'],'n',fetcher),e=>e.status===401);ok();}
 console.log(checks+' Apple login security checks passed');
 
 // 18 Oct 2026 — App Store 2.1a: server-side hand-off back to the app and the App Review demo account
@@ -86,7 +88,8 @@ console.log('handoff/review checks ok');
  n=await nonce();r=await post('/native/apple',{nonce:n,app:'hunter',token:await token(n,{aud:'com.tusneldax.electrichunter',sub:'native-user'})});assert.equal(r.status,200);
  r=await api3(new Request(ORIGIN+'/api/em/me',{headers:{cookie:'__Host-em-session='+(await r.json()).token}}));assert.equal((await r.json()).player.code,p1.code);ok();
  // wrong audience / unknown nonce / mismatched nonce rejected, and a failed check does not burn the nonce
- n=await nonce();r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'test.apple.service'})});assert.equal(r.status,401);ok();
+ n=await nonce();r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'test.apple.service'})});assert.equal(r.status,200);ok();
+ n=await nonce();r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'unknown.service'})});assert.equal(r.status,401);ok();
  r=await post('/native/apple',{nonce:n,app:'hunter',token:await token(n,{aud:'com.tusneldax.electricman'})});assert.equal(r.status,401);ok();
  r=await post('/native/apple',{nonce:'d'.repeat(64),token:await token('d'.repeat(64),{aud:'com.tusneldax.electricman'})});assert.equal(r.status,401);ok();
  r=await post('/native/apple',{nonce:n,token:await token('e'.repeat(64),{aud:'com.tusneldax.electricman'})});assert.equal(r.status,401);ok();
