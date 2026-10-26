@@ -9,7 +9,7 @@ on:
         description: 'Omer-approved existing Electric Man build30 upload/submission only'
         type: choice
         default: none
-        options: [none, upload-and-submit, submit-only, diagnose-only, cloud-upload, renew-certificate]
+        options: [none, upload-and-submit, submit-only, diagnose-only, cloud-upload, renew-certificate, manual-upload]
       sign_only:
         description: 'Export existing build 30 archive only; never upload or revoke certificates'
         type: boolean
@@ -379,8 +379,8 @@ jobs:
           retention-days: 3
 
   submit-approved30:
-    needs: [upload-approved30, cloud-approved30]
-    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.upload && (inputs.release30 == 'submit-only' || (inputs.release30 == 'cloud-upload' && needs.cloud-approved30.result == 'success') || (inputs.release30 == 'upload-and-submit' && needs.upload-approved30.result == 'success')) }}
+    needs: [upload-approved30, cloud-approved30, manual-approved30]
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.upload && (inputs.release30 == 'submit-only' || (inputs.release30 == 'manual-upload' && needs.manual-approved30.result == 'success') || (inputs.release30 == 'cloud-upload' && needs.cloud-approved30.result == 'success') || (inputs.release30 == 'upload-and-submit' && needs.upload-approved30.result == 'success')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 14
     permissions:
@@ -474,3 +474,43 @@ jobs:
           path: evidence/cert30/
           retention-days: 3
           if-no-files-found: warn
+
+  manual-approved30:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release30 == 'manual-upload' && inputs.upload }}
+    runs-on: macos-15
+    timeout-minutes: 7
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/sign-upload-manual30.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40294040637
+          name: electric-man-build30-ipad-unsigned
+          path: archive-input
+      - name: Existing build30 archive only
+        run: |
+          mkdir build30
+          unzip -q archive-input/ElectricMan-build30-unsigned-archive.zip -d build30
+          latest=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest/Contents/Developer"
+      - name: Dedicated EM signing identity and approved upload
+        timeout-minutes: 5
+        env:
+          EM_SIGNING_BUNDLE: ${{ secrets.EM_IOS_SIGNING_BUNDLE }}
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: python3 scripts/sign-upload-manual30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-manual-approved30
+          path: |
+            evidence/manual30/*.ipa
+            evidence/manual30/result.json
+          retention-days: 3
