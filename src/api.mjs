@@ -65,15 +65,16 @@ async function quota(db, key, max, ms){
 
 /* Google ID token: RS256, issuer, audience, nonce, freshness, signature against Google's keys. */
 async function verifyProvider(token, aud, nonce, provider, fetcher = fetch){
-  if (!aud) fail('LOGIN_NOT_CONFIGURED', 503);
+  const audiences = (provider === 'apple' && Array.isArray(aud) ? aud : [aud]).filter(a => typeof a === 'string' && a.length > 0);
+  if (!audiences.length) fail('LOGIN_NOT_CONFIGURED', 503);
   if (typeof token !== 'string' || token.length > 16000) fail('INVALID_IDENTITY', 401);
   const decode = s => Uint8Array.from(atob(s.replaceAll('-', '+').replaceAll('_', '/')), c => c.charCodeAt(0));
   const parts = token.split('.'); if (parts.length !== 3) fail('INVALID_IDENTITY', 401);
   let h, c; try { h = JSON.parse(new TextDecoder().decode(decode(parts[0]))); c = JSON.parse(new TextDecoder().decode(decode(parts[1]))); } catch { fail('INVALID_IDENTITY', 401); }
   const now = Date.now() / 1000;
-  if (h.alg !== 'RS256' || !(provider === 'apple' ? ['https://appleid.apple.com'] : ['accounts.google.com', 'https://accounts.google.com']).includes(c.iss) || c.aud !== aud || c.nonce !== nonce ||
+  if (!h || typeof h !== 'object' || !c || typeof c !== 'object' || typeof h.kid !== 'string' || !h.kid || h.kid.length > 200 || h.alg !== 'RS256' || !(provider === 'apple' ? ['https://appleid.apple.com'] : ['accounts.google.com', 'https://accounts.google.com']).includes(c.iss) || typeof c.aud !== 'string' || !audiences.includes(c.aud) || c.nonce !== nonce ||
       !Number.isFinite(c.exp) || c.exp <= now || !Number.isFinite(c.iat) || c.iat > now + 60 || c.iat < now - 600 || typeof c.sub !== 'string' || !c.sub || c.sub.length > 255) fail('INVALID_IDENTITY', 401);
-  const res = await fetcher(provider === 'apple' ? 'https://appleid.apple.com/auth/keys' : 'https://www.googleapis.com/oauth2/v3/certs', {signal: AbortSignal.timeout(8000), redirect:'error'}); if (!res.ok) fail('LOGIN_UNAVAILABLE', 503);
+  const res = await fetcher(provider === 'apple' ? 'https://appleid.apple.com/auth/keys' : 'https://www.googleapis.com/oauth2/v3/certs', {signal: AbortSignal.timeout(8000), redirect:'manual'}); if (!res.ok) fail('LOGIN_UNAVAILABLE', 503);
   const jwk = (await res.json()).keys?.find(k => k.kid === h.kid && k.kty === 'RSA'); if (!jwk) fail('INVALID_IDENTITY', 401);
   const key = await crypto.subtle.importKey('jwk', jwk, {name:'RSASSA-PKCS1-v1_5', hash:'SHA-256'}, false, ['verify']);
   if (!await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, decode(parts[2]), enc.encode(parts[0] + '.' + parts[1]))) fail('INVALID_IDENTITY', 401);
@@ -81,6 +82,7 @@ async function verifyProvider(token, aud, nonce, provider, fetcher = fetch){
 }
 
 export const verifyGoogle = (token, aud, nonce, fetcher = fetch) => verifyProvider(token, aud, nonce, 'google', fetcher);
+const electricManAppleAudiences = env => [env.EM_IOS_BUNDLE_ID || 'com.tusneldax.electricman', env.EM_APPLE_SERVICE_ID].filter(Boolean);
 export const verifyApple = (token, aud, nonce, fetcher = fetch) => verifyProvider(token, aud, nonce, 'apple', fetcher);
 
 /* ---------- email one-time codes (Resend) ---------- */
@@ -184,7 +186,7 @@ async function appleCallback(db, env, req, fetcher){
   if(form.get('state')!==state || !await one(db,'SELECT id FROM em_nonces WHERE id=? AND expires>?',await hash('apple:'+state),Date.now())) return finish('fail');
   try {
     if(form.has('error')){await run(db,'DELETE FROM em_nonces WHERE id=?',await hash('apple:'+state));return finish('fail');}
-    const claims=await verifyApple(form.get('id_token'),env.EM_APPLE_SERVICE_ID,await hash('apple-token:'+state),fetcher);
+    const claims=await verifyApple(form.get('id_token'),electricManAppleAudiences(env),await hash('apple-token:'+state),fetcher);
     if(!await one(db,'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id',await hash('apple:'+state),Date.now())) return finish('fail');
     const id=await resolveIdentity(db,'apple',claims.sub);
     return finish('apple',await newSession(db,id));
@@ -355,7 +357,7 @@ export async function emAPI(req, env, deps = {}){
     if (path === '/native/apple' && req.method === 'POST'){
       await quota(db, 'exchange:' + ip, 30, 3600000);
       if (!isTok(body.nonce)) fail('LOGIN_EXPIRED', 401);
-      const aud = body.app === 'hunter' ? (env.EH_IOS_BUNDLE_ID || 'com.tusneldax.electrichunter') : (env.EM_IOS_BUNDLE_ID || 'com.tusneldax.electricman');
+      const aud = body.app === 'hunter' ? (env.EH_IOS_BUNDLE_ID || 'com.tusneldax.electrichunter') : electricManAppleAudiences(env);
       if (!await one(db, 'SELECT id FROM em_nonces WHERE id=? AND expires>?', await hash('native-apple:' + body.nonce), Date.now())) fail('LOGIN_EXPIRED', 401);
       const claims = await verifyApple(body.token, aud, body.nonce, fetcher);
       if (!await one(db, 'DELETE FROM em_nonces WHERE id=? AND expires>? RETURNING id', await hash('native-apple:' + body.nonce), Date.now())) fail('LOGIN_EXPIRED', 401);

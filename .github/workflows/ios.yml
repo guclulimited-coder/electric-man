@@ -5,6 +5,31 @@ on:
     paths: ['ios/**', 'public/**', '!public/hunter/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/ios.yml']
   workflow_dispatch:
     inputs:
+      release30:
+        description: 'Omer-approved existing Electric Man build30 upload/submission only'
+        type: choice
+        default: none
+        options: [none, upload-and-submit, submit-only, diagnose-only, cloud-upload, renew-certificate, manual-upload]
+      sign_only:
+        description: 'Export existing build 30 archive only; never upload or revoke certificates'
+        type: boolean
+        default: false
+      enable_apple:
+        description: 'Enable requested App ID Apple login capability; requires apple_audit, never uploads'
+        type: boolean
+        default: false
+      apple_audit:
+        description: 'Read-only App ID capability audit; key stays in process memory, no files or signing'
+        type: boolean
+        default: false
+      archive_only:
+        description: 'Build unsigned device archive only; requires ipad_check=true and upload=false'
+        type: boolean
+        default: false
+      ipad_check:
+        description: 'Unsigned iPad build 30 UI check only (no signing, credentials or upload)'
+        type: boolean
+        default: false
       upload:
         description: 'Sign and upload to App Store Connect (TestFlight)'
         type: boolean
@@ -18,7 +43,7 @@ env:
 jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && !inputs.sign_only && !inputs.ipad_check && !inputs.apple_audit && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -196,3 +221,296 @@ jobs:
           fi
           security delete-keychain "$RUNNER_TEMP/em.keychain-db" 2>/dev/null || true
           rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8 "$RUNNER_TEMP"/em.*
+
+  ipad-unsigned-check:
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && !inputs.upload }}
+    permissions:
+      contents: read
+    runs-on: macos-15
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /ios/
+            /src/
+            /scripts/
+            /tests/
+            /package.json
+            /schema.sql
+            /public/_worker.js
+            /public/index.html
+            /public/engine.js
+            /public/serhat.txt
+            /public/zeynep.txt
+            /public/icon-192.png
+            /public/icon-512.png
+            /public/i18n/
+            /public/avatars/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic API and native contracts
+        run: |
+          node scripts/build.mjs
+          node tests/apple-login.test.mjs
+          node tests/apple-native-contract.test.mjs
+      - name: Unsigned iPad simulator build and captures
+        timeout-minutes: 10
+        run: |
+          if [ "${{ inputs.archive_only }}" = true ]; then
+            bash scripts/archive-ios30.sh
+          else
+            bash scripts/check-ipad30.sh
+          fi
+      - name: Preserve simulator evidence (never upload to Apple)
+        timeout-minutes: 2
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electric-man-build30-ipad-unsigned
+          path: evidence/ipad30/
+          retention-days: 3
+          if-no-files-found: warn
+
+  apple-capability-audit:
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && github.event_name == 'workflow_dispatch' && inputs.apple_audit && !inputs.sign_only && !inputs.upload }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/audit-apple-capability.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check or enable requested App ID capability (no key files, no certificate operations)
+        env:
+          APPLE_ENABLE_CAPABILITY: ${{ inputs.enable_apple }}
+          APPLE_AUDIT_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          APPLE_AUDIT_KEY_ID: ${{ secrets.EM_ASC_KEY_ID || '7368ZSQD95' }}
+          APPLE_AUDIT_ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: node scripts/audit-apple-capability.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        timeout-minutes: 1
+        with:
+          name: electric-man-apple-capability-audit
+          path: evidence/apple-capability.json
+          retention-days: 3
+
+  export-build30-only:
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && github.event_name == 'workflow_dispatch' && inputs.sign_only && !inputs.upload && !inputs.ipad_check && !inputs.apple_audit }}
+    runs-on: macos-15
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/export-ios30.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40294040637
+          name: electric-man-build30-ipad-unsigned
+          path: archive-input
+      - name: Unpack existing unsigned archive
+        run: |
+          mkdir build30
+          unzip -q archive-input/ElectricMan-build30-unsigned-archive.zip -d build30
+          latest=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest/Contents/Developer"
+      - name: Export only, never upload
+        timeout-minutes: 5
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: python3 scripts/export-ios30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        timeout-minutes: 1
+        with:
+          name: electric-man-build30-export-only
+          path: |
+            evidence/sign30/*.ipa
+            evidence/sign30/result.json
+          retention-days: 3
+          if-no-files-found: warn
+
+  upload-approved30:
+    if: ${{ github.event_name == 'workflow_dispatch' && ((inputs.release30 == 'upload-and-submit' && inputs.upload) || inputs.release30 == 'diagnose-only') }}
+    runs-on: macos-15
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/upload-approved30.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40327446648
+          name: electric-man-build30-export-only
+          path: approved-input
+      - name: Upload verified build30 only
+        timeout-minutes: 5
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          DIAG_ONLY: ${{ inputs.release30 == 'diagnose-only' }}
+        run: python3 scripts/upload-approved30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-approved-upload30
+          path: evidence/upload30/result.json
+          retention-days: 3
+
+  submit-approved30:
+    needs: [upload-approved30, cloud-approved30, manual-approved30]
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.upload && (inputs.release30 == 'submit-only' || (inputs.release30 == 'manual-upload' && needs.manual-approved30.result == 'success') || (inputs.release30 == 'cloud-upload' && needs.cloud-approved30.result == 'success') || (inputs.release30 == 'upload-and-submit' && needs.upload-approved30.result == 'success')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/submit-approved30.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Attach processed build30 and resubmit Electric Man 1.0
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: node scripts/submit-approved30.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-approved-submit30
+          path: evidence/submit30/result.json
+          retention-days: 3
+
+  cloud-approved30:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release30 == 'cloud-upload' && inputs.upload }}
+    runs-on: macos-15
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/export-ios30.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40294040637
+          name: electric-man-build30-ipad-unsigned
+          path: archive-input
+      - name: Restore existing archive only
+        run: |
+          mkdir build30
+          unzip -q archive-input/ElectricMan-build30-unsigned-archive.zip -d build30
+          latest=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest/Contents/Developer"
+      - name: Xcode cloud signing and approved direct upload
+        timeout-minutes: 5
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          ASC_APPROVED_UPLOAD: 'true'
+        run: python3 scripts/export-ios30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-cloud-approved30
+          path: evidence/sign30/result.json
+          retention-days: 3
+
+  renew-em-certificate30:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release30 == 'renew-certificate' && !inputs.upload }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    concurrency:
+      group: electric-man-only-certificate30
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/renew-certificate30.py
+            /docs/CERTIFICATE30-PRECHECK.json
+      - name: Cryptography and GitHub sealed-box support
+        run: python3 -m pip -q install 'PyJWT[crypto]==2.10.1' 'PyNaCl==1.6.0'
+      - name: Usage gates, approved EM-only renewal, encrypted secret preparation
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          GH_READ_TOKEN: ${{ github.token }}
+        run: python3 scripts/renew-certificate30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-certificate30-sealed
+          path: evidence/cert30/
+          retention-days: 3
+          if-no-files-found: warn
+
+  manual-approved30:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release30 == 'manual-upload' && inputs.upload }}
+    runs-on: macos-15
+    timeout-minutes: 7
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/sign-upload-manual30.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40294040637
+          name: electric-man-build30-ipad-unsigned
+          path: archive-input
+      - name: Existing build30 archive only
+        run: |
+          mkdir build30
+          unzip -q archive-input/ElectricMan-build30-unsigned-archive.zip -d build30
+          latest=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest/Contents/Developer"
+      - name: Dedicated EM signing identity and approved upload
+        timeout-minutes: 5
+        env:
+          EM_SIGNING_BUNDLE: ${{ secrets.EM_IOS_SIGNING_BUNDLE }}
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: python3 scripts/sign-upload-manual30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-manual-approved30
+          path: |
+            evidence/manual30/*.ipa
+            evidence/manual30/result.json
+          retention-days: 3

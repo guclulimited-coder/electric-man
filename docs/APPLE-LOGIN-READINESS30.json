@@ -1,0 +1,347 @@
+{
+  "observedOn": "2026-10-26",
+  "bundleId": "com.tusneldax.electricman",
+  "version": "1.0.0",
+  "build": 30,
+  "sourceBase": "a7608a2ec283ba1a6b4efab0803dfbea99af7c42",
+  "testedCommit": "0fbd24e",
+  "engineSourceUnchanged": true,
+  "web": {
+    "publicConfigStatus": 200,
+    "servicesId": "com.tusneldax.electricman.web",
+    "callback": "https://electricman.tusneldax.com/api/em/auth/apple/callback",
+    "developerPortalRegistrationVerified": false
+  },
+  "productionNativeNonce": {
+    "status": 200,
+    "playerCreated": false,
+    "currentProof": "docs/APPLE-PRODUCTION30.json"
+  },
+  "entitlement": {
+    "sourceConfigured": true,
+    "appIdCapabilityVerifiedInPortal": true,
+    "signedDistributionBinaryVerified": true
+  },
+  "tests": {
+    "generalAPI": 58,
+    "appleSecurityAPI": 45,
+    "nativeSourceAndGuestJS": 36,
+    "syntheticOnly": true,
+    "remoteStagingChecks": 20
+  },
+  "realAppleAccountLoginVerified": false,
+  "productionWorkerDeployed": true,
+  "appStoreUploaded": true,
+  "testFlightUploaded": true,
+  "signingKeyOrCertificateFilesOpened": "No manual inspection. Xcode alone consumed a protected ephemeral CI credential file; contents not printed or included in artifact.",
+  "simulator": {
+    "device": "iPad Air 11-inch (M3)",
+    "runtime": "iPadOS 26.2",
+    "targetReviewRuntime": "iPadOS 27.0",
+    "targetReviewRuntimeTested": false,
+    "gameAPIResponses": "OFFLINE_FIXTURE",
+    "appleFramework": "REAL_SYSTEM_FRAMEWORK",
+    "realAppleAccountLoginVerified": false,
+    "uiAcceptancePassed": true,
+    "guestMovesBefore": 0,
+    "guestMovesAfter": 5,
+    "nativeAppleRequestReachedForeground": true,
+    "nativeAppleErrorCode": 1000,
+    "captureLanguage": "en",
+    "note": "sheet-tr filename is English because app saved language takes precedence; not presented as Turkish proof."
+  },
+  "runs": [
+    {
+      "id": 40290139590,
+      "automatedUIResult": "pass",
+      "visualAcceptance": false,
+      "reason": "first capture blank; first-run character picker covered sign-in and board",
+      "runDurationMs": 470000,
+      "billableMacTotalMsReported": 0,
+      "invoiceVerified": false
+    },
+    {
+      "id": 40291450525,
+      "status": "cancelled during archive, UI checks passed",
+      "uiAcceptance": true
+    },
+    {
+      "id": 40294040637,
+      "status": "archive succeeded"
+    },
+    {
+      "id": 40294389042,
+      "status": "team API 401"
+    },
+    {
+      "id": 40294716880,
+      "status": "team and individual API 401"
+    }
+  ],
+  "acceptanceReadyForStore": false,
+  "openItems": [
+    "Apple review pending (WAITING_FOR_REVIEW).",
+    "Successful real Apple-account login on a physical iPad has not been independently verified."
+  ],
+  "archive": {
+    "passed": true,
+    "scope": "UNSIGNED_RELEASE_IPHONEOS_ARCHIVE",
+    "commit": "6c98fc5f8a3ff04797faf9c0af26a24ca8fc2d86",
+    "bundleId": "com.tusneldax.electricman",
+    "version": "1.0.0",
+    "build": "30",
+    "unsigned": true,
+    "storeUpload": false,
+    "realAppleAccountLoginVerified": false,
+    "bytes": 10322432,
+    "sha256": "b06d4f8b6b9f8af47019a85591651908a6062aae233fcb547b5a1154391dd921"
+  },
+  "capabilityAudit": {
+    "scope": "ENABLE_REQUESTED_APPLE_LOGIN_CAPABILITY",
+    "bundleId": "com.tusneldax.electricman",
+    "privateKeyFilesOpened": false,
+    "privateKeyFilesWritten": false,
+    "certificateOperations": false,
+    "storeUpload": false,
+    "requestedIdentityMatchesConfigured": true,
+    "authenticationModes": [
+      {
+        "identity": "requested",
+        "mode": "team",
+        "httpStatus": 401
+      },
+      {
+        "identity": "requested",
+        "mode": "individual",
+        "httpStatus": 401
+      },
+      {
+        "identity": "existing-build-workflow",
+        "mode": "team",
+        "httpStatus": 200
+      }
+    ],
+    "identityValidated": true,
+    "identityType": "team",
+    "validatedKeyId": "AMWHRWY3U4",
+    "bundleMatches": [
+      {
+        "id": "DQQ5B4RP2Z",
+        "identifier": "com.tusneldax.electricman",
+        "platform": "UNIVERSAL"
+      },
+      {
+        "id": "U3G65B4FA4",
+        "identifier": "com.tusneldax.electricman.web",
+        "platform": "SERVICES"
+      }
+    ],
+    "enableCapabilityHTTPStatus": 201,
+    "signInWithAppleEnabled": true,
+    "capabilityTypes": [
+      "IN_APP_PURCHASE",
+      "APPLE_ID_AUTH"
+    ],
+    "distributionCertificateCount": 6,
+    "activeDistributionCertificatesByType": {
+      "DISTRIBUTION": 3,
+      "IOS_DISTRIBUTION": 3
+    },
+    "passed": true
+  },
+  "privateKeyUsage": "Approved 20:40 renewal only: new private identity generated in RAM and GitHub-sealed, stored as dedicated EM_IOS_SIGNING_BUNDLE. Signer consumed protected temporary CI identity; contents never logged. Only approved old EM certificate 3S37L2JAP7 revoked after cross-project checks; Hunter H3TYN7QW8J and shared 8MN67BCJ83 preserved.",
+  "staging": {
+    "origin": "https://em-apple30-test-20261026.guclu-limited.workers.dev",
+    "syntheticJWT": true,
+    "realAppleAccountVerified": false,
+    "productionModified": false,
+    "checks": [
+      {
+        "name": "real nonce endpoint",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "real JWKS rejects synthetic com.tusneldax.electricman",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "unknown audience",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "issuer",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "nonce",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "expiry",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "bad signature",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "synthetic signature accepted com.tusneldax.electricman",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "replay rejected com.tusneldax.electricman",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "real nonce endpoint",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "real JWKS rejects synthetic com.tusneldax.electricman.web",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "unknown audience",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "issuer",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "nonce",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "expiry",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "bad signature",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "synthetic signature accepted com.tusneldax.electricman.web",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "replay rejected com.tusneldax.electricman.web",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "cross origin rejected",
+        "actual": 403,
+        "expected": 403,
+        "passed": true
+      },
+      {
+        "name": "web redirect",
+        "actual": 302,
+        "expected": 302,
+        "passed": true
+      }
+    ],
+    "webReturnURL": "https://em-apple30-test-20261026.guclu-limited.workers.dev/api/em/auth/apple/callback",
+    "webReturnRegisteredWithApple": "not verified; existing production callback configuration unchanged",
+    "passed": true,
+    "at": "2026-10-26T12:55:53.993Z",
+    "deployedWorkerVersion": "39959972-5019-40e3-99fc-125f048dd5cb",
+    "realAppleJWKSHTTPStatus": 200,
+    "serverPatchReadyForProductionApproval": true
+  },
+  "signedExport": {
+    "build": 30,
+    "app": "com.tusneldax.electricman",
+    "uploadSucceeded": true,
+    "certificateOperations": false,
+    "protectedHunterCertificate": "H3TYN7QW8J",
+    "credentialsPrinted": false,
+    "certificateId": "KZ6622463A",
+    "profileId": "B63L63L3KP",
+    "frameworkIds": [
+      "com.google.GoogleMobileAds",
+      "com.google.UserMessagingPlatform"
+    ],
+    "codesignVerified": true,
+    "appleEntitlementVerified": true,
+    "ipaSHA256": "72078f86e05b6419a1344db3e3a9ddd796956b7b0626a4401c7bbe07d6dc27f6",
+    "ipaBytes": 9450569,
+    "uploadExitCode": 0,
+    "errors": [],
+    "successMessage": "No errors uploading archive at '/Users/runner/work/electric-man/electric-man/evidence/manual30/ElectricMan-build30.ipa'.",
+    "acceptedByAppStoreConnect": true,
+    "processingState": "VALID",
+    "runId": 40373970488,
+    "storeState": "WAITING_FOR_REVIEW"
+  },
+  "previousExportNotAccepted": {
+    "runId": 40327048970,
+    "reason": "Apple entitlement missing; retained and marked DO NOT UPLOAD"
+  },
+  "serverReadyForProductionApproval": true,
+  "signedBuildReadyForUploadApproval": true,
+  "remainingApproval": "Authorized upload and resubmission completed. Waiting for Apple review; no additional user publishing approval pending.",
+  "appStoreUploadAttempted": true,
+  "reviewSubmitted": true,
+  "storeSubmission": {
+    "scope": "Electric Man 1.0 build30 only",
+    "submitted": true,
+    "otherAppsModified": false,
+    "appId": "6819511421",
+    "versionId": "aef8e18c-40c2-41d1-bc06-272b59c8d73d",
+    "version": "1.0",
+    "previousVersionState": "REJECTED",
+    "buildProcessingState": "VALID",
+    "buildId": "c6af3180-6daa-45f7-ab09-a4d2d125a6b3",
+    "buildAttached": true,
+    "reviewNoteUpdated": true,
+    "previousSubmissions": [
+      {
+        "id": "517ba6cf-6593-435f-915f-3909ba9fe7df",
+        "state": "UNRESOLVED_ISSUES"
+      }
+    ],
+    "submissionId": "517ba6cf-6593-435f-915f-3909ba9fe7df",
+    "submissionState": "WAITING_FOR_REVIEW",
+    "finalVersionState": "WAITING_FOR_REVIEW"
+  },
+  "certificateRenewalReceipt": "CERTIFICATE30-RESULT.json",
+  "testFlightBetaReviewSubmitted": false,
+  "testFlightTestersInvited": false
+}

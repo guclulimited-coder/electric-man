@@ -1,0 +1,42 @@
+{
+  "approval": "Omer via Claude 2026-10-26 20:40 Europe/Istanbul",
+  "oldCertificateId": "3S37L2JAP7",
+  "oldSerial": "6D9A5651F514E2922F415010D0938D0B",
+  "protectedCertificateId": "H3TYN7QW8J",
+  "expectedOtherSigningSerial": "4959624C19D5A8D168EA76AC8EAF686",
+  "otherSecretAudits": [
+    {
+      "repo": "usta-sehri",
+      "run": 40372376061,
+      "targetMatch": false,
+      "scope": "APPLE_SIGNING_BUNDLE and US_IOS_PROVISIONING_PROFILE_B64"
+    },
+    {
+      "repo": "tusneldax-bus-rush-ios",
+      "run": 40372046676,
+      "targetMatch": false,
+      "scope": "shared APPLE_SIGNING_BUNDLE for Bus Rush and MASTERCITY"
+    }
+  ],
+  "mastercityProfile": {
+    "scope": "READ_ONLY_MASTERCITY_PROFILE_METADATA",
+    "assetId": 608016135,
+    "profileUUID": "ae3976c3-7884-4564-a2c2-70c11ae50cd3",
+    "profileName": "Usta Sehri App Store 2026",
+    "serials": [
+      "4959624C19D5A8D168EA76AC8EAF686"
+    ],
+    "target3S37Used": false,
+    "privateKeyFilesOpened": false,
+    "downloadMode": "profile entry only via byte ranges"
+  },
+  "busRushProfilesToCheckLive": [
+    "4FDQHXXN8T",
+    "VJMK2JDCX8"
+  ],
+  "githubPublicKey": {
+    "key_id": "3380204578043523366",
+    "key": "6w4wbi4Apsr5oCrrmkwHY6Jo/uMw29TJlJdiKv8XORs="
+  },
+  "publicKeyPurpose": "Public encryption key only; contains no private credential"
+}

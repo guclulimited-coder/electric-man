@@ -214,5 +214,6 @@
   "eLOGIN_FAILED": "ユーザー名またはパスワードが違います。",
   "loginFail": "サインインを完了できませんでした。もう一度お試しください。",
   "eAPPLE_FAILED": "サインインを完了できませんでした。もう一度お試しください。",
-  "loginOther": "Google またはメールでサインイン"
+  "loginOther": "Google またはメールでサインイン",
+  "guestPlay": "ゲストとしてプレイ"
 }

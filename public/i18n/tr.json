@@ -214,5 +214,6 @@
   "eLOGIN_FAILED": "Kullanıcı adı veya parola hatalı.",
   "loginFail": "Giriş tamamlanamadı, yeniden dene.",
   "eAPPLE_FAILED": "Giriş tamamlanamadı, yeniden dene.",
-  "loginOther": "Google veya e-posta ile giriş"
+  "loginOther": "Google veya e-posta ile giriş",
+  "guestPlay": "Misafir olarak oyna"
 }

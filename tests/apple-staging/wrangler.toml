@@ -1,0 +1,12 @@
+name = "em-apple30-test-20261026"
+main = "worker.mjs"
+compatibility_date = "2026-09-30"
+workers_dev = true
+preview_urls = false
+[[d1_databases]]
+binding = "DB"
+database_name = "em-apple30-test-20261026"
+database_id = "a4f8f4d2-1475-4599-8df8-b9bbfabcf160"
+[vars]
+EM_IOS_BUNDLE_ID = "com.tusneldax.electricman"
+EM_APPLE_SERVICE_ID = "com.tusneldax.electricman.web"

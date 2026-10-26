@@ -214,5 +214,6 @@
   "eLOGIN_FAILED": "Wrong username or password.",
   "loginFail": "Sign-in could not be completed. Please try again.",
   "eAPPLE_FAILED": "Sign-in could not be completed. Please try again.",
-  "loginOther": "Sign in with Google or e-mail"
+  "loginOther": "Sign in with Google or e-mail",
+  "guestPlay": "Play as guest"
 }

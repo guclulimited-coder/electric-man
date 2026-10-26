@@ -1,0 +1,95 @@
+{
+  "approval": "Omer via Claude 2026-10-26 20:40 Europe/Istanbul",
+  "usagePrecheck": "CERTIFICATE30-PRECHECK.json",
+  "renewalRun": 40373610963,
+  "renewal": {
+    "oldId": "3S37L2JAP7",
+    "protectedId": "H3TYN7QW8J",
+    "oldRevoked": true,
+    "newCreated": true,
+    "otherCertificatesModified": false,
+    "privateKeyFilesWritten": false,
+    "plaintextSecretArtifact": false,
+    "busRushProfiles": [
+      {
+        "id": "4FDQHXXN8T",
+        "oldCertificateUsed": false,
+        "certificateIds": [
+          "8MN67BCJ83"
+        ]
+      },
+      {
+        "id": "VJMK2JDCX8",
+        "oldCertificateUsed": false,
+        "certificateIds": [
+          "8MN67BCJ83"
+        ]
+      }
+    ],
+    "hunterRecordVerified": true,
+    "usageGatesPassed": true,
+    "newId": "KZ6622463A",
+    "profileId": "B63L63L3KP",
+    "profileName": "Electric Man Build30 20261026175848",
+    "secretName": "EM_IOS_SIGNING_BUNDLE",
+    "encryptedSecretPrepared": true,
+    "protectedCertificateStillPresent": true,
+    "passed": true
+  },
+  "githubSecretName": "EM_IOS_SIGNING_BUNDLE",
+  "githubSecretStored": true,
+  "secretStorage": "GitHub public-key sealed ciphertext transferred to Actions secret; plaintext never downloaded or logged",
+  "uploadRun": 40373970488,
+  "upload": {
+    "build": 30,
+    "app": "com.tusneldax.electricman",
+    "uploadSucceeded": true,
+    "certificateOperations": false,
+    "protectedHunterCertificate": "H3TYN7QW8J",
+    "credentialsPrinted": false,
+    "certificateId": "KZ6622463A",
+    "profileId": "B63L63L3KP",
+    "frameworkIds": [
+      "com.google.GoogleMobileAds",
+      "com.google.UserMessagingPlatform"
+    ],
+    "codesignVerified": true,
+    "appleEntitlementVerified": true,
+    "ipaSHA256": "72078f86e05b6419a1344db3e3a9ddd796956b7b0626a4401c7bbe07d6dc27f6",
+    "ipaBytes": 9450569,
+    "uploadExitCode": 0,
+    "errors": [],
+    "successMessage": "No errors uploading archive at '/Users/runner/work/electric-man/electric-man/evidence/manual30/ElectricMan-build30.ipa'."
+  },
+  "storeSubmission": {
+    "scope": "Electric Man 1.0 build30 only",
+    "submitted": true,
+    "otherAppsModified": false,
+    "appId": "6819511421",
+    "versionId": "aef8e18c-40c2-41d1-bc06-272b59c8d73d",
+    "version": "1.0",
+    "previousVersionState": "REJECTED",
+    "buildProcessingState": "VALID",
+    "buildId": "c6af3180-6daa-45f7-ab09-a4d2d125a6b3",
+    "buildAttached": true,
+    "reviewNoteUpdated": true,
+    "previousSubmissions": [
+      {
+        "id": "517ba6cf-6593-435f-915f-3909ba9fe7df",
+        "state": "UNRESOLVED_ISSUES"
+      }
+    ],
+    "submissionId": "517ba6cf-6593-435f-915f-3909ba9fe7df",
+    "submissionState": "WAITING_FOR_REVIEW",
+    "finalVersionState": "WAITING_FOR_REVIEW"
+  },
+  "runnerGrossRateEstimateUSD": 2.564,
+  "budgetUSD": 5,
+  "invoiceVerified": false,
+  "otherProductionAppsOrSecretsModified": false,
+  "auditBranchesOnly": [
+    "usta-sehri:codex5-cert-audit-2040",
+    "tusneldax-bus-rush-ios:codex5-cert-audit-2040"
+  ],
+  "protectedCertificateId": "H3TYN7QW8J"
+}

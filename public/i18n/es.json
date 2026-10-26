@@ -214,5 +214,6 @@
   "eLOGIN_FAILED": "Usuario o contraseña incorrectos.",
   "loginFail": "No se pudo completar el inicio de sesión. Inténtalo de nuevo.",
   "eAPPLE_FAILED": "No se pudo completar el inicio de sesión. Inténtalo de nuevo.",
-  "loginOther": "Iniciar sesión con Google o correo"
+  "loginOther": "Iniciar sesión con Google o correo",
+  "guestPlay": "Jugar como invitado"
 }
