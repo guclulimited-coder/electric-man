@@ -183,9 +183,94 @@
           ]
         }
       }
+    },
+    {
+      "id": 40326036159,
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40326036159",
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "failure",
+          "seconds": 10.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40326327295,
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40326327295",
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "failure",
+          "seconds": 7.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40326465442,
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40326465442",
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "success",
+          "seconds": 9.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40326625631,
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40326625631",
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "success",
+          "seconds": 7.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40327048970,
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40327048970",
+      "jobs": [
+        {
+          "name": "export-build30-only",
+          "conclusion": "success",
+          "seconds": 36.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.062,
+          "acceptance": "NOT ACCEPTED: Apple entitlement missing"
+        }
+      ]
+    },
+    {
+      "id": 40327446648,
+      "url": "https://github.com/guclulimited-coder/electric-man/actions/runs/40327446648",
+      "jobs": [
+        {
+          "name": "export-build30-only",
+          "conclusion": "success",
+          "seconds": 45.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.062
+        }
+      ]
     }
   ],
-  "runnerRateEstimateUSD": 1.872,
+  "runnerRateEstimateUSD": 2.02,
   "actualInvoiceUSD": null,
   "storageChargesNotVerified": true
 }

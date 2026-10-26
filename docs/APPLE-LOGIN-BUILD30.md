@@ -4,44 +4,36 @@ Ret: 24 Ekim 2026, 2.1(a), gönderim 517ba6cf-6593-435f-915f-3909ba9fe7df; iPad 
 
 Dal `codex5-em-apple30-20261026`; mevcut native düzeltme dalı `fix-ipad-apple-login` (`a7608a2`) temel alındı. Bu taban henüz main'de değildir; ona ait kaynak/entitlement düzeltmeleri bu teslimin önkoşuludur.
 
-## Hazırlanan akış
+## 26 Ekim güncellemesi — test sunucusu
 
-- WKWebView içinde Apple açılır penceresi yerine ASAuthorizationController; bundle ID `com.tusneldax.electricman`, `com.apple.developer.applesignin = Default` ve CODE_SIGN_ENTITLEMENTS bağlantısı mevcut native düzeltmeden korunur.
-- Sunucudan alınan tek kullanımlık nonce, Apple isteği ve sunucu RS256/JWKS/issuer/audience/expiry/nonce doğrulamasını bağlar. Yeni state dönüş kontrolü, yalnız mevcut controller/attempt yanıtını kabul etme, foreground pencereyi koruma ve kapanışta iptal eklendi. Hatalı JWT başlık/claim nesneleri de kontrollü 401 alır.
-- Native Apple akışı web Services ID'sini kullanmaz. Alternatif sistem tarayıcısı akışında web Services ID `com.tusneldax.electricman.web`, dönüş `https://electricman.tusneldax.com/api/em/auth/apple/callback`; cookie/state/PKCE ve one-time ticket doğrulamaları korunur. Apple Developer portalındaki kayıt ve App ID capability bu işte anahtar/sertifika erişimi olmadan doğrulanamadı.
-- Misafir olarak oyna / Play as guest, hesap ekranında ve sunucu ayarı alınamayan durumda açık düğmedir. Kayıt/giriş yapmaz; varsa bekleyen native Apple girişini iptal eder. Yeni etiket 13 dilde bulunur.
-- Pazarlama sürümü 1.0.0, build 30. Release'te simülatör fixture'ı ve otomasyon yoktur. Oyun motoru, lig, satın alma ve mevcut kayıt biçimleri değiştirilmez.
+**Sunucu yaması canlıya hazır; yayın yapılmadı.** Test: https://em-apple30-test-20261026.guclu-limited.workers.dev
 
-## Canlı sunucu önkoşulu
+- Electric Man için tam eşleşmeyle `com.tusneldax.electricman` ve `com.tusneldax.electricman.web` kabul edilir. Hunter audience ayrımı korunur. Issuer, Apple JWKS/RS256, süre, nonce/state ve tek kullanım kontrolleri kaldırılmaz.
+- Canlıdaki nonce isteği jeton gönderilmeden 401 dönüyordu: audience kontrolünden önce eksik native route sürümü sorunu vardır. Ek olarak Cloudflare gerçek isteğinde `redirect:error` TypeError/503 ürettiği kanıtlandı; JWKS isteği `manual` yapıldı, yönlendirme 3xx yanıtı reddedilir.
+- 139 yerel kontrol (58 genel + 45 Apple + 36 native/guest) ve test ortamında 20 kontrol geçti. Test ortamının normal API yolu gerçek Apple JWKS'ini kullanır (200, 3 anahtar); sentetik anahtarı reddeder. Ayrı `/__oracle` yalnız test Worker'ında bağımlılık enjeksiyonuyla iki audience başarı/replay/imza/nonce/issuer/süre testini çalıştırır, oturum jetonunu dışarı vermez. Bu, gerçek Apple hesabıyla giriş kanıtı değildir.
+- Ayrı D1: `em-apple30-test-20261026` / `a4f8f4d2-1475-4599-8df8-b9bbfabcf160`. Üretim D1 kullanılmadı. Test callback adresi Apple'a kaydedilmedi; gerçek web OAuth kabulü iddia edilmez. Üretimin mevcut Services ID/callback ayarı değiştirilmedi.
+- App ID `DQQ5B4RP2Z`, platform UNIVERSAL. Apple giriş capability'si başlangıçta yoktu; istenen giriş düzeltmesi kapsamında API 201 ile APPLE_ID_AUTH etkinleştirildi ve tekrar okunarak doğrulandı. Mevcut CI anahtarı AMWHRWY3U4 çalışıyor; 7368ZSQD95 kimliğiyle JWT denemeleri 401 veriyor. Hiçbir anahtar içeriği görüntülenmedi.
+- API kanıtı: Actions 40326625631; test Worker sürümü `39959972-5019-40e3-99fc-125f048dd5cb`. Üretim yayını, TestFlight ve mağaza yüklemesi yok.
 
-26 Ekim salt kimliksiz hazırlık kontrolü: `/api/em/config` 200 ve yukarıdaki web Services ID; `/api/em/native/apple/nonce` POST (boş gövde, oturum yok) **401 LOGIN_REQUIRED**. Nonce/oturum jetonu kaydedilmedi; hesap açılmadı. Canlı worker yeni native uçları sunmuyor. Dolayısıyla bu istemciyle gerçek Apple girişini açmak için sunucu yaması da ayrıca devreye alınmalıdır. Bu işte üretim worker'ı, D1 oyuncu kayıtları ve mağaza değiştirilmedi.
+### İmzalı build 30 teslimi
 
-## Doğrulama ayrımı
+Actions `40327446648` / kaynak `9e1a851`: mevcut arşiv yeniden derlenmeden imzalandı. Xcode EXPORT SUCCEEDED, `codesign --verify --deep --strict` geçti; son IPA'da Apple entitlement `Default`, doğru application identifier ve debugger kapalı durumu doğrulandı. Windows'a indirilen dosyada SHA256 ve Mach-O entitlement bağımsız tekrar kontrol edildi.
 
-- Yerel: 58 genel API kontrolü; 39 Apple/native API güvenlik kontrolü; 36 kaynak/gerçek guest JS branch kontrolü. Anahtarlar yalnız RAM'de oluşturulmuş sentetik test anahtarları, SQLite yalnız bellektedir.
-- Bulut: yalnız `ipad_check=true`, `upload=false` seçeneği. `build` isimli eski imzalama/yükleme işi atlanır; yeni iş `contents: read`, sparse kaynak checkout, imzasız simülatör ve imzasız Release archive içindir. Anahtar/sertifika/önceki cert branch'ini açmaz, ASC API kullanmaz, upload/export yapmaz.
-- iPad ekranları ve native çağrı UI testi offline nonce/config fixture'ı kullanır. Bu **gerçek Apple hesabıyla tamamlanmış oturum açma değildir**. Güncel kurulu runtime ve seçilen iPad modelini CI selection.json kaydeder; iPadOS 27.0 olduğu varsayılmaz.
-- Görüntüler incelenmeden Apple sheet'in görünürlüğü veya tüm girişin başarılı olduğu söylenmez. İmzasız cihaz arşivi ayrıca sahip kontrollü imzalama gerektirir; mağazaya yüklenebilir IPA diye sunulmaz.
+- IPA: `outputs/electric-man-ipad30/run-40327446648/ElectricMan.ipa`, 9.460.853 byte.
+- SHA256: `a55dd751618613ec6a0d49ffc20c9b9e9fd856027d99e0c31817bc27e938f3d9`.
+- İlk export `40327048970` Apple entitlement taşımadığı için kabul edilmedi; dosyaları silinmedi, DO-NOT-UPLOAD notuyla işaretlendi. Son export arşive istenen entitlement'ı ad-hoc aşamada ekler, ardından dağıtım imzası ve entitlement'ı zorunlu doğrular.
+- Mevcut CI sırrı yalnız Xcode'a korumalı geçici dosya olarak verildi; içeriği okunup gösterilmedi ve artifact'a alınmadı. API anahtarı/sertifika içeriği incelenmedi. Aktif 3+3 dağıtım sertifikası iptal edilmedi; otomatik Xcode dışa aktarımı kullanıldı. Üretim/mağaza/TestFlight yüklemesi yapılmadı.
+- Tüm işin brüt runner fiyat tahmini **2,02 USD / 5 USD**; fatura doğrulanmadı, kısa süreli artifact depolama ayrıca doğrulanmadı. Gerçek Apple hesabıyla oturum ve iPadOS 27 kabulü henüz yoktur; önceki iPad M3/26.2 misafir UI kanıtı geçerlidir.
 
-## Sonuç ve teslim
+### Canlıya alma sınırı
 
-**Apple giriş ret maddesi henüz kapanmadı; mağaza kabulü verilmedi.**
+Onay sonrası yalnız sunucu değişikliği, native route önkoşulunu içeren bu dal üzerinden mevcut üretim dağıtımına uygulanmalı. Sparse `public/` dizinini tam site diye yayımlamayın: mevcut site varlıklarını düşürebilir. `tests/apple-staging/` giriş noktası, test D1 ve `/__oracle` üretime kesinlikle taşınmamalı. Mevcut üretim ortam değişkenleri/D1 bağları korunmalı. Bu iş canlıyı yayımlamaz.
 
-- `40291450525`: iPad Air 11-inch (M3), iPadOS 26.2 / Xcode 26.3. Sekiz UI/hamle kontrolü geçti; misafir 0→5 hamle yaptı. Native ASAuthorization isteği foreground pencereden çalıştı, ancak **1000** hatası aldı. Gerçek Apple hesabıyla başarılı giriş doğrulanmadı. Bu koşu UI'den sonraki arşiv adımında süreye takıldı.
-- İlk `40290139590` otomatik sonucu görsel kabul sayılmaz: ilk görüntü boş, karakter seçimi paneli açık kaldı. İkinci koşunun İngilizce giriş ve misafir kareleri görsel olarak incelendi. `sheet-tr.png` de kayıtlı dil önceliği nedeniyle İngilizce çıktı; Türkçe kanıt diye sunulmaz.
-- `40294040637`: **ARCHIVE SUCCEEDED**, 1.0.0 (30) imzasız fiziksel iOS Release arşivi; source commit `6c98fc5`. ZIP 10.322.432 byte; SHA-256 `b06d4f8b6b9f8af47019a85591651908a6062aae233fcb547b5a1154391dd921`.
-- API kimliği 7368ZSQD95 ile yalnız okuma denemeleri `40294389042` / `40294716880`: takım ve bireysel JWT biçimleri **401**. Bu kimlik doğrulaması başarısız olduğundan App ID yetkisi sorgulanamadı. Hiçbir yetki/sertifika kaydı değiştirilmedi; mevcut CI secret yalnız RAM'de kullanıldı, anahtar dosyası açılmadı/yazılmadı.
-- Yerel arşiv: `outputs/electric-man-ipad30/run-40294040637/ElectricMan-build30-unsigned-archive.zip`; simülatör uygulaması ve geçerli İngilizce ekranlar `run-40291450525/` altında. Bu yollar bu sohbetin çalışma kökündeki `outputs` dizinine göredir. CI artifact'ları üç gün saklanır; yerel kopyalar kalır.
-- Dağıtım için native sunucu uçları, Apple App ID capability/provisioning ve geçerli CI kimliği birlikte doğrulanmalı; imzalı gerçek cihaz/Apple hesabı testi yapılmalı. Sonradan imzalama gerekir. Mağazaya yüklenebilir imzalı IPA üretilmiş gibi sunulmaz.
+## İstemci ve kabul sınırı
 
-## Bütçe ve durma noktası
+İstemci tabanı `fix-ipad-apple-login` (`a7608a2`); native ASAuthorizationController, foreground pencere, state/nonce, tek istek ömrü ve görünür misafir düğmesi korunur. Oyun motoru/kayıt biçimi değiştirilmedi. Önceki iPad Air M3 / iPadOS 26.2 koşusunda misafir 0→5 hamle yaptı; Apple hesabı olmayan simülatör error 1000 verdi. Gerçek Apple hesabı ve iPadOS 27.0 kabulü henüz doğrulanmadı. İmzalı IPA'nın hazırlanması bu kabulün yerine geçmez.
 
-Bu işe özel üst bütçe 5 USD. Standart macOS runner yayımlanan tarifesi 0.062 USD/dakika; son workflow iş süresi 13 dakika, çalışma adımı 10 dakika ve artifact adımı 2 dakika ile sınırlı. Koşu sürelerinden toplam brüt tarife tahmini ve depolama ayrı raporlanır; hesap faturası/kalan dahil dakika teyidi diye sunulmaz. Artifact saklama üç gün. Mağaza/TestFlight/inceleme adımı yok; sonuç raporuyla durulur.
+Yerel kanıtlar bu sohbetin `outputs/electric-man-ipad30/` klasöründe: geçerli UI `run-40291450525`, imzasız kaynak arşivi `run-40294040637`, capability `run-40326625631`, son imzalı IPA `run-40327446648`. İlk imzasız arşivin SHA256 değeri ve geçmiş koşular JSON teslim kayıtlarında korunur. GitHub artifact saklama süresi üç gündür.
 
-Kaynaklar:
-- https://developer.apple.com/documentation/authenticationservices/asauthorizationcontroller
-- https://developer.apple.com/documentation/signinwithapple/configuring-your-environment-for-sign-in-with-apple
-- https://docs.github.com/en/billing/reference/actions-runner-pricing
+Kaynak doğrulama kuralları: https://developer.apple.com/documentation/signinwithapple/verifying-a-user
 
-
-Üç macOS koşusu (yuvarlanmış 8 + 19 + 3 dakika) ve iki kısa Linux koşusu toplamı yayımlanan tarifeyle **1.872 USD brüt runner tahmini**. İkinci koşunun timeout sonrası artifact süresi de bu hesaba dahil edildi. GitHub timing API billable alanları sıfır döndü; bu fatura teyidi sayılmadı. Depolama ücretinin hesap faturası doğrulanmadı; üç günlük küçük artifact'lar için 0.05 USD bütçe rezervi bırakıldı. 5 USD bütçenin altında kalındı; tüm koşular durdu. Ayrıntı: `APPLE-LOGIN-CLOUD-COST30.json`.

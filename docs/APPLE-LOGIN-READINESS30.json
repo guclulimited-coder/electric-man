@@ -20,20 +20,21 @@
   },
   "entitlement": {
     "sourceConfigured": true,
-    "appIdCapabilityVerifiedInPortal": false,
-    "signedDistributionBinaryVerified": false
+    "appIdCapabilityVerifiedInPortal": true,
+    "signedDistributionBinaryVerified": true
   },
   "tests": {
     "generalAPI": 58,
-    "appleSecurityAPI": 39,
+    "appleSecurityAPI": 45,
     "nativeSourceAndGuestJS": 36,
-    "syntheticOnly": true
+    "syntheticOnly": true,
+    "remoteStagingChecks": 20
   },
   "realAppleAccountLoginVerified": false,
   "productionWorkerDeployed": false,
   "appStoreUploaded": false,
   "testFlightUploaded": false,
-  "signingKeyOrCertificateFilesOpened": false,
+  "signingKeyOrCertificateFilesOpened": "No manual inspection. Xcode alone consumed a protected ephemeral CI credential file; contents not printed or included in artifact.",
   "simulator": {
     "device": "iPad Air 11-inch (M3)",
     "runtime": "iPadOS 26.2",
@@ -80,10 +81,10 @@
   ],
   "acceptanceReadyForStore": false,
   "openItems": [
-    "Native Apple system request returned error 1000 in unsigned simulator; successful real Apple account login not verified.",
-    "Production native nonce endpoint returned 401 LOGIN_REQUIRED; backend release required.",
-    "Existing ASC identity returned 401 with team and individual token forms; portal App ID capability could not be verified.",
-    "Target iPadOS 27.0 unavailable; tested runtime is 26.2."
+    "Production server deployment held for Omer approval; current production nonce endpoint is still 401.",
+    "Real Apple-account login on physical iPad not verified; simulator without account returned 1000.",
+    "Target iPadOS 27.0 unavailable; UI was tested on 26.2.",
+    "Signed build 30 upload and review submission held for separate approval."
   ],
   "archive": {
     "passed": true,
@@ -99,7 +100,7 @@
     "sha256": "b06d4f8b6b9f8af47019a85591651908a6062aae233fcb547b5a1154391dd921"
   },
   "capabilityAudit": {
-    "scope": "READ_ONLY_APP_ID_CAPABILITY_AUDIT",
+    "scope": "ENABLE_REQUESTED_APPLE_LOGIN_CAPABILITY",
     "bundleId": "com.tusneldax.electricman",
     "privateKeyFilesOpened": false,
     "privateKeyFilesWritten": false,
@@ -108,16 +109,219 @@
     "requestedIdentityMatchesConfigured": true,
     "authenticationModes": [
       {
+        "identity": "requested",
         "mode": "team",
         "httpStatus": 401
       },
       {
+        "identity": "requested",
         "mode": "individual",
         "httpStatus": 401
+      },
+      {
+        "identity": "existing-build-workflow",
+        "mode": "team",
+        "httpStatus": 200
       }
     ],
-    "passed": false,
-    "failedStage": "identity-check"
+    "identityValidated": true,
+    "identityType": "team",
+    "validatedKeyId": "AMWHRWY3U4",
+    "bundleMatches": [
+      {
+        "id": "DQQ5B4RP2Z",
+        "identifier": "com.tusneldax.electricman",
+        "platform": "UNIVERSAL"
+      },
+      {
+        "id": "U3G65B4FA4",
+        "identifier": "com.tusneldax.electricman.web",
+        "platform": "SERVICES"
+      }
+    ],
+    "enableCapabilityHTTPStatus": 201,
+    "signInWithAppleEnabled": true,
+    "capabilityTypes": [
+      "IN_APP_PURCHASE",
+      "APPLE_ID_AUTH"
+    ],
+    "distributionCertificateCount": 6,
+    "activeDistributionCertificatesByType": {
+      "DISTRIBUTION": 3,
+      "IOS_DISTRIBUTION": 3
+    },
+    "passed": true
   },
-  "privateKeyUsage": "Existing approved CI secret used in RAM only for read-only ASC JWT; no key/certificate files opened or written."
+  "privateKeyUsage": "API audit in RAM. Approved CI API secret normalized into protected ephemeral file for Xcode export only; no manual credential/certificate reads, no secret logging. Signing-only export; no upload, no explicit certificate revocation.",
+  "staging": {
+    "origin": "https://em-apple30-test-20261026.guclu-limited.workers.dev",
+    "syntheticJWT": true,
+    "realAppleAccountVerified": false,
+    "productionModified": false,
+    "checks": [
+      {
+        "name": "real nonce endpoint",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "real JWKS rejects synthetic com.tusneldax.electricman",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "unknown audience",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "issuer",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "nonce",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "expiry",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "bad signature",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "synthetic signature accepted com.tusneldax.electricman",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "replay rejected com.tusneldax.electricman",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "real nonce endpoint",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "real JWKS rejects synthetic com.tusneldax.electricman.web",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "unknown audience",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "issuer",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "nonce",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "expiry",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "bad signature",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "synthetic signature accepted com.tusneldax.electricman.web",
+        "actual": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "name": "replay rejected com.tusneldax.electricman.web",
+        "actual": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "cross origin rejected",
+        "actual": 403,
+        "expected": 403,
+        "passed": true
+      },
+      {
+        "name": "web redirect",
+        "actual": 302,
+        "expected": 302,
+        "passed": true
+      }
+    ],
+    "webReturnURL": "https://em-apple30-test-20261026.guclu-limited.workers.dev/api/em/auth/apple/callback",
+    "webReturnRegisteredWithApple": "not verified; existing production callback configuration unchanged",
+    "passed": true,
+    "at": "2026-10-26T12:55:53.993Z",
+    "deployedWorkerVersion": "39959972-5019-40e3-99fc-125f048dd5cb",
+    "realAppleJWKSHTTPStatus": 200,
+    "serverPatchReadyForProductionApproval": true
+  },
+  "signedExport": {
+    "build": 30,
+    "version": "1.0.0",
+    "storeUpload": false,
+    "certificateRevocation": false,
+    "keyContentsInspected": false,
+    "credentialFile": "ephemeral CI file, Xcode only, excluded from artifact",
+    "exportExitCode": 0,
+    "diagnostics": [
+      "** EXPORT SUCCEEDED **"
+    ],
+    "signedIPAReady": true,
+    "codesignVerified": true,
+    "appleEntitlementVerified": true,
+    "ipaSHA256": "a55dd751618613ec6a0d49ffc20c9b9e9fd856027d99e0c31817bc27e938f3d9",
+    "ipaBytes": 9460853,
+    "runId": 40327446648,
+    "sourceCommit": "9e1a851",
+    "localVerification": {
+      "sha256MatchesCI": true,
+      "appleEntitlement": [
+        "Default"
+      ],
+      "applicationIdentifier": "YMAU5R6AA4.com.tusneldax.electricman",
+      "build": "30",
+      "cmsSignaturePresent": true,
+      "codesignVerifiedByMacCI": true
+    }
+  },
+  "previousExportNotAccepted": {
+    "runId": 40327048970,
+    "reason": "Apple entitlement missing; retained and marked DO NOT UPLOAD"
+  },
+  "serverReadyForProductionApproval": true,
+  "signedBuildReadyForUploadApproval": true,
+  "remainingApproval": "Production deployment and App Store/TestFlight upload both held for Omer approval; real Apple account login still unverified."
 }
