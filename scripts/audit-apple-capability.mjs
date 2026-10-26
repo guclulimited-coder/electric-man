@@ -59,6 +59,15 @@ try{
  report.certificateInventory=certs.data?.map(c=>({id:c.id,type:c.attributes?.certificateType,serialNumber:c.attributes?.serialNumber,expirationDate:c.attributes?.expirationDate}));
  report.activeDistributionCertificatesByType={};
  for(const cert of certs.data||[]){const a=cert.attributes;if(Date.parse(a.expirationDate)>Date.now())report.activeDistributionCertificatesByType[a.certificateType]=(report.activeDistributionCertificatesByType[a.certificateType]||0)+1;}
+ const emApps=await get('apps?'+new URLSearchParams({'filter[bundleId]':report.bundleId,'fields[apps]':'bundleId',limit:'1'}));
+ const app=emApps.data?.find(a=>a.attributes?.bundleId===report.bundleId);
+ if(app){
+ report.appId=app.id;
+ const versions=await get('apps/'+app.id+'/appStoreVersions?'+new URLSearchParams({'filter[platform]':'IOS','fields[appStoreVersions]':'versionString,appStoreState',limit:'10'}));
+ report.storeVersions=versions.data?.map(v=>({id:v.id,...v.attributes}));
+ const builds=await get('builds?'+new URLSearchParams({'filter[app]':app.id,'filter[version]':'30','fields[builds]':'version,processingState',limit:'10'}));
+ report.storeBuild30=builds.data?.map(b=>({id:b.id,...b.attributes}));
+ }
  report.passed=true;
 }catch{
  report.passed=false;report.failedStage=stage;process.exitCode=1;

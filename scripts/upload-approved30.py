@@ -11,7 +11,7 @@ if os.environ.get('DIAG_ONLY')=='true':
   path=target/'Payload'/name
   row={'component':name}
   for label,requirement in [('appleAnchor','anchor apple generic'),('distribution','anchor apple generic and certificate leaf[field.1.2.840.113635.100.6.1.4] exists')]:
-   r=subprocess.run(['codesign','--verify','--deep','--strict','-R',requirement,str(path)],capture_output=True,text=True);row[label]={'exitCode':r.returncode,'diagnostic':r.stderr.strip()[:1500]}
+   r=subprocess.run(['codesign','--verify','--deep','--strict','-R','='+requirement,str(path)],capture_output=True,text=True);row[label]={'exitCode':r.returncode,'diagnostic':r.stderr.strip()[:1500]}
   r=subprocess.run(['codesign','-d','-r-',str(path)],capture_output=True,text=True);row['designatedRequirement']=r.stdout.strip()[:1500]
   results.append(row)
  info=plistlib.loads(subprocess.check_output(['security','cms','-D','-i',str(app/'embedded.mobileprovision')],stderr=subprocess.DEVNULL))
