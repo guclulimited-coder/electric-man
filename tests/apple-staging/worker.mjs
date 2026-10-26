@@ -2,6 +2,13 @@
 import {emAPI} from '../../public/_worker.js';
 export default {async fetch(req, env) {
   const url = new URL(req.url);
+  if(url.pathname === '/__jwks') {
+    try {
+    const r=await fetch('https://appleid.apple.com/auth/keys',{redirect:'manual',signal:AbortSignal.timeout(8000)});
+    const body=await r.json().catch(()=>({}));
+    return Response.json({appleJWKSStatus:r.status,keyCount:body.keys?.length??0});
+    } catch(e) {return Response.json({error:e.name,message:e.message});}
+  }
   // Fixture route exists ONLY in this separate test deployment/database.
   // It exercises the unchanged API with a synthetic JWKS dependency and never
   // returns session tokens. The ordinary /api/em route always fetches Apple JWKS.

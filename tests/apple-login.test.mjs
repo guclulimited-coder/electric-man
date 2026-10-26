@@ -25,7 +25,7 @@ const env={DB:d1(),EM_APPLE_SERVICE_ID:'test.apple.service'};
 const keys=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
 const jwk={...await crypto.subtle.exportKey('jwk',keys.publicKey),kid:'apple-test'};
 let keyCalls=0;
-const fetcher=async (url,init)=>{assert.equal(url,'https://appleid.apple.com/auth/keys');assert.equal(init.redirect,'error');keyCalls++;return Response.json({keys:[jwk]});};
+const fetcher=async (url,init)=>{assert.equal(url,'https://appleid.apple.com/auth/keys');assert.equal(init.redirect,'manual');keyCalls++;return Response.json({keys:[jwk]});};
 async function token(nonce,extra={}){const now=Math.floor(Date.now()/1000);const h=Buffer.from(JSON.stringify({alg:'RS256',kid:jwk.kid})).toString('base64url'),p=Buffer.from(JSON.stringify({iss:'https://appleid.apple.com',aud:env.EM_APPLE_SERVICE_ID,sub:'apple-user',nonce,iat:now,exp:now+300,...extra})).toString('base64url');const sig=Buffer.from(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',keys.privateKey,new TextEncoder().encode(h+'.'+p))).toString('base64url');return h+'.'+p+'.'+sig;}
 const api=req=>emAPI(req,env,{fetch:fetcher});
 async function start(back='/'){const r=await api(new Request(ORIGIN+'/api/em/auth/apple/start?back='+encodeURIComponent(back)));assert.equal(r.status,302);assert.match(r.headers.get('set-cookie'),/Secure; SameSite=None/);return {url:new URL(r.headers.get('location')),cookie:r.headers.get('set-cookie').split(';')[0]};}
@@ -48,6 +48,7 @@ const good=await token('n');await assert.rejects(()=>verifyApple(good.slice(0,-1
 const disabled=await emAPI(new Request(ORIGIN+'/api/em/auth/apple/start'),{DB:env.DB});assert.equal(disabled.status,503);ok();
 f=await start();r=await finish(f,{id_token:await token(f.url.searchParams.get('nonce'),{aud:'com.tusneldax.electricman'})});assert.equal(r.headers.get('location'),'/?login=apple');ok();
 for(const aud of ['', ['test.apple.service'], 'com.tusneldax.electrichunter']){await assert.rejects(async()=>verifyApple(await token('n',{aud}),['com.tusneldax.electricman','test.apple.service'],'n',fetcher),e=>e.status===401);ok();}
+await assert.rejects(()=>verifyApple(good,env.EM_APPLE_SERVICE_ID,'n',async()=>new Response(null,{status:302,headers:{location:'https://evil.example/keys'}})),e=>e.status===503);ok();
 console.log(checks+' Apple login security checks passed');
 
 // 18 Oct 2026 — App Store 2.1a: server-side hand-off back to the app and the App Review demo account

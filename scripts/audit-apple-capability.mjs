@@ -38,9 +38,11 @@ try{
  }
  stage='bundle-lookup';
  const data=await get('bundleIds?'+new URLSearchParams({'filter[identifier]':report.bundleId,limit:'2'}));
- if(data.data?.length!==1)throw new Error('bundle-not-found');
+ report.bundleMatches=data.data?.map(b=>({id:b.id,identifier:b.attributes?.identifier,platform:b.attributes?.platform}));
+ const bundles=data.data?.filter(b=>b.attributes?.identifier===report.bundleId && b.attributes?.platform==='IOS')||[];
+ if(bundles.length!==1)throw new Error('bundle-not-found');
  stage='capability-lookup';
- const caps=await get('bundleIds/'+encodeURIComponent(data.data[0].id)+'/bundleIdCapabilities');
+ const caps=await get('bundleIds/'+encodeURIComponent(bundles[0].id)+'/bundleIdCapabilities');
  report.signInWithAppleEnabled=caps.data?.some(c=>c.attributes?.capabilityType==='SIGN_IN_WITH_APPLE')===true;
  report.passed=true;
 }catch{
