@@ -13,7 +13,7 @@ try:
  report['exitCode']=r.returncode;report['uploadSucceeded']=r.returncode==0
  try:
   data=json.loads(r.stdout)
-  report['errors']=[{'code':e.get('code'),'message':e.get('message')} for e in data.get('product-errors',[])];report['successMessage']=data.get('success-message')
+  report['errors']=[{'code':e.get('code'),'message':e.get('message'),'reason':e.get('userInfo',{}).get('NSLocalizedFailureReason'),'description':e.get('userInfo',{}).get('NSLocalizedDescription')} for e in data.get('product-errors',[])];report['successMessage']=data.get('success-message')
  except ValueError:report['machineOutputParsed']=False
 except subprocess.TimeoutExpired:report['uploadSucceeded']=False;report['error']='upload-timeout-check-ASC-before-retrying'
 out=pathlib.Path('evidence/upload30');out.mkdir(parents=True,exist_ok=True);(out/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
