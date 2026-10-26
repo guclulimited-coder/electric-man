@@ -5,6 +5,11 @@ on:
     paths: ['ios/**', 'public/**', '!public/hunter/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/ios.yml']
   workflow_dispatch:
     inputs:
+      release30:
+        description: 'Omer-approved existing Electric Man build30 upload/submission only'
+        type: choice
+        default: none
+        options: [none, upload-and-submit, submit-only]
       sign_only:
         description: 'Export existing build 30 archive only; never upload or revoke certificates'
         type: boolean
@@ -38,7 +43,7 @@ env:
 jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
-    if: ${{ !inputs.sign_only && !inputs.ipad_check && !inputs.apple_audit && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && !inputs.sign_only && !inputs.ipad_check && !inputs.apple_audit && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -218,7 +223,7 @@ jobs:
           rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8 "$RUNNER_TEMP"/em.*
 
   ipad-unsigned-check:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && !inputs.upload }}
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && !inputs.upload }}
     permissions:
       contents: read
     runs-on: macos-15
@@ -271,7 +276,7 @@ jobs:
           if-no-files-found: warn
 
   apple-capability-audit:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apple_audit && !inputs.sign_only && !inputs.upload }}
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && github.event_name == 'workflow_dispatch' && inputs.apple_audit && !inputs.sign_only && !inputs.upload }}
     runs-on: ubuntu-latest
     timeout-minutes: 4
     permissions:
@@ -301,7 +306,7 @@ jobs:
           retention-days: 3
 
   export-build30-only:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_only && !inputs.upload && !inputs.ipad_check && !inputs.apple_audit }}
+    if: ${{ (!inputs.release30 || inputs.release30 == 'none') && github.event_name == 'workflow_dispatch' && inputs.sign_only && !inputs.upload && !inputs.ipad_check && !inputs.apple_audit }}
     runs-on: macos-15
     timeout-minutes: 6
     permissions:
@@ -340,3 +345,61 @@ jobs:
             evidence/sign30/result.json
           retention-days: 3
           if-no-files-found: warn
+
+  upload-approved30:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release30 == 'upload-and-submit' && inputs.upload }}
+    runs-on: macos-15
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/upload-approved30.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40327446648
+          name: electric-man-build30-export-only
+          path: approved-input
+      - name: Upload verified build30 only
+        timeout-minutes: 5
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: python3 scripts/upload-approved30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-approved-upload30
+          path: evidence/upload30/result.json
+          retention-days: 3
+
+  submit-approved30:
+    needs: upload-approved30
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.upload && (inputs.release30 == 'submit-only' || (inputs.release30 == 'upload-and-submit' && needs.upload-approved30.result == 'success')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/submit-approved30.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Attach processed build30 and resubmit Electric Man 1.0
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: node scripts/submit-approved30.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-approved-submit30
+          path: evidence/submit30/result.json
+          retention-days: 3
