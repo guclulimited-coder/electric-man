@@ -359,9 +359,88 @@
           "publishedRateEstimateUSD": 0.006
         }
       ]
+    },
+    {
+      "id": 40372030152,
+      "repo": "guclulimited-coder/usta-sehri",
+      "jobs": [
+        {
+          "name": "audit",
+          "conclusion": "success",
+          "seconds": 7.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40372046676,
+      "repo": "guclulimited-coder/tusneldax-bus-rush-ios",
+      "jobs": [
+        {
+          "name": "audit",
+          "conclusion": "success",
+          "seconds": 5.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40372376061,
+      "repo": "guclulimited-coder/usta-sehri",
+      "jobs": [
+        {
+          "name": "audit",
+          "conclusion": "success",
+          "seconds": 5.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40373610963,
+      "repo": "guclulimited-coder/electric-man",
+      "jobs": [
+        {
+          "name": "renew-em-certificate30",
+          "conclusion": "success",
+          "seconds": 12.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40373970488,
+      "repo": "guclulimited-coder/electric-man",
+      "jobs": [
+        {
+          "name": "manual-approved30",
+          "conclusion": "success",
+          "seconds": 47.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.062
+        },
+        {
+          "name": "submit-approved30",
+          "conclusion": "success",
+          "seconds": 112.0,
+          "roundedMinutes": 2,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.012
+        }
+      ]
     }
   ],
-  "runnerRateEstimateUSD": 2.466,
+  "runnerRateEstimateUSD": 2.564,
   "actualInvoiceUSD": null,
-  "storageChargesNotVerified": true
+  "storageChargesNotVerified": true,
+  "allTaskRunsComplete": true
 }

@@ -87,23 +87,17 @@
     "appId": "6819511421",
     "version": "1.0",
     "versionId": "aef8e18c-40c2-41d1-bc06-272b59c8d73d",
-    "state": "REJECTED",
-    "build30Visible": false,
-    "uploadAttempted": true,
-    "uploadSucceeded": false,
-    "reviewSubmitted": false,
-    "reviewNotePreparedButNotApplied": true,
-    "failure": "Apple Invalid Signature: main executable, GoogleMobileAds, UserMessagingPlatform",
-    "uploadRuns": [
-      40347765179,
-      40348109366,
-      40349662993
-    ],
-    "localAppleTrustCheckRun": 40350154166,
-    "localAppleTrustChecksPassed": true,
-    "storeReadBackRun": 40350160322,
-    "certificateRevocation": false,
-    "note": "Root cause not established. Managed signer is absent from filtered manual-certificate API inventory but present in profile; absence is not proof of revocation. Alternate valid CI signing identity requested."
+    "state": "WAITING_FOR_REVIEW",
+    "build30Visible": true,
+    "buildId": "c6af3180-6daa-45f7-ab09-a4d2d125a6b3",
+    "buildProcessingState": "VALID",
+    "uploadSucceeded": true,
+    "buildAttached": true,
+    "reviewNoteUpdated": true,
+    "reviewSubmitted": true,
+    "submissionId": "517ba6cf-6593-435f-915f-3909ba9fe7df",
+    "submissionState": "WAITING_FOR_REVIEW",
+    "runId": 40373970488
   },
   "hunterSigningReuseAudit": {
     "workflow": "main:.github/workflows/hunter-ios.yml",
@@ -128,6 +122,38 @@
     },
     "newCertificateCreated": false,
     "certificateRevoked": false,
-    "pausedForManagerDecision": "Provide reusable distribution signing identity via secure CI, or explicitly approve replacement of an old Electric Man certificate after checking its usage. Hunter certificate must remain untouched."
+    "pausedForManagerDecision": "Resolved by 20:40 conditional approval and successful usage precheck; renewed only Electric Man identity."
+  },
+  "previousStoreFailure": {
+    "appId": "6819511421",
+    "version": "1.0",
+    "versionId": "aef8e18c-40c2-41d1-bc06-272b59c8d73d",
+    "state": "REJECTED",
+    "build30Visible": false,
+    "uploadAttempted": true,
+    "uploadSucceeded": false,
+    "reviewSubmitted": false,
+    "reviewNotePreparedButNotApplied": true,
+    "failure": "Apple Invalid Signature: main executable, GoogleMobileAds, UserMessagingPlatform",
+    "uploadRuns": [
+      40347765179,
+      40348109366,
+      40349662993
+    ],
+    "localAppleTrustCheckRun": 40350154166,
+    "localAppleTrustChecksPassed": true,
+    "storeReadBackRun": 40350160322,
+    "certificateRevocation": false,
+    "note": "Root cause not established. Managed signer is absent from filtered manual-certificate API inventory but present in profile; absence is not proof of revocation. Alternate valid CI signing identity requested."
+  },
+  "certificateRenewal": {
+    "oldId": "3S37L2JAP7",
+    "newId": "KZ6622463A",
+    "profileId": "B63L63L3KP",
+    "protectedId": "H3TYN7QW8J",
+    "protectedStillPresent": true,
+    "crossProjectUsageGatesPassed": true,
+    "githubSecretStored": true,
+    "details": "CERTIFICATE30-RESULT.json"
   }
 }
