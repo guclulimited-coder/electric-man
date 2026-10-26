@@ -104,5 +104,30 @@
     "storeReadBackRun": 40350160322,
     "certificateRevocation": false,
     "note": "Root cause not established. Managed signer is absent from filtered manual-certificate API inventory but present in profile; absence is not proof of revocation. Alternate valid CI signing identity requested."
+  },
+  "hunterSigningReuseAudit": {
+    "workflow": "main:.github/workflows/hunter-ios.yml",
+    "workflowBlob": "3d42ec0cbf767e53a9dd38fdc746b0d4ab400ae6",
+    "protectedHunterCertificate": "H3TYN7QW8J",
+    "recordBranch": "eh-ios-cert",
+    "recordFile": "eh-ios-cert.txt",
+    "existingPrivateIdentityLoadedByHunterWorkflow": false,
+    "hunterGeneratesEphemeralPrivateKeyEachRun": true,
+    "hunterWorkflowHasRevokeFallback": true,
+    "revokeFallbackNotExecuted": true,
+    "visibleRepositorySecrets": [
+      "EM_ANDROID_KEYSTORE_B64",
+      "EM_ANDROID_KEYSTORE_PASSWORD",
+      "EM_ASC_PRIVATE_KEY"
+    ],
+    "repositoryEnvironments": [],
+    "distributionIdentitySecretVisible": false,
+    "quotaLastRead": {
+      "DISTRIBUTION": 3,
+      "IOS_DISTRIBUTION": 3
+    },
+    "newCertificateCreated": false,
+    "certificateRevoked": false,
+    "pausedForManagerDecision": "Provide reusable distribution signing identity via secure CI, or explicitly approve replacement of an old Electric Man certificate after checking its usage. Hunter certificate must remain untouched."
   }
 }
