@@ -38,7 +38,7 @@ env:
 jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
-    if: ${{ !inputs.sign_only && !inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
+    if: ${{ !inputs.sign_only && !inputs.ipad_check && !inputs.apple_audit && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -218,7 +218,7 @@ jobs:
           rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8 "$RUNNER_TEMP"/em.*
 
   ipad-unsigned-check:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && !inputs.sign_only && !inputs.upload }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && !inputs.upload }}
     permissions:
       contents: read
     runs-on: macos-15
@@ -285,7 +285,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Read App ID capability (no key files, no certificate operations)
+      - name: Check or enable requested App ID capability (no key files, no certificate operations)
         env:
           APPLE_ENABLE_CAPABILITY: ${{ inputs.enable_apple }}
           APPLE_AUDIT_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
@@ -335,6 +335,8 @@ jobs:
         timeout-minutes: 1
         with:
           name: electric-man-build30-export-only
-          path: evidence/sign30/
+          path: |
+            evidence/sign30/*.ipa
+            evidence/sign30/result.json
           retention-days: 3
           if-no-files-found: warn

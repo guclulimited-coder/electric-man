@@ -1,4 +1,5 @@
-// Approved ASC identity, READ ONLY. No private key/certificate files are opened
+// ASC audit, optionally enabling the specifically requested Apple login capability.
+// No private key/certificate files are opened
 // or written. The existing CI secret is used solely inside this process.
 import {createPrivateKey,sign} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
