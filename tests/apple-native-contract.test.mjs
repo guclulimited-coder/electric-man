@@ -29,4 +29,23 @@ for(const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){
  const js=match[2].replace(/^import .*?;\s*$/gm,'');
  new vm.Script(`(async()=>{${js}\n})()`);checks++;
 }
+// Execute the real native/offline account branches against a tiny DOM harness:
+// guest dismisses the sheet and cancels pending native login, without auth calls.
+const start=html.indexOf('  async function openAccount(){');
+const account=html.slice(start,html.indexOf('    if (me) return accountView();',start))+'\n}';
+for(const configured of [true,false]){
+ const elements={sheet:{hidden:false}},buttons={},calls=[];
+ const box={querySelector:id=>buttons[id]??=( {} )};
+ let rendered='';
+ const context=vm.createContext({cfg:configured?{}:null,me:null,
+  Native:{app:true,platform:'ios',call:async x=>{calls.push(x);return {ok:true};}},
+  T:k=>k,esc:x=>x,$:id=>elements[id]??={},sheet:(title,markup)=>{rendered=markup;return box;},
+  Profile:{picker:()=>''},settingsRow:()=>'',langPicker:()=>'',legal:()=>'',
+  bindLang:()=>{},bindSettings:()=>{},stopChat:()=>{},LANG:'en'});
+ await new vm.Script(`(async()=>{${account};await openAccount()})()`).runInContext(context);
+ check(rendered.includes('id="guestPlay"'),'guest rendered '+configured);
+ buttons['#guestPlay'].onclick();
+ check(elements.sheet.hidden===true,'guest closes sheet '+configured);
+ check(configured?calls.length===1&&calls[0].action==='cancelLogin':calls.length===0,'guest never authenticates '+configured);
+}
 console.log(checks+' native source/guest UI contracts passed; Swift/Xcode execution not claimed');

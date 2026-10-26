@@ -159,7 +159,7 @@ struct GameView: UIViewRepresentable {
         }
         #if DEBUG
         private var testStarted = false
-        static let openAccountJS = "(()=>{document.getElementById('accountBtn').click();return 'account sheet'})()"
+        static let openAccountJS = "(()=>{const choice=document.querySelector('#card [data-g=m]');if(!document.getElementById('modal').hidden&&choice){choice.click();setTimeout(()=>document.getElementById('accountBtn').click(),400)}else document.getElementById('accountBtn').click();return 'account sheet'})()"
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             // `-emTest apple|browser|sheet` (simulator only): open the account sheet and press a sign-in button
             guard !testStarted, let mode = UserDefaults.standard.string(forKey: "emTest") else { return }
@@ -173,8 +173,12 @@ struct GameView: UIViewRepresentable {
                     webView.evaluateJavaScript("(()=>{const b=document.getElementById('\(id)');if(!b)return 'missing \(id)';b.click();return 'clicked \(id)'})()") { r, e in
                         NSLog("EMTEST tap: %@ %@", String(describing: r), String(describing: e))
                         if mode == "guest" {
-                            webView.evaluateJavaScript("JSON.stringify({sheetHidden:document.getElementById('sheet').hidden,canvas:!!document.querySelector('canvas')})") { result, error in
-                                NSLog("EMTEST guest-state %@", (result as? String) ?? "UNAVAILABLE")
+                            webView.evaluateJavaScript("(()=>{const c=document.getElementById('boardCanvas'),r=c.getBoundingClientRect();window.__emGuestBefore=Number(document.getElementById('moves').textContent);for(let y=1;y<10;y++)for(let x=1;x<10;x++){const o={clientX:r.left+r.width*x/10,clientY:r.top+r.height*y/10,isPrimary:true,pointerId:1,bubbles:true};c.dispatchEvent(new PointerEvent('pointerdown',o));c.dispatchEvent(new PointerEvent('pointerup',o));}return 'board input sent'})()") { _, _ in
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                                    webView.evaluateJavaScript("JSON.stringify({sheetHidden:document.getElementById('sheet').hidden,modalHidden:document.getElementById('modal').hidden,canvas:!!document.getElementById('boardCanvas'),movesBefore:window.__emGuestBefore,movesAfter:Number(document.getElementById('moves').textContent)})") { result, _ in
+                                        NSLog("EMTEST guest-state %@", (result as? String) ?? "UNAVAILABLE")
+                                    }
+                                }
                             }
                         }
                     }
@@ -317,6 +321,9 @@ struct GameView: UIViewRepresentable {
                         self.appleState = state
                         self.appleWindow = window
                         self.appleController = controller
+                        #if DEBUG
+                        NSLog("EMTEST apple native-request foreground=%@", window.windowScene?.activationState == .foregroundActive ? "yes" : "no")
+                        #endif
                         controller.performRequests()
                     }
                 } catch { await MainActor.run { if self.appleAttempt == attempt { self.finishApple(nil, "CONNECTION_FAILED") } } }
@@ -358,7 +365,7 @@ struct GameView: UIViewRepresentable {
         }
         func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
             guard controller === appleController else { return }
-            NSLog("Sign in with Apple error code: %ld", (error as NSError).code)
+            NSLog("EMTEST apple error code: %ld", (error as NSError).code)
             finishApple(nil, (error as? ASAuthorizationError)?.code == .canceled ? "LOGIN_CANCELLED" : "APPLE_FAILED")
         }
     }

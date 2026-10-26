@@ -39,13 +39,14 @@ device=$(xcrun simctl create ElectricMan-Review30 "$(cat "$out/device-type.txt")
 trap 'xcrun simctl shutdown "$device" >/dev/null 2>&1 || true' EXIT
 xcrun simctl boot "$device"
 xcrun simctl bootstatus "$device" -b
+open -a Simulator --args -CurrentDeviceUDID "$device"
 xcrun simctl install "$device" "$app"
 for entry in sheet:en guest:en apple:en sheet:tr; do
   mode=${entry%:*}; lang=${entry#*:}
   xcrun simctl terminate "$device" com.tusneldax.electricman >/dev/null 2>&1 || true
   xcrun simctl launch "$device" com.tusneldax.electricman \
     -emTest "$mode" -emShotLang "$lang" -emTestOffline YES
-  sleep 13
+  sleep 20
   xcrun simctl io "$device" screenshot "$out/$mode-$lang.png"
 done
 xcrun simctl spawn "$device" log show --last 4m --style compact \
@@ -55,8 +56,27 @@ import json,pathlib,plistlib,sys,re
 out=pathlib.Path(sys.argv[1]);app=pathlib.Path(sys.argv[2]);p=plistlib.loads((app/'Info.plist').read_bytes())
 log=(out/'ui.log').read_text()
 guest=[json.loads(m) for m in re.findall(r'guest-state (\{[^\n]+\})',log)]
-checks={'build30':p['CFBundleVersion']=='30','appleButtonTapped':'clicked appleLogin' in log,'guestButtonTapped':'clicked guestPlay' in log,'guestBoardVisible':any(g.get('sheetHidden') is True and g.get('canvas') is True for g in guest),'noPageErrors':'js-error ' not in log and 'js-rejection ' not in log,'fourScreenshots':all((out/f).is_file() for f in ['sheet-en.png','guest-en.png','apple-en.png','sheet-tr.png'])}
+checks={'build30':p['CFBundleVersion']=='30','appleButtonTapped':'clicked appleLogin' in log,'guestButtonTapped':'clicked guestPlay' in log,'guestBoardVisible':any(g.get('sheetHidden') is True and g.get('modalHidden') is True and g.get('canvas') is True for g in guest),'guestMadeMove':any(g.get('movesAfter',0)>g.get('movesBefore',0) for g in guest),'nativeRequestReached': 'apple native-request foreground=yes' in log,'noPageErrors':'js-error ' not in log and 'js-rejection ' not in log,'fourScreenshots':all((out/f).is_file() for f in ['sheet-en.png','guest-en.png','apple-en.png','sheet-tr.png'])}
 (out/'result.json').write_text(json.dumps(dict(checks=checks,passed=all(checks.values()),bundleId=p['CFBundleIdentifier'],version=p['CFBundleShortVersionString'],build=p['CFBundleVersion'],scope='UNSIGNED_IPAD_SIMULATOR_UI_WITH_OFFLINE_API_FIXTURE',realAppleAccountLoginVerified=False,storeUpload=False),indent=2))
 print(json.dumps(checks))
 assert all(checks.values()),'Inspect screenshots and UI log; synthetic UI test failed'
+PY
+
+# Unsigned device archive for later owner-controlled signing, never exported/uploaded.
+# Release excludes the offline simulator fixture and all emTest automation.
+set +e
+xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release \
+  -destination 'generic/platform=iOS' -derivedDataPath build/ipad30 \
+  -archivePath build/ElectricMan30.xcarchive CODE_SIGNING_ALLOWED=NO \
+  CURRENT_PROJECT_VERSION=30 archive > "$out/archive.log" 2>&1
+archive_status=$?
+set -e
+grep -E 'error:|ARCHIVE (SUCCEEDED|FAILED)' "$out/archive.log" | head -30 || true
+if [ "$archive_status" != 0 ]; then exit "$archive_status"; fi
+ditto -c -k --sequesterRsrc --keepParent build/ElectricMan30.xcarchive "$out/ElectricMan-build30-unsigned-archive.zip"
+python3 - "$out" <<'PY'
+import json,pathlib,sys,hashlib
+out=pathlib.Path(sys.argv[1]);r=json.loads((out/'result.json').read_text());r['unsignedReleaseArchiveBuilt']=True
+r['artifacts']={p.name:dict(bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in out.glob('*.zip')}
+(out/'result.json').write_text(json.dumps(r,indent=2))
 PY
