@@ -55,6 +55,8 @@ try{
  report.capabilityTypes=caps.data?.map(c=>c.attributes?.capabilityType);
  const certs=await get('certificates?'+new URLSearchParams({'filter[certificateType]':'DISTRIBUTION,IOS_DISTRIBUTION',limit:'100'}));
  report.distributionCertificateCount=certs.data?.length;
+ report.currentBuild30LeafActive=certs.data?.some(c=>c.attributes?.serialNumber?.toUpperCase()==='20F8887B9CF8918B123F566361D20356');
+ report.certificateInventory=certs.data?.map(c=>({id:c.id,type:c.attributes?.certificateType,serialNumber:c.attributes?.serialNumber,expirationDate:c.attributes?.expirationDate}));
  report.activeDistributionCertificatesByType={};
  for(const cert of certs.data||[]){const a=cert.attributes;if(Date.parse(a.expirationDate)>Date.now())report.activeDistributionCertificatesByType[a.certificateType]=(report.activeDistributionCertificatesByType[a.certificateType]||0)+1;}
  report.passed=true;
