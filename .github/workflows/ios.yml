@@ -9,7 +9,7 @@ on:
         description: 'Omer-approved existing Electric Man build30 upload/submission only'
         type: choice
         default: none
-        options: [none, upload-and-submit, submit-only]
+        options: [none, upload-and-submit, submit-only, diagnose-only]
       sign_only:
         description: 'Export existing build 30 archive only; never upload or revoke certificates'
         type: boolean
@@ -347,7 +347,7 @@ jobs:
           if-no-files-found: warn
 
   upload-approved30:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release30 == 'upload-and-submit' && inputs.upload }}
+    if: ${{ github.event_name == 'workflow_dispatch' && ((inputs.release30 == 'upload-and-submit' && inputs.upload) || inputs.release30 == 'diagnose-only') }}
     runs-on: macos-15
     timeout-minutes: 6
     permissions:
@@ -369,6 +369,7 @@ jobs:
         timeout-minutes: 5
         env:
           ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          DIAG_ONLY: ${{ inputs.release30 == 'diagnose-only' }}
         run: python3 scripts/upload-approved30.py
       - uses: actions/upload-artifact@v4
         if: always()
