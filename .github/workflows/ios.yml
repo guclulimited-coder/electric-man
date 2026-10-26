@@ -9,7 +9,7 @@ on:
         description: 'Omer-approved existing Electric Man build30 upload/submission only'
         type: choice
         default: none
-        options: [none, upload-and-submit, submit-only, diagnose-only, cloud-upload]
+        options: [none, upload-and-submit, submit-only, diagnose-only, cloud-upload, renew-certificate]
       sign_only:
         description: 'Export existing build 30 archive only; never upload or revoke certificates'
         type: boolean
@@ -442,3 +442,35 @@ jobs:
           name: electric-man-cloud-approved30
           path: evidence/sign30/result.json
           retention-days: 3
+
+  renew-em-certificate30:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release30 == 'renew-certificate' && !inputs.upload }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    concurrency:
+      group: electric-man-only-certificate30
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/renew-certificate30.py
+            /docs/CERTIFICATE30-PRECHECK.json
+      - name: Cryptography and GitHub sealed-box support
+        run: python3 -m pip -q install 'PyJWT[crypto]==2.10.1' 'PyNaCl==1.6.0'
+      - name: Usage gates, approved EM-only renewal, encrypted secret preparation
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          GH_READ_TOKEN: ${{ github.token }}
+        run: python3 scripts/renew-certificate30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: electric-man-certificate30-sealed
+          path: evidence/cert30/
+          retention-days: 3
+          if-no-files-found: warn
