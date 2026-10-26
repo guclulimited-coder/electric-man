@@ -39,11 +39,14 @@ try{
  stage='bundle-lookup';
  const data=await get('bundleIds?'+new URLSearchParams({'filter[identifier]':report.bundleId,limit:'2'}));
  report.bundleMatches=data.data?.map(b=>({id:b.id,identifier:b.attributes?.identifier,platform:b.attributes?.platform}));
- const bundles=data.data?.filter(b=>b.attributes?.identifier===report.bundleId && b.attributes?.platform==='IOS')||[];
+ const bundles=data.data?.filter(b=>b.attributes?.identifier===report.bundleId && ['IOS','UNIVERSAL'].includes(b.attributes?.platform))||[];
  if(bundles.length!==1)throw new Error('bundle-not-found');
  stage='capability-lookup';
  const caps=await get('bundleIds/'+encodeURIComponent(bundles[0].id)+'/bundleIdCapabilities');
- report.signInWithAppleEnabled=caps.data?.some(c=>c.attributes?.capabilityType==='SIGN_IN_WITH_APPLE')===true;
+ report.signInWithAppleEnabled=caps.data?.some(c=>['APPLE_ID_AUTH','SIGN_IN_WITH_APPLE'].includes(c.attributes?.capabilityType))===true;
+ report.capabilityTypes=caps.data?.map(c=>c.attributes?.capabilityType);
+ const certs=await get('certificates?'+new URLSearchParams({'filter[certificateType]':'DISTRIBUTION,IOS_DISTRIBUTION',limit:'100'}));
+ report.distributionCertificateCount=certs.data?.length;
  report.passed=true;
 }catch{
  report.passed=false;report.failedStage=stage;process.exitCode=1;
