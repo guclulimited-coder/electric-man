@@ -1,0 +1,108 @@
+{
+  "previousDeployment": "b21765f6-23a9-4145-bc5a-a376b4bc341b",
+  "previousSource": "5eb9883",
+  "scope": "Electric Man host Apple routes only; all other routes use original worker",
+  "assetFiles": 91,
+  "bytes": 73313242,
+  "before": "C:\\Users\\PC\\Documents\\Codex\\2026-10-23\\codex5-usta-ehri-unity-ta-ma\\outputs\\em-live30\\before\\public",
+  "after": "C:\\Users\\PC\\Documents\\Codex\\2026-10-23\\codex5-usta-ehri-unity-ta-ma\\outputs\\em-live30\\after\\public",
+  "oldWorkerSHA256": "393bbc999a55469bcb53d81175bbe978ace60dc801ee0779abd1e5c82e2970f0",
+  "newWorkerSHA256": "f7a2a18b3a6337e0ac83ba4c67e446e81449b430aac9ba2fb65d2bef21a30928",
+  "productionDeploymentAfter": "c64455cd",
+  "smoke": {
+    "passed": true,
+    "at": "2026-10-26T15:14:30.471Z",
+    "productionDeployment": "c64455cd",
+    "checks": [
+      {
+        "name": "unchanged asset /",
+        "actual": "bbdaf57fdaa85c0bd87fb06e5cf99a5b614cbd508dcf4eb262c5b713adab0d70",
+        "expected": "bbdaf57fdaa85c0bd87fb06e5cf99a5b614cbd508dcf4eb262c5b713adab0d70"
+      },
+      {
+        "name": "unchanged asset /engine.js",
+        "actual": "17000eb483159e91ab068d518fce76b2a8e5e77a160e14549816faf90557f39e",
+        "expected": "17000eb483159e91ab068d518fce76b2a8e5e77a160e14549816faf90557f39e"
+      },
+      {
+        "name": "unchanged asset /hunter/",
+        "actual": "7751e959c464483d1063057b32983d0f7c2204cd385780d1e93f17c1d922058a",
+        "expected": "7751e959c464483d1063057b32983d0f7c2204cd385780d1e93f17c1d922058a"
+      },
+      {
+        "name": "web Apple redirect",
+        "actual": 302,
+        "expected": 302
+      },
+      {
+        "name": "Apple host",
+        "actual": "appleid.apple.com",
+        "expected": "appleid.apple.com"
+      },
+      {
+        "name": "web Services ID",
+        "actual": "com.tusneldax.electricman.web",
+        "expected": "com.tusneldax.electricman.web"
+      },
+      {
+        "name": "callback URL",
+        "actual": "https://electricman.tusneldax.com/api/em/auth/apple/callback",
+        "expected": "https://electricman.tusneldax.com/api/em/auth/apple/callback"
+      },
+      {
+        "name": "native nonce",
+        "actual": 200,
+        "expected": 200
+      },
+      {
+        "name": "native real JWKS invalid signature rejected",
+        "actual": 401,
+        "expected": 401
+      },
+      {
+        "name": "foreign origin refused",
+        "actual": 403,
+        "expected": 403
+      },
+      {
+        "name": "invalid web callback rejected",
+        "actual": "/?login=fail",
+        "expected": "/?login=fail"
+      }
+    ],
+    "playerLoginOrSaveOperations": 0,
+    "realAppleAccountLoginVerified": false
+  },
+  "allNonWorkerAssetsEqualGitBlobs": true,
+  "beforeWorkerSHA256": "393bbc999a55469bcb53d81175bbe978ace60dc801ee0779abd1e5c82e2970f0",
+  "afterWorkerSHA256": "04ef4eee42a062c671d3db93ff3cd66207cd0c3a0433dd4e2a3f2b73bfc83c56",
+  "intermediateDeployment": "da8d9495 (Windows CRLF only; asset bytes immediately restored before acceptance)",
+  "rollbackDirectory": "C:\\Users\\PC\\Documents\\Codex\\2026-10-23\\codex5-usta-ehri-unity-ta-ma\\outputs\\em-live30\\before\\public",
+  "approval": {
+    "by": "Omer via Claude",
+    "localTime": "2026-10-26 18:09 Europe/Istanbul",
+    "scope": "Electric Man backend and build30 upload/review only"
+  },
+  "store": {
+    "appId": "6819511421",
+    "version": "1.0",
+    "versionId": "aef8e18c-40c2-41d1-bc06-272b59c8d73d",
+    "state": "REJECTED",
+    "build30Visible": false,
+    "uploadAttempted": true,
+    "uploadSucceeded": false,
+    "reviewSubmitted": false,
+    "reviewNotePreparedButNotApplied": true,
+    "failure": "Apple Invalid Signature: main executable, GoogleMobileAds, UserMessagingPlatform",
+    "uploadRuns": [
+      40347765179,
+      40348109366,
+      40349662993
+    ],
+    "localAppleTrustCheckRun": 40350154166,
+    "localAppleTrustChecksPassed": true,
+    "storeReadBackRun": 40350160322,
+    "certificateRevocation": false,
+    "note": "Root cause not established. Managed signer is absent from filtered manual-certificate API inventory but present in profile; absence is not proof of revocation. Alternate valid CI signing identity requested."
+  }
+}

@@ -6,7 +6,7 @@ Dal `codex5-em-apple30-20261026`; mevcut native düzeltme dalı `fix-ipad-apple-
 
 ## 26 Ekim güncellemesi — test sunucusu
 
-**Sunucu yaması canlıya hazır; yayın yapılmadı.** Test: https://em-apple30-test-20261026.guclu-limited.workers.dev
+**Güncel: Sunucu 18:09 onayıyla canlıya alındı; canlı duman testleri geçti. Build30 Apple yüklemesinde Invalid Signature ile reddedildi; App Store 1.0 REJECTED, incelemeye yeniden gönderilmedi.** Test: https://em-apple30-test-20261026.guclu-limited.workers.dev
 
 - Electric Man için tam eşleşmeyle `com.tusneldax.electricman` ve `com.tusneldax.electricman.web` kabul edilir. Hunter audience ayrımı korunur. Issuer, Apple JWKS/RS256, süre, nonce/state ve tek kullanım kontrolleri kaldırılmaz.
 - Canlıdaki nonce isteği jeton gönderilmeden 401 dönüyordu: audience kontrolünden önce eksik native route sürümü sorunu vardır. Ek olarak Cloudflare gerçek isteğinde `redirect:error` TypeError/503 ürettiği kanıtlandı; JWKS isteği `manual` yapıldı, yönlendirme 3xx yanıtı reddedilir.
@@ -37,3 +37,13 @@ Yerel kanıtlar bu sohbetin `outputs/electric-man-ipad30/` klasöründe: geçerl
 
 Kaynak doğrulama kuralları: https://developer.apple.com/documentation/signinwithapple/verifying-a-user
 
+
+## 18:09 onayı sonrası operasyon sonucu
+
+Geri dönüş dağıtımı `b21765f6`, kaynak `5eb9883`, tam önceki public varlıkları `outputs/em-live30/before/public`; yalnız dört Electric Man Apple endpoint'i için eski Worker'ı saran yama canlıda `c64455cd` dağıtımıdır. `scripts/make-production-apple30.py` canlı Worker'ı byte düzeyinde yeniden üretiyor. İkinci dağıtımdan önce Windows satır sonu farkları düzeltildi; tüm diğer varlıklar eski Git blob'larıyla aynı. Ana oyun, engine ve Hunter ana sayfa SHA256'ları yayından önce/sonra aynı. Diğer host/endpoint'ler orijinal Worker'a gider; test oracle canlıya taşınmadı (bu URL'ler yalnız normal HTML fallback'idir).
+
+Canlı web Apple 302, doğru Services ID/callback, native nonce 200, geçersiz JWT/JWKS imzası 401, yabancı origin 403, geçersiz web callback login=fail. Gerçek oyuncuyla giriş/kayıt/yükleme işlemi yapılmadı; yalnız auth nonce'ları üretildi.
+
+App Store yüklemeleri `40347765179`, `40348109366`; düzeltilmiş framework kimlikleriyle doğrudan Xcode upload `40349662993`: Apple üç bileşeni Invalid Signature ile reddetti. Tam Apple anchor ve Distribution requirement kontrolü `40350154166` yerelde geçti; bu sonuç mağaza kabulü değildir. API geri okuma `40350160322`: Electric Man 6819511421 / 1.0 REJECTED, build30 yok. İnceleme notu hazırlanmış olsa da uygulanmadı, yeniden gönderim yapılmadı. Yönetilen imzanın normal sertifika envanterinde bulunmaması tek başına iptal kanıtı değildir; kök neden henüz kesinleşmedi. Ortak sertifikalara müdahale edilmeden kullanılabilecek alternatif CI imza kimliği soruldu. Sertifika iptali yok.
+
+Önceki imzalı IPA, Apple mağaza doğrulamasından geçmediği için **yüklemeye hazır değildir**. Yerel codesign başarısı için önceki kayıtlardaki hazır ifadesi bu sonuçla geçersizdir. Onay yayın için tekrar istenmiyor; eksik olan çalışır imzalama yoludur. Son bütçe, bu belgedeki önceki tahmin yerine `APPLE-LOGIN-CLOUD-COST30.json` kaydındadır.

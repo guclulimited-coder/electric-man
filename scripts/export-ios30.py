@@ -1,4 +1,5 @@
-# Export the existing archive only. No upload, no explicit certificate operations.
+# Export the existing archive; upload only with explicit ASC_APPROVED_UPLOAD.
+# No explicit certificate operations.
 # The existing CI secret goes directly to Xcode through an ephemeral protected
 # credential file; its contents are never read back, printed, or archived.
 import os, pathlib, plistlib, subprocess, json, re, textwrap

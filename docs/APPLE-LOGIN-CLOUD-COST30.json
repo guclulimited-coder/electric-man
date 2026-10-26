@@ -268,9 +268,100 @@
           "publishedRateEstimateUSD": 0.062
         }
       ]
+    },
+    {
+      "id": 40347765179,
+      "jobs": [
+        {
+          "name": "upload-approved30",
+          "conclusion": "failure",
+          "seconds": 63.0,
+          "roundedMinutes": 2,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.124
+        }
+      ]
+    },
+    {
+      "id": 40348109366,
+      "jobs": [
+        {
+          "name": "upload-approved30",
+          "conclusion": "failure",
+          "seconds": 44.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.062
+        }
+      ]
+    },
+    {
+      "id": 40348636951,
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "success",
+          "seconds": 7.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
+    },
+    {
+      "id": 40349091018,
+      "jobs": [
+        {
+          "name": "upload-approved30",
+          "conclusion": "success",
+          "seconds": 10.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.062
+        }
+      ]
+    },
+    {
+      "id": 40349662993,
+      "jobs": [
+        {
+          "name": "cloud-approved30",
+          "conclusion": "failure",
+          "seconds": 91.0,
+          "roundedMinutes": 2,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.124
+        }
+      ]
+    },
+    {
+      "id": 40350154166,
+      "jobs": [
+        {
+          "name": "upload-approved30",
+          "conclusion": "success",
+          "seconds": 11.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.062,
+          "publishedRateEstimateUSD": 0.062
+        }
+      ]
+    },
+    {
+      "id": 40350160322,
+      "jobs": [
+        {
+          "name": "apple-capability-audit",
+          "conclusion": "success",
+          "seconds": 10.0,
+          "roundedMinutes": 1,
+          "usdPerMinute": 0.006,
+          "publishedRateEstimateUSD": 0.006
+        }
+      ]
     }
   ],
-  "runnerRateEstimateUSD": 2.02,
+  "runnerRateEstimateUSD": 2.466,
   "actualInvoiceUSD": null,
   "storageChargesNotVerified": true
 }

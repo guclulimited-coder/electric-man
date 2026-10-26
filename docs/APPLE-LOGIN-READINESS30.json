@@ -13,10 +13,9 @@
     "developerPortalRegistrationVerified": false
   },
   "productionNativeNonce": {
-    "status": 401,
-    "error": "LOGIN_REQUIRED",
-    "nonceStored": false,
-    "playerCreated": false
+    "status": 200,
+    "playerCreated": false,
+    "currentProof": "docs/APPLE-PRODUCTION30.json"
   },
   "entitlement": {
     "sourceConfigured": true,
@@ -31,7 +30,7 @@
     "remoteStagingChecks": 20
   },
   "realAppleAccountLoginVerified": false,
-  "productionWorkerDeployed": false,
+  "productionWorkerDeployed": true,
   "appStoreUploaded": false,
   "testFlightUploaded": false,
   "signingKeyOrCertificateFilesOpened": "No manual inspection. Xcode alone consumed a protected ephemeral CI credential file; contents not printed or included in artifact.",
@@ -81,10 +80,9 @@
   ],
   "acceptanceReadyForStore": false,
   "openItems": [
-    "Production server deployment held for Omer approval; current production nonce endpoint is still 401.",
-    "Real Apple-account login on physical iPad not verified; simulator without account returned 1000.",
-    "Target iPadOS 27.0 unavailable; UI was tested on 26.2.",
-    "Signed build 30 upload and review submission held for separate approval."
+    "Apple upload rejects all three signatures; build30 absent in App Store Connect.",
+    "App Store version1.0 remains REJECTED. Review note/submission not applied because upload gate failed.",
+    "Real Apple-account login on physical iPad not verified."
   ],
   "archive": {
     "passed": true,
@@ -315,13 +313,17 @@
       "build": "30",
       "cmsSignaturePresent": true,
       "codesignVerifiedByMacCI": true
-    }
+    },
+    "acceptedByAppStoreConnect": false,
+    "storeValidation": "Invalid Signature; not upload-ready despite local codesign success"
   },
   "previousExportNotAccepted": {
     "runId": 40327048970,
     "reason": "Apple entitlement missing; retained and marked DO NOT UPLOAD"
   },
   "serverReadyForProductionApproval": true,
-  "signedBuildReadyForUploadApproval": true,
-  "remainingApproval": "Production deployment and App Store/TestFlight upload both held for Omer approval; real Apple account login still unverified."
+  "signedBuildReadyForUploadApproval": false,
+  "remainingApproval": "Publishing approval received at 18:09. Store is blocked by rejected code signatures; an alternate valid CI signing identity is requested, not renewed publishing permission.",
+  "appStoreUploadAttempted": true,
+  "reviewSubmitted": false
 }
