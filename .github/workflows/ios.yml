@@ -5,6 +5,10 @@ on:
     paths: ['ios/**', 'public/**', '!public/hunter/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/ios.yml']
   workflow_dispatch:
     inputs:
+      sign_only:
+        description: 'Export existing build 30 archive only; never upload or revoke certificates'
+        type: boolean
+        default: false
       enable_apple:
         description: 'Enable requested App ID Apple login capability; requires apple_audit, never uploads'
         type: boolean
@@ -34,7 +38,7 @@ env:
 jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
-    if: ${{ !inputs.ipad_check && !inputs.apple_audit && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
+    if: ${{ !inputs.sign_only && !inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -214,7 +218,7 @@ jobs:
           rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8 "$RUNNER_TEMP"/em.*
 
   ipad-unsigned-check:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.apple_audit && !inputs.upload }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.sign_only && !inputs.apple_audit && !inputs.sign_only && !inputs.upload }}
     permissions:
       contents: read
     runs-on: macos-15
@@ -267,7 +271,7 @@ jobs:
           if-no-files-found: warn
 
   apple-capability-audit:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apple_audit && !inputs.upload }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apple_audit && !inputs.sign_only && !inputs.upload }}
     runs-on: ubuntu-latest
     timeout-minutes: 4
     permissions:
@@ -295,3 +299,42 @@ jobs:
           name: electric-man-apple-capability-audit
           path: evidence/apple-capability.json
           retention-days: 3
+
+  export-build30-only:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_only && !inputs.upload && !inputs.ipad_check && !inputs.apple_audit }}
+    runs-on: macos-15
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: /scripts/export-ios30.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40294040637
+          name: electric-man-build30-ipad-unsigned
+          path: archive-input
+      - name: Unpack existing unsigned archive
+        run: |
+          mkdir build30
+          unzip -q archive-input/ElectricMan-build30-unsigned-archive.zip -d build30
+          latest=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest/Contents/Developer"
+      - name: Export only, never upload
+        timeout-minutes: 5
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: python3 scripts/export-ios30.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        timeout-minutes: 1
+        with:
+          name: electric-man-build30-export-only
+          path: evidence/sign30/
+          retention-days: 3
+          if-no-files-found: warn
