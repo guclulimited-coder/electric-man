@@ -42,11 +42,20 @@ try{
  const bundles=data.data?.filter(b=>b.attributes?.identifier===report.bundleId && ['IOS','UNIVERSAL'].includes(b.attributes?.platform))||[];
  if(bundles.length!==1)throw new Error('bundle-not-found');
  stage='capability-lookup';
- const caps=await get('bundleIds/'+encodeURIComponent(bundles[0].id)+'/bundleIdCapabilities');
+ let caps=await get('bundleIds/'+encodeURIComponent(bundles[0].id)+'/bundleIdCapabilities');
+ if(process.env.APPLE_ENABLE_CAPABILITY==='true' && !caps.data?.some(c=>c.attributes?.capabilityType==='APPLE_ID_AUTH')) {
+  stage='enable-apple-capability';report.scope='ENABLE_REQUESTED_APPLE_LOGIN_CAPABILITY';
+  const r=await fetch('https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities',{method:'POST',headers:{Authorization:'Bearer '+bearer,'Content-Type':'application/json'},body:JSON.stringify({data:{type:'bundleIdCapabilities',attributes:{capabilityType:'APPLE_ID_AUTH',settings:[{key:'APPLE_ID_AUTH_APP_CONSENT',options:[{key:'PRIMARY_APP_CONSENT'}]}]},relationships:{bundleId:{data:{type:'bundleIds',id:bundles[0].id}}}}}),redirect:'error'});
+  report.enableCapabilityHTTPStatus=r.status;
+  if(!r.ok)throw new Error('capability-enable-failed');
+  caps=await get('bundleIds/'+encodeURIComponent(bundles[0].id)+'/bundleIdCapabilities');
+ }
  report.signInWithAppleEnabled=caps.data?.some(c=>['APPLE_ID_AUTH','SIGN_IN_WITH_APPLE'].includes(c.attributes?.capabilityType))===true;
  report.capabilityTypes=caps.data?.map(c=>c.attributes?.capabilityType);
  const certs=await get('certificates?'+new URLSearchParams({'filter[certificateType]':'DISTRIBUTION,IOS_DISTRIBUTION',limit:'100'}));
  report.distributionCertificateCount=certs.data?.length;
+ report.activeDistributionCertificatesByType={};
+ for(const cert of certs.data||[]){const a=cert.attributes;if(Date.parse(a.expirationDate)>Date.now())report.activeDistributionCertificatesByType[a.certificateType]=(report.activeDistributionCertificatesByType[a.certificateType]||0)+1;}
  report.passed=true;
 }catch{
  report.passed=false;report.failedStage=stage;process.exitCode=1;

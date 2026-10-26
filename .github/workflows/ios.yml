@@ -5,6 +5,10 @@ on:
     paths: ['ios/**', 'public/**', '!public/hunter/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/ios.yml']
   workflow_dispatch:
     inputs:
+      enable_apple:
+        description: 'Enable requested App ID Apple login capability; requires apple_audit, never uploads'
+        type: boolean
+        default: false
       apple_audit:
         description: 'Read-only App ID capability audit; key stays in process memory, no files or signing'
         type: boolean
@@ -279,6 +283,7 @@ jobs:
           node-version: '22'
       - name: Read App ID capability (no key files, no certificate operations)
         env:
+          APPLE_ENABLE_CAPABILITY: ${{ inputs.enable_apple }}
           APPLE_AUDIT_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
           APPLE_AUDIT_KEY_ID: ${{ secrets.EM_ASC_KEY_ID || '7368ZSQD95' }}
           APPLE_AUDIT_ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
