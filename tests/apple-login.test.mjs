@@ -95,3 +95,23 @@ console.log('handoff/review checks ok');
  r=await api3(new Request(ORIGIN+'/api/em/native/apple/nonce',{method:'POST',headers:{origin:'https://evil.example','content-type':'application/json'},body:'{}'}));assert.equal(r.status,403);ok();
 }
 console.log('native Apple sign-in checks ok');
+
+// Build 30: malformed tokens fail closed; native login is independent of the web
+// Services ID; concurrent reuse and expired nonce never mint another session.
+{
+ const isolated={DB:d1()};
+ const post=(path,body)=>emAPI(new Request(ORIGIN+'/api/em'+path,{method:'POST',headers:{origin:ORIGIN,'content-type':'application/json'},body:JSON.stringify(body)}),isolated,{fetch:fetcher});
+ const begin=async()=>{const r=await post('/native/apple/nonce',{});assert.equal(r.status,200);return (await r.json()).nonce;};
+ let n=await begin();
+ let r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'com.tusneldax.electricman'})});assert.equal(r.status,200);ok();
+ n=await begin();isolated.DB.raw.exec('UPDATE em_nonces SET expires=0');
+ r=await post('/native/apple',{nonce:n,token:await token(n,{aud:'com.tusneldax.electricman'})});assert.equal(r.status,401);ok();
+ n=await begin();const signed=await token(n,{aud:'com.tusneldax.electricman'});
+ const result=await Promise.all([post('/native/apple',{nonce:n,token:signed}),post('/native/apple',{nonce:n,token:signed})]);
+ assert.deepEqual(result.map(r=>r.status).sort(),[200,401]);ok();
+ for(const [head,claim] of [[null,{}],[{},null],[{alg:'RS256',kid:123},{}]]){
+  const forged=Buffer.from(JSON.stringify(head)).toString('base64url')+'.'+Buffer.from(JSON.stringify(claim)).toString('base64url')+'.AA';
+  await assert.rejects(()=>verifyApple(forged,'com.tusneldax.electricman',n,fetcher),e=>e.status===401);ok();
+ }
+}
+console.log(checks+' total Apple security/API checks passed (synthetic keys and in-memory SQLite; not Apple-account acceptance)');

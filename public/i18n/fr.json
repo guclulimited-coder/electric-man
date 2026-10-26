@@ -214,5 +214,6 @@
   "eLOGIN_FAILED": "Nom d'utilisateur ou mot de passe incorrect.",
   "loginFail": "La connexion n'a pas pu aboutir. Réessaie.",
   "eAPPLE_FAILED": "La connexion n'a pas pu aboutir. Réessaie.",
-  "loginOther": "Se connecter avec Google ou e-mail"
+  "loginOther": "Se connecter avec Google ou e-mail",
+  "guestPlay": "Jouer en tant qu’invité"
 }

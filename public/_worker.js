@@ -281,7 +281,7 @@ async function verifyProvider(token, aud, nonce, provider, fetcher = fetch){
   const parts = token.split('.'); if (parts.length !== 3) fail('INVALID_IDENTITY', 401);
   let h, c; try { h = JSON.parse(new TextDecoder().decode(decode(parts[0]))); c = JSON.parse(new TextDecoder().decode(decode(parts[1]))); } catch { fail('INVALID_IDENTITY', 401); }
   const now = Date.now() / 1000;
-  if (h.alg !== 'RS256' || !(provider === 'apple' ? ['https://appleid.apple.com'] : ['accounts.google.com', 'https://accounts.google.com']).includes(c.iss) || c.aud !== aud || c.nonce !== nonce ||
+  if (!h || typeof h !== 'object' || !c || typeof c !== 'object' || typeof h.kid !== 'string' || !h.kid || h.kid.length > 200 || h.alg !== 'RS256' || !(provider === 'apple' ? ['https://appleid.apple.com'] : ['accounts.google.com', 'https://accounts.google.com']).includes(c.iss) || c.aud !== aud || c.nonce !== nonce ||
       !Number.isFinite(c.exp) || c.exp <= now || !Number.isFinite(c.iat) || c.iat > now + 60 || c.iat < now - 600 || typeof c.sub !== 'string' || !c.sub || c.sub.length > 255) fail('INVALID_IDENTITY', 401);
   const res = await fetcher(provider === 'apple' ? 'https://appleid.apple.com/auth/keys' : 'https://www.googleapis.com/oauth2/v3/certs', {signal: AbortSignal.timeout(8000), redirect:'error'}); if (!res.ok) fail('LOGIN_UNAVAILABLE', 503);
   const jwk = (await res.json()).keys?.find(k => k.kid === h.kid && k.kty === 'RSA'); if (!jwk) fail('INVALID_IDENTITY', 401);

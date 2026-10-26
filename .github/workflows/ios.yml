@@ -5,6 +5,10 @@ on:
     paths: ['ios/**', 'public/**', '!public/hunter/**', 'native/**', 'scripts/bundle-native.mjs', '.github/workflows/ios.yml']
   workflow_dispatch:
     inputs:
+      ipad_check:
+        description: 'Unsigned iPad build 30 UI check only (no signing, credentials or upload)'
+        type: boolean
+        default: false
       upload:
         description: 'Sign and upload to App Store Connect (TestFlight)'
         type: boolean
@@ -18,7 +22,7 @@ env:
 jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')
+    if: ${{ !inputs.ipad_check && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios-upload]') || contains(github.event.head_commit.message, '[ios-check]')) }}
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -196,3 +200,49 @@ jobs:
           fi
           security delete-keychain "$RUNNER_TEMP/em.keychain-db" 2>/dev/null || true
           rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8 "$RUNNER_TEMP"/em.*
+
+  ipad-unsigned-check:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.ipad_check && !inputs.upload }}
+    permissions:
+      contents: read
+    runs-on: macos-15
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /ios/
+            /src/
+            /scripts/
+            /tests/
+            /package.json
+            /schema.sql
+            /public/_worker.js
+            /public/index.html
+            /public/engine.js
+            /public/serhat.txt
+            /public/zeynep.txt
+            /public/icon-192.png
+            /public/icon-512.png
+            /public/i18n/
+            /public/avatars/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic API and native contracts
+        run: |
+          node scripts/build.mjs
+          node tests/apple-login.test.mjs
+          node tests/apple-native-contract.test.mjs
+      - name: Unsigned iPad simulator build and captures
+        run: bash scripts/check-ipad30.sh
+      - name: Preserve simulator evidence (never upload to Apple)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electric-man-build30-ipad-unsigned
+          path: evidence/ipad30/
+          retention-days: 3
+          if-no-files-found: warn

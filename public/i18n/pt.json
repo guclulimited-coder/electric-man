@@ -214,5 +214,6 @@
   "eLOGIN_FAILED": "Usuário ou senha incorretos.",
   "loginFail": "Não foi possível concluir o login. Tente novamente.",
   "eAPPLE_FAILED": "Não foi possível concluir o login. Tente novamente.",
-  "loginOther": "Entrar com Google ou e-mail"
+  "loginOther": "Entrar com Google ou e-mail",
+  "guestPlay": "Jogar como convidado"
 }
