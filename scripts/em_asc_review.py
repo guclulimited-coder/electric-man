@@ -113,6 +113,13 @@ def submit(key, build):
         n = rd['attributes'].get('notes') or ''
         if f'Build {build} (29 Oct 2026)' not in n:
             api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': extra[:3900]}}}); note('reviewer note replaced')
+    # 3b) age rating: answer Apple's new questions (owner approved 30 Oct 00:01: not a social media app)
+    for ai in api('GET', f'/v1/apps/{app}/appInfos')['data']:
+        d = (safe(api, 'GET', f"/v1/appInfos/{ai['id']}/ageRatingDeclaration") or {}).get('data')
+        if not d: continue
+        fix = {k: False for k in ('socialMedia', 'socialMediaAgeRestricted') if d['attributes'].get(k) is None}
+        if fix:
+            safe(api, 'PATCH', f"/v1/ageRatingDeclarations/{d['id']}", {'data': {'type': 'ageRatingDeclarations', 'id': d['id'], 'attributes': fix}}); note('age rating set: ' + str(fix))
     # 4) submission: version + in-app purchases
     subs = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&limit=10')['data']
     sub = next((s for s in subs if s['attributes']['state'] in ('READY_FOR_REVIEW', 'UNRESOLVED_ISSUES')), None)
