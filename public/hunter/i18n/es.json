@@ -668,5 +668,11 @@
  "bo35_1": "¡Papá! ¡La grieta se cierra! ¡Todo se iluminó!",
  "bo35_2": "Se acabó el cable, hijo. Nos vamos a casa.",
  "bo35_3": "Papá… todavía hay islas detrás de nosotros.",
- "bo35_4": "Que las haya. Un electricista siempre está de guardia."
+ "bo35_4": "Que las haya. Un electricista siempre está de guardia.",
+ "o_gateNeed": "Inicia sesión con tu cuenta para jugar.",
+ "o_gateWhy": "Tu cuenta guarda tu progreso, chats, liga y amigos en todos tus dispositivos.",
+ "o_gateCarry": "Al iniciar sesión, tu progreso en este dispositivo pasa a tu cuenta. No se borra nada.",
+ "o_gateCarried": "Tu progreso en este dispositivo se añadió a tu cuenta.",
+ "o_gateOffline": "Sin conexión. Conéctate a internet e inténtalo de nuevo.",
+ "o_gateRetry": "Reintentar"
 }

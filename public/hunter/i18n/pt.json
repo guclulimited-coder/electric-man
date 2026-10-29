@@ -668,5 +668,11 @@
  "bo35_1": "Pai! A fenda está fechando! Tudo se iluminou!",
  "bo35_2": "O cabo acabou, filho. Vamos pra casa.",
  "bo35_3": "Pai… ainda tem ilhas atrás de nós.",
- "bo35_4": "Deixa ter. Eletricista está sempre de plantão."
+ "bo35_4": "Deixa ter. Eletricista está sempre de plantão.",
+ "o_gateNeed": "Entre com sua conta para jogar.",
+ "o_gateWhy": "Sua conta guarda seu progresso, conversas, liga e amigos em todos os seus dispositivos.",
+ "o_gateCarry": "Ao entrar, seu progresso neste dispositivo vai para sua conta. Nada é apagado.",
+ "o_gateCarried": "Seu progresso neste dispositivo foi adicionado à sua conta.",
+ "o_gateOffline": "Sem conexão. Conecte-se à internet e tente de novo.",
+ "o_gateRetry": "Tentar de novo"
 }

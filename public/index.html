@@ -97,6 +97,7 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 #accountBtn{position:relative}
 #accountDot{position:absolute;right:3px;top:3px;width:9px;height:9px;border-radius:50%;background:#2fb36d;border:2px solid #fff}
 .sheet{position:absolute;inset:0;z-index:28;background:rgba(22,48,79,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet.gate{background:linear-gradient(#6ec6ff,#d9f3ff);align-items:stretch}.sheet.gate .sheet-card{max-height:100%;border-radius:0;padding-top:env(safe-area-inset-top,0px)}.sheet.gate #sheetClose{display:none}.gate-need{font-weight:700;color:var(--ink)!important;font-size:16px!important}
 .sheet-card{background:#fff;width:100%;max-height:88%;border-radius:20px 20px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 30px rgba(22,48,79,.25)}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px}
 .sheet-head h2{font-family:var(--f-display);font-weight:400;font-size:19px;margin:0;color:var(--ink)}
@@ -1020,6 +1021,14 @@ $('coinChip').onclick = () => Shop.open();
 const API = '/api/em';
 const Online = (() => {
   let cfg = null, me = null, revision = 0, saveTimer = null, saving = false;
+  /* login-required (29 Ekim 2026, sahip kararı): misafir oynama yok. Giriş yapılmadan tahta açılmaz; bu cihazdaki ilerleme girişte hesaba eklenir (sync/applySave en yükseği tutar), silinmez. */
+  let gate = false;
+  const hasLocal = () => maxLevel > 1 || Object.keys(store.get('stars', {})).length > 0;
+  const gateHead = () => gate ? `<p class="gate-need">${esc(T('gateNeed'))}</p><p>${esc(T('gateWhy'))}</p>${hasLocal() && !store.get('carried', 0) ? `<p>${esc(T('gateCarry'))}</p>` : ''}` : '';
+  function gateOn(){ if (SHOT) return; gate = true; $('sheet').classList.add('gate'); openAccount(); }
+  function gateOffline(){ if (SHOT) return; gate = true; $('sheet').classList.add('gate'); const b = sheet(T('loginTitle'), `<p class="gate-need">${esc(T('gateNeed'))}</p><p>${esc(T('gateWhy'))}</p><div class="err">${esc(T('gateOffline'))}</div><button class="btn" id="gateRetry">${esc(T('gateRetry'))}</button>${langPicker()}`); bindLang(b); b.querySelector('#gateRetry').onclick = ev => { ev.currentTarget.disabled = true; init(); }; }
+  function gateOff(){ const carried = gate && hasLocal() && !store.get('carried', 0); gate = false; store.set('acct', 1); if (carried) store.set('carried', 1); $('sheet').classList.remove('gate'); $('sheet').hidden = true; stopChat(); say(carried ? T('gateCarried') : T('welcome', {name: me.name})); }
+  const gated = () => gate;
   let badges = {requests:0, unread:0}, badgeTimer = null, chat = null;
   const msg = e => { const k = 'e' + e; return L[k] ? T(k) : T('eNET'); };
   function shotApi(path){
@@ -1084,15 +1093,19 @@ const Online = (() => {
     catch (e){ say(msg(e.message)); btn.disabled = false; }
   }
   async function init(){
+    if (!SHOT && !me && !store.get('acct', 0)){ gate = true; $('sheet').classList.add('gate'); sheet(T('loginTitle'), `<p>…</p>`); }
     try { cfg = await call('/config'); } catch { cfg = null; }
-    if (!cfg) return;
-    try { setMe((await call('/me')).player); } catch {}
+    if (!cfg){ if (!SHOT && !store.get('acct', 0)) gateOffline(); else if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } return; }
+    let meErr = false;
+    try { setMe((await call('/me')).player); } catch { meErr = true; }
+    if (me){ store.set('acct', 1); if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } }
+    else if (!SHOT){ if (meErr && store.get('acct', 0)){ if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } } else gateOn(); }
     if (me) sync().then(claimWeb);
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); say(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     const login = new URLSearchParams(location.search).get('login');
     if (login){ history.replaceState(null, '', location.pathname); say(['tiktok','apple'].includes(login) && me ? T('welcome', {name: me.name}) : T('ttFail')); }
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && me) pollBadges(); });
+    if (!init.bound){ init.bound = true; document.addEventListener('visibilitychange', () => { if (!document.hidden && me) pollBadges(); }); }
   }
 
   /* ---------- notification badges (friend requests + unread messages) ---------- */
@@ -1130,13 +1143,13 @@ const Online = (() => {
   async function openAccount(){
     if (!cfg){ const b = sheet(T('accTitle'), `<p>${esc(T('accPreview'))}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`); bindLang(b); bindSettings(b); return; }
     if (!me && Native.app){
-      const b = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p><button class="btn" id="appLogin">${esc(T('loginApp'))}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
+      const b = sheet(T('loginTitle'), `${gateHead()}<p>${esc(T('loginIntro'))}</p><button class="btn" id="appLogin">${esc(T('loginApp'))}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
       bindLang(b); bindSettings(b);
-      b.querySelector('#appLogin').onclick = async ev => { ev.currentTarget.disabled = true; try { await Native.call({action:'login', lang: LANG}); setMe((await call('/me')).player); if (me){ await sync(); accountView(); say(T('welcome', {name: me.name})); } } catch (e){ if (e.message !== 'LOGIN_CANCELLED') $('loginErr').textContent = msg(e.message); } ev.currentTarget.disabled = false; };
+      b.querySelector('#appLogin').onclick = async ev => { const btn = ev.currentTarget; btn.disabled = true; try { await Native.call({action:'login', lang: LANG}); setMe((await call('/me')).player); if (me){ await sync(); if (gate) gateOff(); else { accountView(); say(T('welcome', {name: me.name})); } } } catch (e){ if (e.message !== 'LOGIN_CANCELLED') $('loginErr').textContent = msg(e.message); } btn.disabled = false; };
       return;
     }
     if (me) return accountView();
-    const body = sheet(T('loginTitle'), `<p>${esc(T('loginIntro'))}</p>
+    const body = sheet(T('loginTitle'), `${gateHead()}<p>${esc(T('loginIntro'))}</p>
       ${cfg.googleClientId ? '<div id="gbtn"></div>' : ''}
       ${cfg.appleClientId ? `<a class="btn apple" href="/api/em/auth/apple/start?back=%2F">${esc(T('apple'))}</a>` : ''}
       ${cfg.tiktok ? `<a class="btn tt" href="/api/em/auth/tiktok/start?back=%2F">${esc(T('tiktok'))}</a>` : ''}
@@ -1149,7 +1162,7 @@ const Online = (() => {
       <p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
     bindLang(body); bindSettings(body);
     const err = t => { $('loginErr').textContent = t || ''; };
-    const done = async () => { setMe((await call('/me')).player); await sync(); await claimWeb(); accountView(); say(T('welcome', {name: me.name})); };
+    const done = async () => { setMe((await call('/me')).player); await sync(); await claimWeb(); if (gate) gateOff(); else { accountView(); say(T('welcome', {name: me.name})); } };
     if (cfg.googleClientId) googleButton(async token => { try { await call('/auth/google', {token}); await done(); } catch (e){ err(msg(e.message)); } });
     if (cfg.email){
       let challenge = null;
@@ -1179,8 +1192,8 @@ const Online = (() => {
     const err = t => { $('accErr').textContent = t || ''; };
     body.querySelector('#nameSave').onclick = async () => { try { const r = await call('/profile', {name: $('em_name').value}); me.name = r.name; $('em_name').value = r.name; err(''); say(T('nameSaved', {n: r.name})); } catch (e){ err(msg(e.message)); } };
     body.querySelector('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(me.code); say(T('copied', {c: me.code})); } catch { const r = document.createRange(); r.selectNodeContents($('myCode')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
-    body.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch {} setMe(null); $('sheet').hidden = true; say(T('loggedOut')); };
-    body.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); $('sheet').hidden = true; say(T('deleted')); } catch (e){ err(e.message === 'CONFIRM_DELETE' ? T('confirmDel', {w}) : msg(e.message)); } };
+    body.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch {} setMe(null); $('sheet').hidden = true; say(T('loggedOut')); gateOn(); };
+    body.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); $('sheet').hidden = true; say(T('deleted')); gateOn(); } catch (e){ err(e.message === 'CONFIRM_DELETE' ? T('confirmDel', {w}) : msg(e.message)); } };
   }
   function googleButton(onToken){
     const render = async () => {
@@ -1319,13 +1332,13 @@ const Online = (() => {
     input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); } });
     poll(); setTimeout(() => pollBadges(), 2500);
   }
-  return {init, saveSoon, cleared, openAccount, openLeague, openFriends, stopChat, sheet, webPay, buyWeb};
+  return {init, gated, saveSoon, cleared, openAccount, openLeague, openFriends, stopChat, sheet, webPay, buyWeb};
 })();
 $('accountBtn').onclick = () => Online.openAccount();
 $('leagueBtn').onclick = () => Online.openLeague();
 $('msgBtn').onclick = () => Online.openFriends();
-$('sheetClose').onclick = () => { $('sheet').hidden = true; Online.stopChat(); };
-$('sheet').addEventListener('click', e => { if (e.target.id === 'sheet'){ $('sheet').hidden = true; Online.stopChat(); } });
+$('sheetClose').onclick = () => { if (Online.gated()) return; $('sheet').hidden = true; Online.stopChat(); };
+$('sheet').addEventListener('click', e => { if (e.target.id === 'sheet' && !Online.gated()){ $('sheet').hidden = true; Online.stopChat(); } });
 
 /* ---------- main loop ---------- */
 let lastT = performance.now();

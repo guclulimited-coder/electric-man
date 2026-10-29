@@ -211,5 +211,11 @@
   "reviewLogin": "Entrar con cuenta demo (App Review)",
   "reviewUser": "Usuario",
   "reviewPass": "Contraseña",
-  "eLOGIN_FAILED": "Usuario o contraseña incorrectos."
+  "eLOGIN_FAILED": "Usuario o contraseña incorrectos.",
+  "gateNeed": "Inicia sesión con tu cuenta para jugar.",
+  "gateWhy": "Tu cuenta guarda tu progreso, chats, liga y amigos en todos tus dispositivos.",
+  "gateCarry": "Al iniciar sesión, tu progreso en este dispositivo pasa a tu cuenta. No se borra nada.",
+  "gateCarried": "Tu progreso en este dispositivo se añadió a tu cuenta.",
+  "gateOffline": "Sin conexión. Conéctate a internet e inténtalo de nuevo.",
+  "gateRetry": "Reintentar"
 }

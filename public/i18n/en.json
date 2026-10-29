@@ -211,5 +211,11 @@
   "reviewLogin": "Sign in with demo account (App Review)",
   "reviewUser": "Username",
   "reviewPass": "Password",
-  "eLOGIN_FAILED": "Wrong username or password."
+  "eLOGIN_FAILED": "Wrong username or password.",
+  "gateNeed": "Sign in with your account to play.",
+  "gateWhy": "Your account keeps your progress, chats, league and friends on all your devices.",
+  "gateCarry": "Your progress on this device moves to your account when you sign in. Nothing is deleted.",
+  "gateCarried": "Your progress on this device was added to your account.",
+  "gateOffline": "No connection. Connect to the internet and try again.",
+  "gateRetry": "Try again"
 }

@@ -211,5 +211,11 @@
   "reviewLogin": "Demo hesap ile giriş (App Review)",
   "reviewUser": "Kullanıcı adı",
   "reviewPass": "Parola",
-  "eLOGIN_FAILED": "Kullanıcı adı veya parola hatalı."
+  "eLOGIN_FAILED": "Kullanıcı adı veya parola hatalı.",
+  "gateNeed": "Oynamak için hesabınla giriş yap.",
+  "gateWhy": "Hesabın ilerlemeni, sohbetini, ligini ve arkadaşlarını tüm cihazlarda saklar.",
+  "gateCarry": "Bu cihazdaki ilerlemen giriş yapınca hesabına aktarılır; hiçbir şey silinmez.",
+  "gateCarried": "Bu cihazdaki ilerlemen hesabına eklendi.",
+  "gateOffline": "İnternet bağlantısı yok. Bağlanıp tekrar dene.",
+  "gateRetry": "Tekrar dene"
 }

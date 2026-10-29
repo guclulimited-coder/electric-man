@@ -211,5 +211,11 @@
   "reviewLogin": "Mit Demo-Konto anmelden (App Review)",
   "reviewUser": "Benutzername",
   "reviewPass": "Passwort",
-  "eLOGIN_FAILED": "Benutzername oder Passwort falsch."
+  "eLOGIN_FAILED": "Benutzername oder Passwort falsch.",
+  "gateNeed": "Melde dich mit deinem Konto an, um zu spielen.",
+  "gateWhy": "Dein Konto speichert Fortschritt, Chats, Liga und Freunde auf all deinen Geräten.",
+  "gateCarry": "Bei der Anmeldung wird dein Fortschritt auf diesem Gerät in dein Konto übernommen. Nichts wird gelöscht.",
+  "gateCarried": "Dein Fortschritt auf diesem Gerät wurde deinem Konto hinzugefügt.",
+  "gateOffline": "Keine Verbindung. Verbinde dich mit dem Internet und versuche es erneut.",
+  "gateRetry": "Erneut versuchen"
 }

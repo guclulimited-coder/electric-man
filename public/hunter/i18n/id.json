@@ -668,5 +668,11 @@
  "bo35_1": "Ayah! Celahnya menutup! Semuanya terang!",
  "bo35_2": "Kabelnya sudah tuntas, Nak. Kita pulang.",
  "bo35_3": "Ayah… di belakang masih ada pulau-pulau.",
- "bo35_4": "Biar saja. Tukang listrik selalu siaga."
+ "bo35_4": "Biar saja. Tukang listrik selalu siaga.",
+ "o_gateNeed": "Masuk dengan akunmu untuk bermain.",
+ "o_gateWhy": "Akunmu menyimpan progres, obrolan, liga, dan teman di semua perangkatmu.",
+ "o_gateCarry": "Saat masuk, progres di perangkat ini dipindahkan ke akunmu. Tidak ada yang dihapus.",
+ "o_gateCarried": "Progres di perangkat ini telah ditambahkan ke akunmu.",
+ "o_gateOffline": "Tidak ada koneksi. Sambungkan ke internet lalu coba lagi.",
+ "o_gateRetry": "Coba lagi"
 }

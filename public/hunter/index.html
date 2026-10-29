@@ -76,6 +76,7 @@ body{margin:0;background:var(--void);color:var(--ink);font-family:var(--f-ui);ov
 .item .lvl{font:400 14px var(--f-display);color:var(--volt)}
 .buy{border:0;border-radius:10px;padding:8px 10px;min-width:92px;background:var(--gold);color:#1a1200;font:700 13px var(--f-ui);cursor:pointer;font-variant-numeric:tabular-nums}
 .buy:disabled{background:rgba(255,255,255,.1);color:var(--muted);cursor:not-allowed}
+#gateBox{display:grid;gap:10px;text-align:left;width:min(420px,100%);margin:0 auto}#gateBox[hidden]{display:none}#gateBox .buy{min-height:46px;font-size:15px}#gateBox a.buy{display:flex;align-items:center;justify-content:center;text-decoration:none;color:#1a1200}#gateBox .gate-need{font-weight:700;color:var(--gold);font-size:16px;text-align:center}#gateBox .note{text-align:center}#gateBox select{width:100%}
 .buy.alt{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(255,201,74,.6);color:var(--gold)}
 .buy.tt{display:block;text-align:center;text-decoration:none;background:#111;color:#fff;padding:12px;font-size:14px;border-radius:999px;margin:6px 0}
 .note{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
@@ -250,6 +251,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
     <div class="eyebrow">TusneldaX</div>
     <h1>Electric <em>Hunter</em></h1>
     <p class="story" data-th="story">Uzaylı canavarlar elektrikçi Serhat'ın oğlunu kaçırıp yarığın öbür tarafına götürdü. Serhat kablosunu kuşanıp portaldan onların boyutuna geçiyor. <span>Orada yediği her canavarın gücü ona geçiyor, düşürdüğü her silah onun oluyor.</span></p>
+    <div id="gateBox" hidden></div>
     <dl class="how">
       <dt data-t="howWalk">Yürü</dt><dd data-t="howWalkD">Ekranın neresine dokunursan orada joystick çıkar, sürükle (klavyede WASD)</dd>
       <dt data-t="howAtk">Saldır</dt><dd data-t="howAtkD">Canavar menzile girince bütün silahların kendiliğinden vurur</dd>
@@ -309,7 +311,7 @@ let LANG = LANG_NAMES[lsGet('lang')] ? lsGet('lang') : detectLang();
 const loadLang = c => fetch('i18n/' + c + '.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 let L = {}, LTR = {};
 try { [L, LTR] = await Promise.all([loadLang(LANG), LANG === 'tr' ? null : loadLang('tr')]); if (!LTR) LTR = L; } catch(e){ try { LANG = 'en'; [L, LTR] = await Promise.all([loadLang('en'), loadLang('tr')]); } catch(e2){ try { LANG = 'tr'; L = LTR = await loadLang('tr'); } catch(e3){} } }
-const BUILD = '2026-10-23.6'; // bump on every deploy so a cached copy is easy to spot
+const BUILD = '2026-10-29.1'; // bump on every deploy so a cached copy is easy to spot
 $('buildTag').textContent = 'v' + BUILD; console.log('Electric Hunter build', BUILD);
 const T = (k, v = {}) => { let s = L[k]; if (typeof s !== 'string') s = LTR[k]; if (typeof s !== 'string') s = k; return s.replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m); };
 const UP = s => String(s).toLocaleUpperCase(LANG);
@@ -2095,6 +2097,19 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;',
 const Online = (() => {
   const API = '/api/em';
   let cfg = null, me = null, revision = 0, saveTimer = null, saving = false, badges = {requests: 0, unread: 0}, badgeTimer = null, chat = null, lastScore = '';
+  /* login-required (29 Ekim 2026, sahip kararı): misafir oynama yok. Portal düğmesi girişten sonra görünür; bu cihazdaki kayıt girişte hesaba eklenir (applySave daha ileri olanı tutar), silinmez. */
+  let gate = false;
+  const hasLocal = () => { const sv = store.get('save', null); return !!(sv && (sv.isl || sv.eaten)); };
+  const gateHead = () => gate ? `<p class="gate-need">${esc(T('o_gateNeed'))}</p><p class="note">${esc(T('o_gateWhy'))}</p>${hasLocal() && !store.get('carried', 0) ? `<p class="note">${esc(T('o_gateCarry'))}</p>` : ''}` : '';
+  const gatePut = h => { const g = $('gateBox'); g.innerHTML = h; return g; };
+  function startLabel(){ const b = $('startBtn'); if (!b || b.disabled) return; const sv = store.get('save', null); b.textContent = sv && sv.isl ? T('continueIsl', {n: sv.isl + 1}) : T('enterPortal'); }
+  function gateShow(){ gate = true; $('startBtn').hidden = true; $('gateBox').hidden = false; }
+  function gateOn(){ if (running){ try { saveGame(); } catch(e){} location.reload(); return; } gateShow(); account(); }
+  function gateOffline(){ gateShow(); const g = gatePut(`<p class="gate-need">${esc(T('o_gateNeed'))}</p><p class="note">${esc(T('o_gateWhy'))}</p><div class="err">${esc(T('o_gateOffline'))}</div><button class="buy" type="button" id="gateRetry">${esc(T('o_gateRetry'))}</button>${langPicker()}`); g.querySelector('#gateRetry').onclick = ev => { ev.currentTarget.disabled = true; init(); }; bindGateLang(g); }
+  function bindGateLang(g){ const sel = g.querySelector('#langSel'); if (sel) sel.onchange = () => { try { localStorage.setItem('pa-lang', JSON.stringify(sel.value)); } catch(e){} location.reload(); }; }
+  function gateHide(){ gate = false; $('gateBox').hidden = true; $('gateBox').innerHTML = ''; $('startBtn').hidden = false; startLabel(); }
+  function gateOff(){ const carried = gate && hasLocal() && !store.get('carried', 0); store.set('acct', 1); if (carried) store.set('carried', 1); gateHide(); toast(carried ? T('o_gateCarried') : T('o_welcome', {name: me.name})); }
+  const gated = () => gate;
   const msg = e => { const k = 'o_e' + e; return (L[k] || LTR[k]) ? T(k) : T('o_eNET'); };
   async function call(path, body){
     if (Native.app){
@@ -2154,16 +2169,21 @@ const Online = (() => {
     catch(e){ toast(msg(e.message)); btn.disabled = false; }
   }
   async function init(){
+    if (!me && !store.get('acct', 0)){ gateShow(); gatePut(`<p class="note">…</p>`); }
     try { cfg = await call('/config'); } catch(e){ cfg = null; }
-    if (!cfg) return;
-    try { setMe((await call('/me')).player); } catch(e){}
-    if (me){ await sync(); score(); await claimWeb(); }
+    if (!cfg){ if (!store.get('acct', 0)) gateOffline(); else if (gate) gateHide(); return; }
+    let meErr = false;
+    try { setMe((await call('/me')).player); } catch(e){ meErr = true; }
+    if (me){ store.set('acct', 1); if (gate) gateHide(); }
+    else if (meErr && store.get('acct', 0)){ if (gate) gateHide(); }
+    else gateOn();
+    if (me){ await sync(); score(); await claimWeb(); startLabel(); }
     if (webPay()){ $('shopNote2').textContent = T('payNote'); }
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); toast(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     const login = new URLSearchParams(location.search).get('login');
     if (login){ history.replaceState(null, '', location.pathname); toast(['tiktok','apple'].includes(login) && me ? T('o_welcome', {name: me.name}) : T('ttFail')); }
-    setInterval(() => { if (running && me) score(); }, 60000);
+    if (!init.bound){ init.bound = true; setInterval(() => { if (running && me) score(); }, 60000); }
   }
   function renderBadge(b){ const n = (b.requests || 0) + (b.unread || 0), el = $('profDot'); el.hidden = !n; el.textContent = n > 99 ? '99+' : n; }
   async function pollBadges(){
@@ -2208,17 +2228,19 @@ const Online = (() => {
         <details><summary class="note" style="cursor:pointer">${T('o_delAcc')}</summary><p class="note">${esc(T('o_delText', {w}))}</p><div class="field"><input id="delConfirm" placeholder="${esc(w)}"><button class="buy alt" type="button" id="delGo">${T('o_del')}</button></div></details>`);
       b.querySelector('#nameSave').onclick = async () => { try { const r = await call('/profile', {name: $('ehName').value}); me.name = r.name; $('profName').textContent = r.name; toast(T('o_nameSaved', {n: r.name})); err('accErr'); } catch(e){ err('accErr', msg(e.message)); } };
       b.querySelector('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(me.code); toast(T('o_copied', {c: me.code})); } catch(e){ $('ehCode').select(); } };
-      b.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch(e){} setMe(null); toast(T('o_loggedOut')); render(); };
-      b.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); toast(T('o_deleted')); render(); } catch(e){ err('accErr', e.message === 'CONFIRM_DELETE' ? T('o_confirmDel', {w}) : msg(e.message)); } };
+      b.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch(e){} setMe(null); toast(T('o_loggedOut')); gateOn(); };
+      b.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); toast(T('o_deleted')); gateOn(); } catch(e){ err('accErr', e.message === 'CONFIRM_DELETE' ? T('o_confirmDel', {w}) : msg(e.message)); } };
       return;
     }
-    const done = async () => { setMe((await call('/me')).player); await sync(); score(); await claimWeb(); toast(T('o_welcome', {name: me.name})); render(); };
+    const done = async () => { setMe((await call('/me')).player); await sync(); score(); await claimWeb(); if (gate){ gateOff(); return; } toast(T('o_welcome', {name: me.name})); render(); };
+    const put = gate ? gatePut : body;
     if (Native.app){
-      const b = body(`<p class="note">${T('accNote')}</p><button class="buy" type="button" id="appLogin">${T('o_loginApp')}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p>${extras()}`);
+      const b = put(`${gateHead()}<p class="note">${T('accNote')}</p><button class="buy" type="button" id="appLogin">${T('o_loginApp')}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p>${gate ? langPicker() : extras()}`);
+      if (gate) bindGateLang(b);
       b.querySelector('#appLogin').onclick = async ev => { ev.currentTarget.disabled = true; try { await Native.call({action: 'login', lang: LANG}); await done(); } catch(e){ if (e.message !== 'LOGIN_CANCELLED') err('loginErr', msg(e.message)); } if ($('appLogin')) $('appLogin').disabled = false; };
       return;
     }
-    const b = body(`<p class="note">${T('accNote')}</p>
+    const b = put(`${gateHead()}<p class="note">${T('accNote')}</p>
       ${cfg.googleClientId ? '<div id="gbtn" style="min-height:44px"></div>' : ''}
       ${cfg.appleClientId ? `<a class="buy apple" href="/api/em/auth/apple/start?back=${location.pathname.startsWith('/hunter/') ? '%2Fhunter%2F' : '%2F'}">${esc(T('apple'))}</a>` : ''}
       ${cfg.tiktok ? `<a class="buy tt" href="/api/em/auth/tiktok/start?back=${location.pathname.startsWith('/hunter/') ? '%2Fhunter%2F' : '%2F'}">${esc(T('tiktok'))}</a>` : ''}
@@ -2226,7 +2248,8 @@ const Online = (() => {
       ${cfg.email ? `<div class="field"><input id="ehEmail" type="email" inputmode="email" autocomplete="email" placeholder="${esc(T('o_emailPh'))}" style="text-transform:none;letter-spacing:0"></div>
         <div class="field" id="codeField" hidden><input id="ehOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="${esc(T('o_codeLbl'))}"></div>
         <button class="buy" type="button" id="emailGo">${T('o_sendCode')}</button>` : ''}
-      <div class="err" id="loginErr"></div><p class="note">${legal()}</p>${extras()}`);
+      <div class="err" id="loginErr"></div><p class="note">${legal()}</p>${gate ? langPicker() : extras()}`);
+    if (gate) bindGateLang(b);
     if (cfg.googleClientId) googleButton(async token => { try { await call('/auth/google', {token}); await done(); } catch(e){ err('loginErr', msg(e.message)); } });
     if (cfg.email){
       let challenge = null;
@@ -2338,7 +2361,7 @@ const Online = (() => {
     $('chatSend').onclick = send; input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter' && !e.isComposing){ e.preventDefault(); send(); } });
     poll(); setTimeout(pollBadges, 2500);
   }
-  return {init, render, saveSoon, score, stopChat, claimWeb, buyWeb, webPay, get me(){ return me; }};
+  return {init, gated, render, saveSoon, score, stopChat, claimWeb, buyWeb, webPay, get me(){ return me; }};
 })();
 function renderProfile(){ Online.render(); }
 $('profile').addEventListener('click', e => {
@@ -2458,7 +2481,7 @@ $('shopPacks').addEventListener('click', e => {
 $('resumeBtn').addEventListener('click', togglePause);
 $('againBtn').addEventListener('click', respawnHere);
 
-$('startBtn').addEventListener('click', () => { if (!store.get('introSeen', 0) && serhatBuf){ $('title').hidden = true; playIntro(startGame); } else startGame(); });
+$('startBtn').addEventListener('click', () => { if (Online.gated()) return; if (!store.get('introSeen', 0) && serhatBuf){ $('title').hidden = true; playIntro(startGame); } else startGame(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && running && !paused) togglePause(); });
 
 // ---------------------------------------------------------------- HUD

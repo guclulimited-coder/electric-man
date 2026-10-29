@@ -668,5 +668,11 @@
  "bo35_1": "Dad! The rift is closing! Everything lit up!",
  "bo35_2": "The cable is done, son. We're going home.",
  "bo35_3": "Dad… there are still islands behind us.",
- "bo35_4": "Let there be. An electrician is always on watch."
+ "bo35_4": "Let there be. An electrician is always on watch.",
+ "o_gateNeed": "Sign in with your account to play.",
+ "o_gateWhy": "Your account keeps your progress, chats, league and friends on all your devices.",
+ "o_gateCarry": "Your progress on this device moves to your account when you sign in. Nothing is deleted.",
+ "o_gateCarried": "Your progress on this device was added to your account.",
+ "o_gateOffline": "No connection. Connect to the internet and try again.",
+ "o_gateRetry": "Try again"
 }

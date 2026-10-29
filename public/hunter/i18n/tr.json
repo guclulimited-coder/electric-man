@@ -668,5 +668,11 @@
  "bo35_1": "Baba! Yarık kapanıyor! Her şey aydınlandı!",
  "bo35_2": "Kablo bitti oğlum. Eve gidiyoruz.",
  "bo35_3": "Baba… arkada hâlâ adalar var.",
- "bo35_4": "Olsun. Elektrikçi her zaman nöbette."
+ "bo35_4": "Olsun. Elektrikçi her zaman nöbette.",
+ "o_gateNeed": "Oynamak için hesabınla giriş yap.",
+ "o_gateWhy": "Hesabın ilerlemeni, sohbetini, ligini ve arkadaşlarını tüm cihazlarda saklar.",
+ "o_gateCarry": "Bu cihazdaki ilerlemen giriş yapınca hesabına aktarılır; hiçbir şey silinmez.",
+ "o_gateCarried": "Bu cihazdaki ilerlemen hesabına eklendi.",
+ "o_gateOffline": "İnternet bağlantısı yok. Bağlanıp tekrar dene.",
+ "o_gateRetry": "Tekrar dene"
 }

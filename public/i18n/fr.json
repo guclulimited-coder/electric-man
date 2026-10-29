@@ -211,5 +211,11 @@
   "reviewLogin": "Connexion avec un compte démo (App Review)",
   "reviewUser": "Nom d'utilisateur",
   "reviewPass": "Mot de passe",
-  "eLOGIN_FAILED": "Nom d'utilisateur ou mot de passe incorrect."
+  "eLOGIN_FAILED": "Nom d'utilisateur ou mot de passe incorrect.",
+  "gateNeed": "Connecte-toi à ton compte pour jouer.",
+  "gateWhy": "Ton compte conserve ta progression, tes discussions, ta ligue et tes amis sur tous tes appareils.",
+  "gateCarry": "En te connectant, ta progression sur cet appareil passe sur ton compte. Rien n’est supprimé.",
+  "gateCarried": "Ta progression sur cet appareil a été ajoutée à ton compte.",
+  "gateOffline": "Pas de connexion. Connecte-toi à internet et réessaie.",
+  "gateRetry": "Réessayer"
 }

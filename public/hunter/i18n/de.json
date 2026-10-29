@@ -668,5 +668,11 @@
  "bo35_1": "Papa! Der Riss schließt sich! Alles leuchtet!",
  "bo35_2": "Das Kabel ist am Ende, mein Sohn. Wir gehen nach Hause.",
  "bo35_3": "Papa… hinter uns sind noch Inseln.",
- "bo35_4": "Sollen sie. Ein Elektriker hat immer Bereitschaft."
+ "bo35_4": "Sollen sie. Ein Elektriker hat immer Bereitschaft.",
+ "o_gateNeed": "Melde dich mit deinem Konto an, um zu spielen.",
+ "o_gateWhy": "Dein Konto speichert Fortschritt, Chats, Liga und Freunde auf all deinen Geräten.",
+ "o_gateCarry": "Bei der Anmeldung wird dein Fortschritt auf diesem Gerät in dein Konto übernommen. Nichts wird gelöscht.",
+ "o_gateCarried": "Dein Fortschritt auf diesem Gerät wurde deinem Konto hinzugefügt.",
+ "o_gateOffline": "Keine Verbindung. Verbinde dich mit dem Internet und versuche es erneut.",
+ "o_gateRetry": "Erneut versuchen"
 }

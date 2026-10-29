@@ -668,5 +668,11 @@
  "bo35_1": "Papa ! La faille se ferme ! Tout s'est allumé !",
  "bo35_2": "Le câble est au bout, fiston. On rentre à la maison.",
  "bo35_3": "Papa… il y a encore des îles derrière nous.",
- "bo35_4": "Qu'il y en ait. Un électricien est toujours de garde."
+ "bo35_4": "Qu'il y en ait. Un électricien est toujours de garde.",
+ "o_gateNeed": "Connecte-toi à ton compte pour jouer.",
+ "o_gateWhy": "Ton compte conserve ta progression, tes discussions, ta ligue et tes amis sur tous tes appareils.",
+ "o_gateCarry": "En te connectant, ta progression sur cet appareil passe sur ton compte. Rien n’est supprimé.",
+ "o_gateCarried": "Ta progression sur cet appareil a été ajoutée à ton compte.",
+ "o_gateOffline": "Pas de connexion. Connecte-toi à internet et réessaie.",
+ "o_gateRetry": "Réessayer"
 }
