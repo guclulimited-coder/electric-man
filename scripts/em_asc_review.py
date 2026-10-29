@@ -43,8 +43,9 @@ def items(sub):
     r = safe(api, 'GET', f'/v1/reviewSubmissions/{sub}/items?limit=50&include=appStoreVersion')
     return (r or {}).get('data', [])
 
-def check():
+def check(only=None):
     for key, (app, bid_name, name) in APPS.items():
+        if only and key not in only: continue
         note(f'== {name} {app}')
         for v in versions(app):
             va = v['attributes']; b = (safe(api, 'GET', f"/v1/appStoreVersions/{v['id']}/build") or {}).get('data')
@@ -155,6 +156,6 @@ def agecheck(key):
     if r: note('VAGE ' + json.dumps(r['data']['attributes'])[:3000])
 
 if MODE[0] == 'agecheck': agecheck(MODE[1])
-if MODE[0] == 'check': check()
+if MODE[0] == 'check': check(MODE[1:] or None)
 elif MODE[0] == 'submit':
     for i in range(1, len(MODE), 2): submit(MODE[i], MODE[i + 1])
