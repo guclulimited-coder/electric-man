@@ -101,10 +101,14 @@ jobs:
           k = temp / 'em.key'; csr = temp / 'em.csr'
           subprocess.run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(k), '-out', str(csr), '-subj', '/CN=Electric Man CI/O=TusneldaX/C=TR'], check=True, capture_output=True)
           csr_b64 = ''.join(l for l in csr.read_text().splitlines() if not l.startswith('-----'))
+          sign_id = 'Apple Distribution'
           def make():
-              try: return api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': 'DISTRIBUTION', 'csrContent': csr_b64}}})['data']
-              except urllib.error.HTTPError as e:
-                  if e.code != 409: raise
+              global sign_id
+              for ctype, ident in [('DISTRIBUTION', 'Apple Distribution'), ('IOS_DISTRIBUTION', 'iPhone Distribution')]:
+                  try:
+                      c = api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': ctype, 'csrContent': csr_b64}}})['data']; sign_id = ident; return c
+                  except urllib.error.HTTPError as e:
+                      if e.code != 409: raise
               return None
           cert = make()
           if not cert:
@@ -116,6 +120,7 @@ jobs:
                   except Exception as e: print('::warning::could not revoke ' + pid + ': ' + str(e))
                   time.sleep(5); cert = make()
           if not cert: print('::error::Apple distribution certificate limit reached'); sys.exit(1)
+          (temp / 'em-sign-id').write_text(sign_id)
           (temp / 'em-cert-id').write_text(cert['id'])
           der = temp / 'em.cer'; der.write_bytes(base64.b64decode(cert['attributes']['certificateContent']))
           pem = temp / 'em.pem'; subprocess.run(['openssl', 'x509', '-inform', 'DER', '-in', str(der), '-out', str(pem)], check=True)
@@ -140,15 +145,16 @@ jobs:
           for d in [pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles', pathlib.Path.home() / 'Library/Developer/Xcode/UserData/Provisioning Profiles']:
               d.mkdir(parents=True, exist_ok=True); (d / (info['UUID'] + '.mobileprovision')).write_bytes(pf.read_bytes())
           pathlib.Path('ExportOptions.plist').write_bytes(plistlib.dumps({'method': 'app-store-connect', 'destination': 'upload', 'signingStyle': 'manual', 'teamID': env['TEAM_ID'],
-              'signingCertificate': 'Apple Distribution', 'provisioningProfiles': {bid_name: info['Name']}, 'manageAppVersionAndBuildNumber': False, 'uploadSymbols': True}))
+              'signingCertificate': sign_id, 'provisioningProfiles': {bid_name: info['Name']}, 'manageAppVersionAndBuildNumber': False, 'uploadSymbols': True}))
           (temp / 'em-profile-name').write_text(info['Name'])
           apps = api('GET', '/v1/apps?filter[bundleId]=' + bid_name)['data']
           print('::notice::temporary distribution certificate ' + cert['id'] + ', profile ' + info['Name'] + ', app record ' + (apps[0]['id'] if apps else 'MISSING'))
           PY
           PROFILE_NAME_CI=$(cat "$RUNNER_TEMP/em-profile-name")
+          SIGN_ID=$(cat "$RUNNER_TEMP/em-sign-id")
           AUTH=(-authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
+            -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$SIGN_ID" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME_CI" DEVELOPMENT_TEAM="$TEAM_ID" OTHER_CODE_SIGN_FLAGS="--keychain $RUNNER_TEMP/em.keychain-db" \
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" $AD_SETTINGS archive > archive.log 2>&1 \
             || { set +e; { grep -E "error:|Signing|signing" archive.log | sort -u | head -20; tail -15 archive.log; } | while read -r l; do echo "::error::$l"; done; exit 1; }
