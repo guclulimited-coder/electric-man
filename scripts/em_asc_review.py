@@ -103,14 +103,16 @@ def submit(key, build):
     api('PATCH', f"/v1/appStoreVersions/{v['id']}/relationships/build", {'data': {'type': 'builds', 'id': b['id']}}); note(f'build {build} attached')
     # 3) reviewer note
     rd = (api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail") or {}).get('data')
-    extra = (f"\n\nBuild {build} (24 Oct 2026): Fixed: Sign in with Apple now works on iPad (compatibility mode) and iPhone; tested on iPad Air simulator iPadOS. "
-             "Sign in with Apple now uses the native system sheet: open Account (profile) > Continue with Apple. "
-             "The demo account from App Review Information is under Account > Sign in with Google or e-mail > Sign in with demo account (App Review). "
-             "The coin packs in the shop are consumable in-app purchases and are submitted together with this version; signing in is not required to buy.")
+    extra = (f"Build {build} (29 Oct 2026): The game now requires an account (sign-in is shown at first launch) because it includes "
+             "online chat, friends, leagues and cloud saves across devices; the reason is shown on the sign-in screen. Progress made earlier "
+             "without an account is moved to the account on first sign-in. Sign in with Apple is offered (native system sheet), plus Google and e-mail code. "
+             "Demo account: on the sign-in screen tap 'Sign in with demo account (App Review)' and use the username and password above. "
+             "Account deletion is available in the app: Account (profile) > Delete account. "
+             "The coin packs in the shop are consumable in-app purchases and are submitted together with this version.")
     if rd:
         n = rd['attributes'].get('notes') or ''
-        if f'Build {build} (24 Oct 2026)' not in n:
-            api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': (n + extra)[-3900:]}}}); note('reviewer note added')
+        if f'Build {build} (29 Oct 2026)' not in n:
+            api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': extra[:3900]}}}); note('reviewer note replaced')
     # 4) submission: version + in-app purchases
     subs = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&limit=10')['data']
     sub = next((s for s in subs if s['attributes']['state'] in ('READY_FOR_REVIEW', 'UNRESOLVED_ISSUES')), None)
