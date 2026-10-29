@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
 permissions:
-  contents: read
+  contents: write
 env:
   TEAM_ID: YMAU5R6AA4
   BUNDLE_ID: com.tusneldax.electricman
@@ -25,6 +25,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: eh-ios-cert
+          path: prev-cert
+          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -96,7 +101,21 @@ jobs:
           k = temp / 'em.key'; csr = temp / 'em.csr'
           subprocess.run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(k), '-out', str(csr), '-subj', '/CN=Electric Man CI/O=TusneldaX/C=TR'], check=True, capture_output=True)
           csr_b64 = ''.join(l for l in csr.read_text().splitlines() if not l.startswith('-----'))
-          cert = api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': 'DISTRIBUTION', 'csrContent': csr_b64}}})['data']
+          def make():
+              try: return api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': 'DISTRIBUTION', 'csrContent': csr_b64}}})['data']
+              except urllib.error.HTTPError as e:
+                  if e.code != 409: raise
+              return None
+          cert = make()
+          if not cert:
+              # slot taken: revoke the CI certificate of the previous Electric Hunter / Electric Man upload (recorded on the eh-ios-cert
+              # branch; uploaded builds stay valid) and try again
+              prev = pathlib.Path('prev-cert/eh-ios-cert.txt'); pid = prev.read_text().strip() if prev.exists() else ''
+              if pid:
+                  try: api('DELETE', '/v1/certificates/' + pid); print('::warning::revoked the previous CI certificate ' + pid)
+                  except Exception as e: print('::warning::could not revoke ' + pid + ': ' + str(e))
+                  time.sleep(5); cert = make()
+          if not cert: print('::error::Apple distribution certificate limit reached'); sys.exit(1)
           (temp / 'em-cert-id').write_text(cert['id'])
           der = temp / 'em.cer'; der.write_bytes(base64.b64decode(cert['attributes']['certificateContent']))
           pem = temp / 'em.pem'; subprocess.run(['openssl', 'x509', '-inform', 'DER', '-in', str(der), '-out', str(pem)], check=True)
@@ -137,6 +156,9 @@ jobs:
             || { set +e; tail -25 export.log | while read -r l; do echo "::error::$l"; done; exit 1; }
           touch "$RUNNER_TEMP/em-uploaded"
           echo "::notice::Uploaded build $GITHUB_RUN_NUMBER to App Store Connect"
+          # remember which certificate this build was signed with, so the next CI upload can free its slot
+          cd "$GITHUB_WORKSPACE/prev-cert" && cp "$RUNNER_TEMP/em-cert-id" eh-ios-cert.txt && git config user.name ci && git config user.email ci@tusneldax.com \
+            && git add eh-ios-cert.txt && git commit -qm "Electric Man iOS build $GITHUB_RUN_NUMBER certificate" && git push -q || echo "::warning::could not record the certificate id"
       - name: Clean up signing files (revoke the certificate only if nothing was uploaded)
         if: always()
         env:
