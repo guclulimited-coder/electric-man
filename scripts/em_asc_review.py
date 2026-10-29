@@ -10,7 +10,7 @@ import json, sys, time, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
 MODE = open('store/em-asc-mode.txt').read().split()
-APPS = {'em': ('6819511421', 'com.tusneldax.electricman', 'Electric Man'), 'eh': ('6819712674', 'com.tusneldax.electrichunter', 'Electric Hunter')}
+APPS = {'em': ('6819511421', 'com.tusneldax.electricman', 'Electric Man'), 'eh': ('6819712674', 'com.tusneldax.electrichunter', 'Electric Hunter'), 'mc': ('6817973176', 'com.tusnelda.ustasehri', 'MASTERCITY')}
 BASE = 'https://api.appstoreconnect.apple.com'
 LOG = []
 def note(m): LOG.append(str(m).replace('\n', ' ')); print(m, flush=True)
