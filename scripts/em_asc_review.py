@@ -135,6 +135,19 @@ def submit(key, build):
     for x in iaps(app): note(f"  iap {x['attributes'].get('productId')} {x['attributes'].get('state')}")
     v = versions(app)[0]; note(f"FINAL {name}: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
 
+
+def agecheck(key):
+    app, bid_name, name = APPS[key]
+    v = versions(app)[0]
+    info = api('GET', f'/v1/apps/{app}/appInfos')['data']
+    for ai in info:
+        note(f"appInfo {ai['id']} {ai['attributes'].get('appStoreState') or ai['attributes'].get('state')}")
+        d = safe(api, 'GET', f"/v1/appInfos/{ai['id']}/ageRatingDeclaration")
+        if d: note('AGE ' + json.dumps(d['data']['attributes'])[:3000])
+    r = safe(api, 'GET', f"/v1/appStoreVersions/{v['id']}/ageRatingDeclaration")
+    if r: note('VAGE ' + json.dumps(r['data']['attributes'])[:3000])
+
+if MODE[0] == 'agecheck': agecheck(MODE[1])
 if MODE[0] == 'check': check()
 elif MODE[0] == 'submit':
     for i in range(1, len(MODE), 2): submit(MODE[i], MODE[i + 1])
