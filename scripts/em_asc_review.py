@@ -78,7 +78,12 @@ def submit(key, build):
     if not bs or bs[0]['attributes']['processingState'] != 'VALID':
         note(f"{name}: build {build} not ready: {bs[0]['attributes']['processingState'] if bs else 'MISSING'}"); sys.exit(3)
     b = bs[0]
-    v = versions(app)[0]; note(f"{name}: start {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+    vl = versions(app)
+    if key == 'br' and not vl:
+        v = {'attributes': {'versionString': '1.7.1', 'appStoreState': 'READY_FOR_SALE'}}
+    else:
+        v = vl[0]
+    note(f"{name}: start {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
     if key == 'br' and v['attributes']['versionString'] != '1.7.3':
         # Bus Rush is live (1.7.1): create the new version record; 1.7.1 stays on sale until 1.7.3 is approved
         v = api('POST', '/v1/appStoreVersions', {'data': {'type': 'appStoreVersions', 'attributes': {'platform': 'IOS', 'versionString': '1.7.3', 'releaseType': 'AFTER_APPROVAL'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']; note('version 1.7.3 created')
