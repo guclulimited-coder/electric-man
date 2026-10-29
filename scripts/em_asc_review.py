@@ -10,7 +10,7 @@ import json, sys, time, urllib.request, urllib.error
 import jwt
 KEY, KID, ISS = sys.argv[1:4]
 MODE = open('store/em-asc-mode.txt').read().split()
-APPS = {'em': ('6819511421', 'com.tusneldax.electricman', 'Electric Man'), 'eh': ('6819712674', 'com.tusneldax.electrichunter', 'Electric Hunter'), 'mc': ('6817973176', 'com.tusnelda.ustasehri', 'MASTERCITY')}
+APPS = {'em': ('6819511421', 'com.tusneldax.electricman', 'Electric Man'), 'eh': ('6819712674', 'com.tusneldax.electrichunter', 'Electric Hunter'), 'mc': ('6817973176', 'com.tusnelda.ustasehri', 'MASTERCITY'), 'br': ('6817836111', 'com.tusneldax.busrush', 'TUSNELDAX Bus Rush')}
 BASE = 'https://api.appstoreconnect.apple.com'
 LOG = []
 def note(m): LOG.append(str(m).replace('\n', ' ')); print(m, flush=True)
@@ -79,6 +79,14 @@ def submit(key, build):
         note(f"{name}: build {build} not ready: {bs[0]['attributes']['processingState'] if bs else 'MISSING'}"); sys.exit(3)
     b = bs[0]
     v = versions(app)[0]; note(f"{name}: start {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+    if key == 'br' and v['attributes']['versionString'] != '1.7.3':
+        # Bus Rush is live (1.7.1): create the new version record; 1.7.1 stays on sale until 1.7.3 is approved
+        v = api('POST', '/v1/appStoreVersions', {'data': {'type': 'appStoreVersions', 'attributes': {'platform': 'IOS', 'versionString': '1.7.3', 'releaseType': 'AFTER_APPROVAL'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']; note('version 1.7.3 created')
+        wn = {'tr': 'Hesabınla giriş: ilerlemen, ligin ve arkadaşların tüm cihazlarda saklanır. Daha önce giriş yapmadan oynadıysan ilerlemen hesabına aktarılır.'}
+        for loc in api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizations")['data']:
+            lc = loc['attributes']['locale']
+            txt = wn.get(lc.split('-')[0], 'Sign in to play: your progress, league and friends are saved across all your devices. Progress made before signing in is moved to your account.')
+            safe(api, 'PATCH', f"/v1/appStoreVersionLocalizations/{loc['id']}", {'data': {'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': txt}}}); note('whatsNew ' + lc)
     # 1) withdraw a pending submission (Electric Hunter); a rejected one (UNRESOLVED_ISSUES) stays and is reused/replaced
     old = None
     for s in api('GET', f'/v1/reviewSubmissions?filter[app]={app}&limit=10')['data']:
@@ -115,11 +123,15 @@ def submit(key, build):
              "The coin packs in the shop are consumable in-app purchases and are submitted together with this version.")
     if rd:
         n = rd['attributes'].get('notes') or ''
-        if key == 'mc':
+        if key in ('mc', 'br'):
             mc = (f"Build {build} (29 Oct 2026): sign-in is required at first launch (online chat, friends, shared multiplayer city, cloud saves; "
                   "the reason is shown on the sign-in screen). Progress made earlier without an account is moved to the account on first sign-in. "
                   "Sign in with Apple is offered. Account deletion in the app: profile menu > 'Hesap ayarları ve silme', and the app menu > 'Hesabımı silme seçenekleri'. "
                   "No gambling or casino content in the iOS app. Demo account steps below are unchanged.\n\n")
+            if key == 'br':
+                mc = (f"Build {build} (30 Oct 2026): sign-in is now required at first launch (leagues, friends, duels and cloud saves across devices; "
+                      "the reason is shown on the sign-in screen). Progress made earlier without an account is moved to the account on first sign-in. "
+                      "Sign in with Apple is offered. Account deletion in the app: Hesabım (My account) > delete account. Demo account steps below are unchanged.\n\n")
             if f'Build {build} (29 Oct 2026)' not in n:
                 api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': (mc + n)[:3990]}}}); note('reviewer note prepended (demo steps kept)')
         elif f'Build {build} (29 Oct 2026)' not in n:
