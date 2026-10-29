@@ -97,6 +97,9 @@ def submit(key, build):
             if s2 != 'CANCELING': break
             time.sleep(15)
         note('old submission: ' + s2)
+    if key == 'mc':
+        # MASTERCITY: the only (never released) version record is reused for the new version
+        api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'versionString': '1.0.44'}}}); note('version string -> 1.0.44')
     # 2) release after approval, build
     api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'releaseType': 'AFTER_APPROVAL'}}}); note('releaseType AFTER_APPROVAL')
     if b['attributes'].get('usesNonExemptEncryption') is None:
@@ -112,7 +115,14 @@ def submit(key, build):
              "The coin packs in the shop are consumable in-app purchases and are submitted together with this version.")
     if rd:
         n = rd['attributes'].get('notes') or ''
-        if f'Build {build} (29 Oct 2026)' not in n:
+        if key == 'mc':
+            mc = (f"Build {build} (29 Oct 2026): sign-in is required at first launch (online chat, friends, shared multiplayer city, cloud saves; "
+                  "the reason is shown on the sign-in screen). Progress made earlier without an account is moved to the account on first sign-in. "
+                  "Sign in with Apple is offered. Account deletion in the app: profile menu > 'Hesap ayarları ve silme', and the app menu > 'Hesabımı silme seçenekleri'. "
+                  "No gambling or casino content in the iOS app. Demo account steps below are unchanged.\n\n")
+            if f'Build {build} (29 Oct 2026)' not in n:
+                api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': (mc + n)[:3990]}}}); note('reviewer note prepended (demo steps kept)')
+        elif f'Build {build} (29 Oct 2026)' not in n:
             api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': extra[:3900]}}}); note('reviewer note replaced')
     # 3b) age rating: answer Apple's new questions (owner approved 30 Oct 00:01: not a social media app)
     for ai in api('GET', f'/v1/apps/{app}/appInfos')['data']:
