@@ -1,1 +1,1 @@
-submit mc 51
+check mc
