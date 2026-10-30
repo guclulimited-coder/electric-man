@@ -1,0 +1,42 @@
+# Gölge Operasyonu (usta-unity) için yalnız Apple kimlik işleri: paket kimliği, geçici dağıtım sertifikası, profil.
+# Sahip isteği 30 Ekim 2026: "Bir sürümü de test flight yükle deneyecem". Bu dal Electric Man kodunu içermez.
+# Sertifika paketi usta-sehri golge-ios CI'sinin açık anahtarına şifrelenip bu dala yazılır (düz metin yok).
+# Sertifika kaydı eh-ios-cert dalında tutulur; Electric Hunter/Man CI'si aynı kaydı kullanmaya devam eder.
+name: Golge Operasyonu Apple signing identity
+on:
+  push:
+    branches: [golge-ios]
+    paths: ['golge-ios.json', '.github/workflows/golge-ios.yml', 'golge_em.py']
+permissions:
+  contents: write
+concurrency:
+  group: golge-ios-identity
+  cancel-in-progress: false
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: eh-ios-cert
+          path: prev-cert
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q 'PyJWT[crypto]==2.10.1'
+      - name: Bundle id, certificate, profile (sealed)
+        env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: python golge_em.py
+      - name: Record certificate on eh-ios-cert and publish sealed bundle
+        if: hashFiles('golge-sign.enc.json') != ''
+        run: |
+          set -euo pipefail
+          git config --global user.name ci; git config --global user.email ci@tusneldax.com
+          cd prev-cert && git add eh-ios-cert.txt && git commit -qm "Golge Operasyonu iOS certificate (shared CI slot)" && git push -q && cd ..
+          git add golge-sign.enc.json && git commit -qm "Golge sealed signing bundle [skip ci]" && git push -q
+          echo "::notice title=published::eh-ios-cert updated, sealed bundle on golge-ios"
