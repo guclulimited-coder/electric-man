@@ -112,7 +112,13 @@ def submit(key, build):
         note('old submission: ' + s2)
     if key == 'mc':
         # MASTERCITY: the only (never released) version record is reused for the new version
-        api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'versionString': '1.0.44'}}}); note('version string -> 1.0.44')
+        api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'versionString': '1.0.45'}}}); note('version string -> 1.0.45')
+        # 1.0.45 release note (owner approval 30 Oct 13:38): Turkish for tr, English elsewhere
+        for loc in api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizations")['data']:
+            lc = loc['attributes']['locale']
+            txt = ('Daha hızlı açılış ve tek dokunuşla giriş; gece görünümü yenilendi (ışıklı vitrinler, Barlar Sokağı).' if lc.startswith('tr')
+                   else 'Faster opening and one-tap sign-in; refreshed night visuals (lit shop fronts, Barlar Sokağı).')
+            safe(api, 'PATCH', f"/v1/appStoreVersionLocalizations/{loc['id']}", {'data': {'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': txt}}}); note('whatsNew ' + lc)
     # 2) release after approval, build
     api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'releaseType': 'AFTER_APPROVAL'}}}); note('releaseType AFTER_APPROVAL')
     if b['attributes'].get('usesNonExemptEncryption') is None:
@@ -129,7 +135,8 @@ def submit(key, build):
     if rd:
         n = rd['attributes'].get('notes') or ''
         if key in ('mc', 'br'):
-            mc = (f"Build {build} (29 Oct 2026): sign-in is required at first launch (online chat, friends, shared multiplayer city, cloud saves; "
+            mc = (f"Build {build} (30 Oct 2026, version 1.0.45): faster first launch, the sign-in screen appears before the 3D city loads. "
+                  "Sign-in is required at first launch (online chat, friends, shared multiplayer city, cloud saves; "
                   "the reason is shown on the sign-in screen). Progress made earlier without an account is moved to the account on first sign-in. "
                   "Sign in with Apple is offered. Account deletion in the app: profile menu > 'Hesap ayarları ve silme', and the app menu > 'Hesabımı silme seçenekleri'. "
                   "No gambling or casino content in the iOS app. Demo account steps below are unchanged.\n\n")
@@ -137,7 +144,10 @@ def submit(key, build):
                 mc = (f"Build {build} (30 Oct 2026): sign-in is now required at first launch (leagues, friends, duels and cloud saves across devices; "
                       "the reason is shown on the sign-in screen). Progress made earlier without an account is moved to the account on first sign-in. "
                       "Sign in with Apple is offered. Account deletion in the app: Hesabım (My account) > delete account. Demo account steps below are unchanged.\n\n")
-            if f'Build {build} (29 Oct 2026)' not in n:
+            # keep the reviewer note short: drop earlier prepended "Build N (...)" paragraphs, keep the demo steps below them
+            while n.startswith('Build ') and '\n\n' in n and f'Build {build} (' not in n.split('\n\n', 1)[0] and 'demo' in n.split('\n\n', 1)[1].lower():
+                n = n.split('\n\n', 1)[1]
+            if f'Build {build} (' not in n:
                 api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': (mc + n)[:3990]}}}); note('reviewer note prepended (demo steps kept)')
         elif f'Build {build} (29 Oct 2026)' not in n:
             api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': extra[:3900]}}}); note('reviewer note replaced')
