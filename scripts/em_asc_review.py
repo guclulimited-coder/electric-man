@@ -3,6 +3,7 @@
 Owner approval: "diğer uygulamaların hepsini kontrol et ... ona göre aksiyon al".
 Modes (store/em-asc-mode.txt):
   check                 read-only: versions, builds, review submissions + items, IAPs, review details, bundle capabilities, certificates
+  demo mc               App Review demo account: real device sign-in probe (Android + iPhone, English), read-only on ASC
   submit <app> <build>  app = em | eh. Cancels a pending submission (eh), attaches <build>, AFTER_APPROVAL, reviewer note,
                         submits the version together with every READY_TO_SUBMIT in-app purchase, verifies the item count.
 Never prints keys or passwords."""
@@ -112,12 +113,12 @@ def submit(key, build):
         note('old submission: ' + s2)
     if key == 'mc':
         # MASTERCITY: the only (never released) version record is reused for the new version
-        api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'versionString': '1.0.45'}}}); note('version string -> 1.0.45')
-        # 1.0.45 release note (owner approval 30 Oct 13:38): Turkish for tr, English elsewhere
+        api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'versionString': '1.0.46'}}}); note('version string -> 1.0.46')
+        # 1.0.46 release note (owner approval 31 Oct 10:29): Turkish for tr, English elsewhere
         for loc in api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizations")['data']:
             lc = loc['attributes']['locale']
-            txt = ('Daha hızlı açılış ve tek dokunuşla giriş; gece görünümü yenilendi (ışıklı vitrinler, Barlar Sokağı).' if lc.startswith('tr')
-                   else 'Faster opening and one-tap sign-in; refreshed night visuals (lit shop fronts, Barlar Sokağı).')
+            txt = ('Daha kolay giriş: tek dokunuşla Apple, Google veya e-posta; onaydan sonra oyuna kendiliğinden dönüş.' if lc.startswith('tr')
+                   else 'Easier sign-in: one tap with Apple, Google or e-mail; the game returns by itself after you confirm.')
             safe(api, 'PATCH', f"/v1/appStoreVersionLocalizations/{loc['id']}", {'data': {'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': txt}}}); note('whatsNew ' + lc)
     # 2) release after approval, build
     api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'releaseType': 'AFTER_APPROVAL'}}}); note('releaseType AFTER_APPROVAL')
@@ -135,7 +136,8 @@ def submit(key, build):
     if rd:
         n = rd['attributes'].get('notes') or ''
         if key in ('mc', 'br'):
-            mc = (f"Build {build} (30 Oct 2026, version 1.0.45): faster first launch, the sign-in screen appears before the 3D city loads. "
+            mc = (f"Build {build} (31 Oct 2026, version 1.0.46): easier sign-in. The tapped method (Sign in with Apple first, then Google, e-mail code) opens directly "
+                  "in the system sign-in sheet without an extra in-app dialog, and the game continues by itself after confirmation; app dialogs follow the device language. "
                   "Sign-in is required at first launch (online chat, friends, shared multiplayer city, cloud saves; "
                   "the reason is shown on the sign-in screen). Progress made earlier without an account is moved to the account on first sign-in. "
                   "Sign in with Apple is offered. Account deletion in the app: profile menu > 'Hesap ayarları ve silme', and the app menu > 'Hesabımı silme seçenekleri'. "
@@ -192,7 +194,25 @@ def agecheck(key):
     r = safe(api, 'GET', f"/v1/appStoreVersions/{v['id']}/ageRatingDeclaration")
     if r: note('VAGE ' + json.dumps(r['data']['attributes'])[:3000])
 
+def demo(key):
+    """Read-only on App Store Connect: reads the demo account from the review details and runs scripts/mc_demo_probe.py
+    (real device sign-in on oyun.tusneldax.com). Credentials go to the probe only through its environment."""
+    import os, subprocess
+    app, bid_name, name = APPS[key]
+    v = versions(app)[0]
+    a = ((api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail") or {}).get('data') or {}).get('attributes') or {}
+    if not a.get('demoAccountName') or not a.get('demoAccountPassword'): note('demo account not set'); return
+    subprocess.run([sys.executable, '-m', 'pip', '-q', 'install', 'playwright==1.56.0'], check=True)
+    subprocess.run([sys.executable, '-m', 'playwright', 'install', '--with-deps', 'chromium'], check=True, stdout=subprocess.DEVNULL)
+    env = dict(os.environ, DEMO_USER=a['demoAccountName'], DEMO_PASS=a['demoAccountPassword'])
+    r = subprocess.run([sys.executable, 'scripts/mc_demo_probe.py'], env=env, capture_output=True, text=True, timeout=900)
+    for line in (r.stdout + r.stderr).splitlines()[-40:]:
+        if a['demoAccountPassword'] in line or a['demoAccountName'] in line: line = '[hidden line]'
+        note(line[:300])
+    note(f'demo probe exit {r.returncode}')
+
 if MODE[0] == 'agecheck': agecheck(MODE[1])
+if MODE[0] == 'demo': demo(MODE[1])
 if MODE[0] == 'check': check(MODE[1:] or None)
 elif MODE[0] == 'submit':
     for i in range(1, len(MODE), 2): submit(MODE[i], MODE[i + 1])
