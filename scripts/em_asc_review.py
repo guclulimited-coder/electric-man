@@ -34,7 +34,7 @@ def safe(f, *a):
     except RuntimeError as e: note('  ! ' + str(e)[:600]); return None
 
 def versions(app):
-    return [x for x in api('GET', f'/v1/apps/{app}/appStoreVersions?filter[platform]=IOS&limit=5')['data'] if x['attributes']['appStoreState'] not in ('READY_FOR_SALE', 'REPLACED_WITH_NEW_INFO')]
+    return [x for x in api('GET', f'/v1/apps/{app}/appStoreVersions?filter[platform]=IOS&limit=5')['data'] if x['attributes']['appStoreState'] not in ('READY_FOR_SALE', 'READY_FOR_DISTRIBUTION', 'REPLACED_WITH_NEW_INFO')]
 def iaps(app):
     out = []
     r = safe(api, 'GET', f'/v1/apps/{app}/inAppPurchasesV2?limit=50')
@@ -85,13 +85,13 @@ def submit(key, build):
     else:
         v = vl[0]
     note(f"{name}: start {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
-    if key == 'br' and v['attributes']['versionString'] != '1.7.3':
+    if key == 'br' and v['attributes']['versionString'] != '1.7.4':
         # Bus Rush is live (1.7.1): create the new version record; 1.7.1 stays on sale until 1.7.3 is approved
-        v = api('POST', '/v1/appStoreVersions', {'data': {'type': 'appStoreVersions', 'attributes': {'platform': 'IOS', 'versionString': '1.7.3', 'releaseType': 'AFTER_APPROVAL'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']; note('version 1.7.3 created')
-        wn = {'tr': 'Hesabınla giriş: ilerlemen, ligin ve arkadaşların tüm cihazlarda saklanır. Daha önce giriş yapmadan oynadıysan ilerlemen hesabına aktarılır.'}
+        v = api('POST', '/v1/appStoreVersions', {'data': {'type': 'appStoreVersions', 'attributes': {'platform': 'IOS', 'versionString': '1.7.4', 'releaseType': 'AFTER_APPROVAL'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']; note('version 1.7.4 created')
+        wn = {'tr': 'Kayıt düzeltmesi: iki cihazdaki kayıtlar artık kendiliğinden birleşiyor, ilerleme kaybolmuyor. Daha kolay giriş ve puan gösterimi düzeltmesi.'}
         for loc in api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizations")['data']:
             lc = loc['attributes']['locale']
-            txt = wn.get(lc.split('-')[0], 'Sign in to play: your progress, league and friends are saved across all your devices. Progress made before signing in is moved to your account.')
+            txt = wn.get(lc.split('-')[0], 'Save fix: progress from two devices now merges automatically, nothing is lost. Easier sign-in and a score display fix.')
             safe(api, 'PATCH', f"/v1/appStoreVersionLocalizations/{loc['id']}", {'data': {'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': txt}}}); note('whatsNew ' + lc)
     # 1) withdraw a pending submission (Electric Hunter); a rejected one (UNRESOLVED_ISSUES) stays and is reused/replaced
     old = None
