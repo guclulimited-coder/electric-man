@@ -1,0 +1,74 @@
+name: Giris testi (emulator, Electric Man + Electric Hunter)
+# 31 Ekim 2026: yeni uygulama girisinin emulatorde denenmesi. Bu daldaki hata ayiklama paketleri, canli giris sayfasi ve
+# App Review demo hesabi kullanilir (sifre App Store Connect'ten okunur, yazdirilmaz). Magazaya hicbir sey yuklenmez.
+on:
+  workflow_dispatch:
+  push:
+    branches: [emeh-signin]
+    paths: ['.github/workflows/emeh-signin-test.yml', '.github/scripts/emeh-signin-test.sh', '.github/scripts/cdp.py']
+permissions: { contents: write }
+concurrency: { group: emeh-signin-test, cancel-in-progress: false }
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.14.3' }
+      - name: Debug APKs (official test ads)
+        run: |
+          set +e
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+          node scripts/bundle-native.mjs android/app/src/main/assets/www && node scripts/bundle-native.mjs hunter-app/android/app/src/main/assets/www hunter || exit 1
+          mkdir -p apk
+          for d in android hunter-app/android; do
+            gradle -p $d assembleDebug --no-daemon > build.log 2>&1 || { grep -E "^e: |error:|What went wrong" -A3 build.log | head -40 | while read -r l; do echo "::error::$l"; done; exit 1; }
+          done
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk/em.apk && cp hunter-app/android/app/build/outputs/apk/debug/app-debug.apk apk/eh.apk && ls -la apk
+      - name: Demo account from App Store Connect (masked)
+        env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'PyJWT[crypto]==2.10.1' websocket-client==1.8.0
+          "$RUNNER_TEMP/v/bin/python" - <<'PY'
+          import json, os, re, textwrap, time, urllib.request, jwt
+          raw = os.environ['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw))
+          key = '-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n'
+          tok = jwt.encode({'iss': os.environ['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': os.environ['KEY_ID'], 'typ': 'JWT'})
+          get = lambda p: json.load(urllib.request.urlopen(urllib.request.Request('https://api.appstoreconnect.apple.com' + p, headers={'Authorization': 'Bearer ' + tok}), timeout=60))
+          v = get('/v1/apps/6819511421/appStoreVersions?filter[platform]=IOS&limit=3')['data'][0]
+          a = get(f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail")['data']['attributes']
+          u, p = a.get('demoAccountName') or '', a.get('demoAccountPassword') or ''
+          print('::add-mask::' + p)
+          with open(os.environ['GITHUB_ENV'], 'a') as f: f.write(f'DEMO_USER={u}\nDEMO_PASS={p}\n')
+          print('::notice::demo account found: ' + str(bool(u and p)))
+          PY
+          echo "$RUNNER_TEMP/v/bin" >> "$GITHUB_PATH"
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash .github/scripts/emeh-signin-test.sh
+      - name: Screenshots to the emeh-signin-shots branch
+        if: always()
+        run: |
+          [ -d shots ] || exit 0
+          cd shots && git init -q -b emeh-signin-shots && git config user.name Claude && git config user.email noreply@anthropic.com
+          git add . && git commit -qm "giris testi ekran goruntuleri ${{ github.sha }}" && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" emeh-signin-shots || true
