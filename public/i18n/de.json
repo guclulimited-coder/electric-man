@@ -219,5 +219,7 @@
   "gateCarry": "Bei der Anmeldung wird dein Fortschritt auf diesem Gerät in dein Konto übernommen. Nichts wird gelöscht.",
   "gateCarried": "Dein Fortschritt auf diesem Gerät wurde deinem Konto hinzugefügt.",
   "gateOffline": "Keine Verbindung. Verbinde dich mit dem Internet und versuche es erneut.",
-  "gateRetry": "Erneut versuchen"
+  "gateRetry": "Erneut versuchen",
+  "google": "Weiter mit Google",
+  "emailLogin": "Weiter mit E-Mail"
 }

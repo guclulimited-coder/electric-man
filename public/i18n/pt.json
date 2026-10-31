@@ -219,5 +219,7 @@
   "gateCarry": "Ao entrar, seu progresso neste dispositivo vai para sua conta. Nada é apagado.",
   "gateCarried": "Seu progresso neste dispositivo foi adicionado à sua conta.",
   "gateOffline": "Sem conexão. Conecte-se à internet e tente de novo.",
-  "gateRetry": "Tentar de novo"
+  "gateRetry": "Tentar de novo",
+  "google": "Continuar com o Google",
+  "emailLogin": "Continuar com e-mail"
 }

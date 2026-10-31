@@ -674,5 +674,8 @@
  "o_gateCarry": "サインインすると、この端末の進行状況はアカウントに引き継がれます。何も削除されません。",
  "o_gateCarried": "この端末の進行状況をアカウントに追加しました。",
  "o_gateOffline": "接続がありません。インターネットに接続して、もう一度お試しください。",
- "o_gateRetry": "再試行"
+ "o_gateRetry": "再試行",
+ "google": "Google で続行",
+ "emailLogin": "メールで続行",
+ "reviewLogin": "デモアカウントでログイン (App Review)"
 }

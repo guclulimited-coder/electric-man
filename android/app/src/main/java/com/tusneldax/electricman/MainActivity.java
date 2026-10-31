@@ -65,11 +65,18 @@ public class MainActivity extends AppCompatActivity {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final SecureRandom random = new SecureRandom();
 
-    // pending system-browser sign-in
+    // pending system-browser sign-in (verifier/state also kept encrypted in em_auth, so it survives process death)
+    static final long LOGIN_TTL = 15 * 60_000L, POLL_MS = 3000, IDLE_POLL_MS = 5000;
     private JavaScriptReplyProxy loginProxy;
     private int loginId;
     private String loginVerifier, loginState;
-    private boolean loginAway;
+    private long loginStarted, backAt;
+    private boolean loginAway, resumed, claiming;
+    private final Runnable pollTask = this::poll;
+    private final Runnable giveUpTask = () -> {
+        // back in the app, nothing signed in yet: free the sign-in button, keep checking quietly in the background
+        if (loginProxy != null && loginVerifier != null) { reply(loginProxy, loginId, "LOGIN_CANCELLED", null); loginProxy = null; }
+    };
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -138,7 +145,9 @@ public class MainActivity extends AppCompatActivity {
         int shot = getIntent().getIntExtra("emShot", 0);
         String shotLang = getIntent().getStringExtra("emShotLang");
         web.loadUrl(shot > 0 ? START + "?shot=" + shot + "&lang=" + (shotLang == null ? "" : shotLang) : START);
+        restorePending();
         handleIntent(getIntent());
+        if (loginVerifier != null) schedulePoll(500);
     }
 
     /* ---------------- bridge ---------------- */
@@ -158,7 +167,8 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 case "api": api(m, proxy, rid); return;
-                case "login": startLogin(m.optString("lang", "tr"), proxy, rid); return;
+                case "login": startLogin(m.optString("lang", "en"), m.optString("method", ""), proxy, rid); return;
+                case "loginCheck": loginCheck(proxy, rid); return;
                 case "ad": ads.show(m.optString("kind"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "products": billing.products(m.optJSONArray("ids"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "buy": billing.buy(this, m.optString("id"), (err, data) -> reply(proxy, rid, err, data)); return;
@@ -233,20 +243,121 @@ public class MainActivity extends AppCompatActivity {
     private String hex(byte[] b) { StringBuilder s = new StringBuilder(); for (byte x : b) s.append(String.format("%02x", x)); return s.toString(); }
     private String randomHex(int bytes) { byte[] b = new byte[bytes]; random.nextBytes(b); return hex(b); }
 
-    private void startLogin(String lang, JavaScriptReplyProxy proxy, int id) {
+    private void savePending() {
+        try {
+            String sealed = SecureBox.seal(new JSONObject().put("v", loginVerifier).put("s", loginState).put("t", loginStarted).toString());
+            if (sealed != null) auth.edit().putString("pending", sealed).apply();
+        } catch (Exception ignored) { }
+    }
+
+    private void restorePending() {
+        try {
+            String plain = SecureBox.open(auth.getString("pending", null));
+            if (plain == null) { auth.edit().remove("pending").apply(); return; }
+            JSONObject p = new JSONObject(plain);
+            long t = p.optLong("t");
+            String v = p.optString("v"), st = p.optString("s");
+            if (System.currentTimeMillis() - t > LOGIN_TTL || !v.matches("^[a-f0-9]{64}$") || !st.matches("^[a-f0-9]{32}$")) { clearPending(); return; }
+            loginVerifier = v; loginState = st; loginStarted = t;
+        } catch (Exception e) { clearPending(); }
+    }
+
+    private void clearPending() {
+        loginVerifier = null; loginState = null; loginStarted = 0;
+        main.removeCallbacks(pollTask); main.removeCallbacks(giveUpTask);
+        auth.edit().remove("pending").apply();
+    }
+
+    private void startLogin(String lang, String method, JavaScriptReplyProxy proxy, int id) {
         try {
             if (loginProxy != null) reply(loginProxy, loginId, "LOGIN_CANCELLED", null);
             loginProxy = proxy; loginId = id;
-            loginVerifier = randomHex(32); loginState = randomHex(16);
+            loginVerifier = randomHex(32); loginState = randomHex(16); loginStarted = System.currentTimeMillis();
+            savePending();
             String challenge = hex(MessageDigest.getInstance("SHA-256").digest(loginVerifier.getBytes(StandardCharsets.UTF_8)));
-            Uri u = Uri.parse(ORIGIN + "/app-login").buildUpon()
+            Uri.Builder ub = Uri.parse(ORIGIN + "/app-login").buildUpon()
                     .appendQueryParameter("challenge", challenge).appendQueryParameter("state", loginState)
-                    .appendQueryParameter("lang", lang.matches("^[a-z]{2}$") ? lang : "tr").appendQueryParameter("platform", "android").build();
+                    .appendQueryParameter("lang", lang.matches("^[a-z]{2}$") ? lang : "en").appendQueryParameter("platform", "android");
+            if (method.matches("^(google|apple|email|review)$")) ub.appendQueryParameter("method", method);
             loginAway = true;
-            new CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(this, u);
+            main.removeCallbacks(giveUpTask);
+            new CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(this, ub.build());
+            schedulePoll(POLL_MS);
         } catch (Exception e) {
             reply(proxy, id, "LOGIN_UNAVAILABLE", null);
             loginProxy = null;
+            clearPending();
+        }
+    }
+
+    /** Called by the page at start-up: finishes a sign-in that was started before the app was closed by the system. */
+    private void loginCheck(JavaScriptReplyProxy proxy, int id) {
+        if (loginVerifier == null) restorePending();
+        final String verifier = loginVerifier;
+        if (verifier == null) { reply(proxy, id, null, jsonOf("pending", false)); return; }
+        io.execute(() -> {
+            String token = claim(verifier);
+            main.post(() -> {
+                if (token != null && verifier.equals(loginVerifier)) { finishLogin(token, false); reply(proxy, id, null, jsonOf("ok", true)); }
+                else reply(proxy, id, null, jsonOf("pending", loginVerifier != null));
+            });
+        });
+    }
+
+    private JSONObject jsonOf(String k, boolean v) {
+        try { return new JSONObject().put(k, v); } catch (Exception e) { return new JSONObject(); }
+    }
+
+    private void schedulePoll(long delay) {
+        main.removeCallbacks(pollTask);
+        if (loginVerifier != null) main.postDelayed(pollTask, delay);
+    }
+
+    /** Asks the server whether the sign-in page has finished; runs every few seconds while a sign-in is pending. */
+    private void poll() {
+        final String verifier = loginVerifier;
+        if (verifier == null) return;
+        if (System.currentTimeMillis() - loginStarted > LOGIN_TTL) {
+            if (loginProxy != null) { reply(loginProxy, loginId, "LOGIN_EXPIRED", null); loginProxy = null; }
+            clearPending();
+            return;
+        }
+        // in the game with no sign-in in progress on screen: check for a minute after coming back, then stop (the page asks again at start-up)
+        if (loginProxy == null && resumed && System.currentTimeMillis() - backAt > 60_000) return;
+        if (claiming) { schedulePoll(POLL_MS); return; }
+        claiming = true;
+        io.execute(() -> {
+            String token = claim(verifier);
+            main.post(() -> {
+                claiming = false;
+                if (!verifier.equals(loginVerifier)) return;
+                if (token != null) finishLogin(token, true);
+                else schedulePoll(loginProxy != null ? POLL_MS : IDLE_POLL_MS);
+            });
+        });
+    }
+
+    /** Background thread: one claim attempt. Returns the new app session token, or null while still pending. */
+    private String claim(String verifier) {
+        try {
+            Object[] r = request("POST", "/native/claim", new JSONObject().put("verifier", verifier));
+            JSONObject b = r[1] instanceof JSONObject ? (JSONObject) r[1] : new JSONObject();
+            String token = b.optString("token");
+            return (int) r[0] == 200 && token.matches("^[a-f0-9]{64}$") ? token : null;
+        } catch (Exception e) { return null; }
+    }
+
+    /** Main thread: store the session, tell the page, and come back from the browser straight into the game. */
+    private void finishLogin(String token, boolean notifyPage) {
+        auth.edit().putString("token", token).apply();
+        clearPending();
+        boolean away = loginAway || !resumed;
+        loginAway = false;
+        if (loginProxy != null) { reply(loginProxy, loginId, null, jsonOf("ok", true)); loginProxy = null; }
+        else if (notifyPage && web != null) web.evaluateJavascript("window.__emLoginDone&&window.__emLoginDone()", null);
+        if (away) {
+            // the browser tab sits on top of the game in this task: bring the game back (singleTask clears the tab)
+            try { startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP)); } catch (Exception ignored) { }
         }
     }
 
@@ -260,36 +371,47 @@ public class MainActivity extends AppCompatActivity {
     private void handleIntent(Intent intent) {
         Uri u = intent == null ? null : intent.getData();
         if (u == null || !"electricman".equals(u.getScheme()) || !"signin".equals(u.getHost())) return;
+        intent.setData(null);
         loginAway = false;
-        final JavaScriptReplyProxy proxy = loginProxy;
-        final int id = loginId;
         final String verifier = loginVerifier, state = loginState;
-        loginProxy = null;
         String ticket = u.getQueryParameter("ticket"), st = u.getQueryParameter("state");
-        if (proxy == null) return;
-        if (ticket == null || !ticket.matches("^[a-f0-9]{64}$") || state == null || !state.equals(st)) { reply(proxy, id, "LOGIN_EXPIRED", null); return; }
+        if (verifier == null) return;
+        if (ticket == null || !ticket.matches("^[a-f0-9]{64}$") || state == null || !state.equals(st)) { schedulePoll(0); return; }
         io.execute(() -> {
+            String token = null;
             try {
                 Object[] r = request("POST", "/native/exchange", new JSONObject().put("ticket", ticket).put("verifier", verifier));
                 JSONObject b = r[1] instanceof JSONObject ? (JSONObject) r[1] : new JSONObject();
-                String token = b.optString("token");
-                if ((int) r[0] == 200 && token.matches("^[a-f0-9]{64}$")) {
-                    auth.edit().putString("token", token).apply();
-                    reply(proxy, id, null, new JSONObject().put("ok", true));
-                } else reply(proxy, id, "LOGIN_EXPIRED", null);
-            } catch (Exception e) { reply(proxy, id, "CONNECTION_FAILED", null); }
+                String t = b.optString("token");
+                if ((int) r[0] == 200 && t.matches("^[a-f0-9]{64}$")) token = t;
+            } catch (Exception ignored) { }
+            final String got = token;
+            main.post(() -> {
+                if (!verifier.equals(loginVerifier)) return;
+                if (got != null) finishLogin(got, true); else schedulePoll(0);
+            });
         });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (loginAway) {
-            // back from the browser without a sign-in callback → the user closed it
-            main.postDelayed(() -> {
-                if (loginAway && loginProxy != null) { loginAway = false; reply(loginProxy, loginId, "LOGIN_CANCELLED", null); loginProxy = null; }
-            }, 1500);
+        resumed = true;
+        if (loginVerifier != null) {
+            backAt = System.currentTimeMillis();
+            schedulePoll(0);
+            if (loginAway) {
+                loginAway = false;
+                main.removeCallbacks(giveUpTask);
+                main.postDelayed(giveUpTask, 8000);
+            }
         }
+    }
+
+    @Override
+    protected void onPause() {
+        resumed = false;
+        super.onPause();
     }
 
     void openExternal(Uri u) {
@@ -298,6 +420,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        main.removeCallbacksAndMessages(null);
         if (web != null) web.destroy();
         billing.close();
         io.shutdown();

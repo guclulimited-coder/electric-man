@@ -219,5 +219,7 @@
   "gateCarry": "Bu cihazdaki ilerlemen giriş yapınca hesabına aktarılır; hiçbir şey silinmez.",
   "gateCarried": "Bu cihazdaki ilerlemen hesabına eklendi.",
   "gateOffline": "İnternet bağlantısı yok. Bağlanıp tekrar dene.",
-  "gateRetry": "Tekrar dene"
+  "gateRetry": "Tekrar dene",
+  "google": "Google ile devam et",
+  "emailLogin": "E-posta ile devam et"
 }

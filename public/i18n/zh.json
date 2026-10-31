@@ -219,5 +219,7 @@
   "gateCarry": "登录后，此设备上的进度会转入你的账号，不会删除任何内容。",
   "gateCarried": "此设备上的进度已加入你的账号。",
   "gateOffline": "没有网络连接。请连接网络后重试。",
-  "gateRetry": "重试"
+  "gateRetry": "重试",
+  "google": "使用 Google 账号继续",
+  "emailLogin": "使用电子邮件继续"
 }

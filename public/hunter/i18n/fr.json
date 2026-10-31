@@ -674,5 +674,8 @@
  "o_gateCarry": "En te connectant, ta progression sur cet appareil passe sur ton compte. Rien n’est supprimé.",
  "o_gateCarried": "Ta progression sur cet appareil a été ajoutée à ton compte.",
  "o_gateOffline": "Pas de connexion. Connecte-toi à internet et réessaie.",
- "o_gateRetry": "Réessayer"
+ "o_gateRetry": "Réessayer",
+ "google": "Continuer avec Google",
+ "emailLogin": "Continuer avec l'e-mail",
+ "reviewLogin": "Connexion avec un compte démo (App Review)"
 }

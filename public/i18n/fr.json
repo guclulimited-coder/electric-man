@@ -219,5 +219,7 @@
   "gateCarry": "En te connectant, ta progression sur cet appareil passe sur ton compte. Rien n’est supprimé.",
   "gateCarried": "Ta progression sur cet appareil a été ajoutée à ton compte.",
   "gateOffline": "Pas de connexion. Connecte-toi à internet et réessaie.",
-  "gateRetry": "Réessayer"
+  "gateRetry": "Réessayer",
+  "google": "Continuer avec Google",
+  "emailLogin": "Continuer avec l'e-mail"
 }

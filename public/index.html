@@ -111,6 +111,7 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 .row > *{min-width:0}
 .btn.small{padding:9px 12px;font-size:14px}
 .btn.ghost{background:#eef3fb;color:var(--ink);box-shadow:inset 0 -3px 0 #d6e1f1}
+.login-ways{display:flex;flex-direction:column;gap:10px}.login-ways .btn{width:100%}.btn.apple{background:#111;box-shadow:inset 0 -4px 0 #000}.btn.gl{background:#fff;color:#1f1f1f;box-shadow:inset 0 0 0 1.5px #c9d6ea,inset 0 -3px 0 #d6e1f1}.linkish{appearance:none;border:0;background:none;color:var(--ink-soft);font:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px}
 .btn.tt{display:block;background:#111;color:#fff;box-shadow:inset 0 -4px 0 #000;text-align:center;text-decoration:none}
 .btn.danger{background:#fff0ee;color:#c0392b;box-shadow:inset 0 -3px 0 #f3c9c3}
 .codebox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:.08em;background:#f6f9fe;border:1.5px dashed #b8cbe6;border-radius:12px;padding:10px 12px;text-align:center;flex:1}
@@ -242,7 +243,7 @@ function detectLang(){
 let LANG = LANG_NAMES[store.get('lang')] ? store.get('lang') : detectLang();
 let L = {};
 async function loadLang(code){ const r = await fetch('i18n/' + code + '.json'); if (!r.ok) throw new Error(r.status); return r.json(); }
-try { L = await loadLang(LANG); } catch { try { LANG = 'tr'; L = await loadLang('tr'); } catch { L = {}; } }
+try { L = await loadLang(LANG); } catch { try { LANG = 'en'; L = await loadLang('en'); } catch { L = {}; } }
 const T = (k, v = {}) => { let s = L[k]; if (Array.isArray(s)) s = s[Math.floor(Math.random() * s.length)]; if (typeof s !== 'string') s = k; return s.replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m); };
 const district = lv => (L.districts || [])[Math.min(14, Math.floor((lv - 1) / 20))] || '';
 const fmtTime = ts => new Date(ts).toLocaleTimeString(LANG, {hour:'2-digit', minute:'2-digit'});
@@ -1027,7 +1028,7 @@ const Online = (() => {
   const gateHead = () => gate ? `<p class="gate-need">${esc(T('gateNeed'))}</p><p>${esc(T('gateWhy'))}</p>${hasLocal() && !store.get('carried', 0) ? `<p>${esc(T('gateCarry'))}</p>` : ''}` : '';
   function gateOn(){ if (SHOT) return; gate = true; $('sheet').classList.add('gate'); openAccount(); }
   function gateOffline(){ if (SHOT) return; gate = true; $('sheet').classList.add('gate'); const b = sheet(T('loginTitle'), `<p class="gate-need">${esc(T('gateNeed'))}</p><p>${esc(T('gateWhy'))}</p><div class="err">${esc(T('gateOffline'))}</div><button class="btn" id="gateRetry">${esc(T('gateRetry'))}</button>${langPicker()}`); bindLang(b); b.querySelector('#gateRetry').onclick = ev => { ev.currentTarget.disabled = true; init(); }; }
-  function gateOff(){ const carried = gate && hasLocal() && !store.get('carried', 0); gate = false; store.set('acct', 1); if (carried) store.set('carried', 1); $('sheet').classList.remove('gate'); $('sheet').hidden = true; stopChat(); say(carried ? T('gateCarried') : T('welcome', {name: me.name})); }
+  function gateOff(){ const carried = gate && hasLocal() && !store.get('carried', 0); gate = false; store.set('acct', 1); if (carried) store.set('carried', 1); $('sheet').classList.remove('gate'); $('sheet').hidden = true; stopChat(); say(carried ? T('gateCarried') : T('welcome', {name: me.name})); if (!Profile.gender) setTimeout(() => Profile.ask(), 500); }
   const gated = () => gate;
   let badges = {requests:0, unread:0}, badgeTimer = null, chat = null;
   const msg = e => { const k = 'e' + e; return L[k] ? T(k) : T('eNET'); };
@@ -1092,11 +1093,22 @@ const Online = (() => {
     try { await push(); const r = await call('/pay/start', {game:'em', pack: id, lang: LANG, back:'/'}); location.href = r.url; }
     catch (e){ say(msg(e.message)); btn.disabled = false; }
   }
+  // uygulama: giriş tamamlanınca (dönüş, yoklama ya da uygulama yeniden açıldığında) doğrudan oyuna
+  async function nativeSignedIn(){
+    if (me) return;
+    try { setMe((await call('/me')).player); } catch { return; }
+    if (!me) return;
+    await sync();
+    if (gate) gateOff(); else if (!$('sheet').hidden && $('sheet').querySelector('[data-login]')){ $('sheet').hidden = true; say(T('welcome', {name: me.name})); } else say(T('welcome', {name: me.name}));
+  }
+  if (Native.app) window.__emLoginDone = () => { nativeSignedIn(); };
   async function init(){
     if (!SHOT && !me && !store.get('acct', 0)){ gate = true; $('sheet').classList.add('gate'); sheet(T('loginTitle'), `<p>…</p>`); }
     try { cfg = await call('/config'); } catch { cfg = null; }
     if (!cfg){ if (!SHOT && !store.get('acct', 0)) gateOffline(); else if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } return; }
     let meErr = false;
+    // uygulama sistem tarafından kapatılırken yarım kalan giriş varsa önce onu tamamla
+    if (Native.app && !SHOT){ try { await Native.call({action:'loginCheck'}); } catch {} }
     try { setMe((await call('/me')).player); } catch { meErr = true; }
     if (me){ store.set('acct', 1); if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } }
     else if (!SHOT){ if (meErr && store.get('acct', 0)){ if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } } else gateOn(); }
@@ -1143,9 +1155,17 @@ const Online = (() => {
   async function openAccount(){
     if (!cfg){ const b = sheet(T('accTitle'), `<p>${esc(T('accPreview'))}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`); bindLang(b); bindSettings(b); return; }
     if (!me && Native.app){
-      const b = sheet(T('loginTitle'), `${gateHead()}<p>${esc(T('loginIntro'))}</p><button class="btn" id="appLogin">${esc(T('loginApp'))}</button><div class="err" id="loginErr"></div><p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
+      /* 31 Ekim 2026: giriş yolu doğrudan burada seçilir; dokununca tarayıcı o yolla açılır (ara soru/pencere yok). */
+      const ways = [cfg.googleClientId && ['google', 'btn gl', 'google'], cfg.appleClientId && ['apple', 'btn apple', 'apple'], cfg.email && ['email', 'btn', 'emailLogin']].filter(Boolean);
+      const b = sheet(T('loginTitle'), `${gateHead()}<p>${esc(T('loginIntro'))}</p><div class="login-ways">${ways.length ? ways.map(([m, c, k]) => `<button class="${c}" data-login="${m}">${esc(T(k))}</button>`).join('') : `<button class="btn" data-login="">${esc(T('loginApp'))}</button>`}</div>${cfg.review ? `<p class="note"><button class="linkish" data-login="review">${esc(T('reviewLogin'))}</button></p>` : ''}<div class="err" id="loginErr"></div><p class="note">${legal()}</p><div class="field"><label>${esc(T('profilePic'))}</label>${Profile.picker()}</div>${settingsRow()}${langPicker()}`);
       bindLang(b); bindSettings(b);
-      b.querySelector('#appLogin').onclick = async ev => { const btn = ev.currentTarget; btn.disabled = true; try { await Native.call({action:'login', lang: LANG}); setMe((await call('/me')).player); if (me){ await sync(); if (gate) gateOff(); else { accountView(); say(T('welcome', {name: me.name})); } } } catch (e){ if (e.message !== 'LOGIN_CANCELLED') $('loginErr').textContent = msg(e.message); } btn.disabled = false; };
+      const btns = [...b.querySelectorAll('[data-login]')];
+      btns.forEach(x => x.onclick = async () => {
+        btns.forEach(y => y.disabled = true); $('loginErr').textContent = '';
+        try { await Native.call({action:'login', lang: LANG, method: x.dataset.login}); await nativeSignedIn(); }
+        catch (e){ if (e.message !== 'LOGIN_CANCELLED' && $('loginErr')) $('loginErr').textContent = msg(e.message); }
+        btns.forEach(y => y.disabled = false);
+      });
       return;
     }
     if (me) return accountView();
@@ -1367,10 +1387,10 @@ try {
   renderSound(); Profile.render();
   start(level);
   if (SHOT) setTimeout(shotScene, 2500);
-  else { if (!Profile.gender) setTimeout(() => Profile.ask(), 600);
-  Ads.launch(); Shop.restorePending(); }
+  else { Ads.launch(); Shop.restorePending(); }
   requestAnimationFrame(loop);
-  Online.init();
+  // karakter seçimi giriş ekranının üstüne açılmaz: yalnız girişten sonra (ya da giriş gerekmiyorsa açılışta)
+  Online.init().catch(() => {}).finally(() => { if (!SHOT && !Profile.gender && !Online.gated()) setTimeout(() => Profile.ask(), 300); });
 } catch (e){
   $('loading').hidden = false;
   $('loading').textContent = T('noGL');

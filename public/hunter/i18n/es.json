@@ -674,5 +674,8 @@
  "o_gateCarry": "Al iniciar sesión, tu progreso en este dispositivo pasa a tu cuenta. No se borra nada.",
  "o_gateCarried": "Tu progreso en este dispositivo se añadió a tu cuenta.",
  "o_gateOffline": "Sin conexión. Conéctate a internet e inténtalo de nuevo.",
- "o_gateRetry": "Reintentar"
+ "o_gateRetry": "Reintentar",
+ "google": "Continuar con Google",
+ "emailLogin": "Continuar con correo electrónico",
+ "reviewLogin": "Entrar con cuenta demo (App Review)"
 }

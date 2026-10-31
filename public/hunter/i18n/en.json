@@ -674,5 +674,8 @@
  "o_gateCarry": "Your progress on this device moves to your account when you sign in. Nothing is deleted.",
  "o_gateCarried": "Your progress on this device was added to your account.",
  "o_gateOffline": "No connection. Connect to the internet and try again.",
- "o_gateRetry": "Try again"
+ "o_gateRetry": "Try again",
+ "google": "Continue with Google",
+ "emailLogin": "Continue with email",
+ "reviewLogin": "Sign in with demo account (App Review)"
 }

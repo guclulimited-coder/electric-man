@@ -674,5 +674,8 @@
  "o_gateCarry": "Saat masuk, progres di perangkat ini dipindahkan ke akunmu. Tidak ada yang dihapus.",
  "o_gateCarried": "Progres di perangkat ini telah ditambahkan ke akunmu.",
  "o_gateOffline": "Tidak ada koneksi. Sambungkan ke internet lalu coba lagi.",
- "o_gateRetry": "Coba lagi"
+ "o_gateRetry": "Coba lagi",
+ "google": "Lanjutkan dengan Google",
+ "emailLogin": "Lanjutkan dengan email",
+ "reviewLogin": "Masuk dengan akun demo (App Review)"
 }

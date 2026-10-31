@@ -674,5 +674,8 @@
  "o_gateCarry": "Bu cihazdaki ilerlemen giriş yapınca hesabına aktarılır; hiçbir şey silinmez.",
  "o_gateCarried": "Bu cihazdaki ilerlemen hesabına eklendi.",
  "o_gateOffline": "İnternet bağlantısı yok. Bağlanıp tekrar dene.",
- "o_gateRetry": "Tekrar dene"
+ "o_gateRetry": "Tekrar dene",
+ "google": "Google ile devam et",
+ "emailLogin": "E-posta ile devam et",
+ "reviewLogin": "Demo hesap ile giriş (App Review)"
 }

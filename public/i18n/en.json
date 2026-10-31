@@ -219,5 +219,7 @@
   "gateCarry": "Your progress on this device moves to your account when you sign in. Nothing is deleted.",
   "gateCarried": "Your progress on this device was added to your account.",
   "gateOffline": "No connection. Connect to the internet and try again.",
-  "gateRetry": "Try again"
+  "gateRetry": "Try again",
+  "google": "Continue with Google",
+  "emailLogin": "Continue with email"
 }

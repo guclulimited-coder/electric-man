@@ -674,5 +674,8 @@
  "o_gateCarry": "登录后，此设备上的进度会转入你的账号，不会删除任何内容。",
  "o_gateCarried": "此设备上的进度已加入你的账号。",
  "o_gateOffline": "没有网络连接。请连接网络后重试。",
- "o_gateRetry": "重试"
+ "o_gateRetry": "重试",
+ "google": "使用 Google 账号继续",
+ "emailLogin": "使用电子邮件继续",
+ "reviewLogin": "使用演示账号登录 (App Review)"
 }
