@@ -63,9 +63,13 @@ const q = new URLSearchParams(location.search);
 const challenge = q.get('challenge') || '', state = q.get('state') || '';
 const HUNTER = q.get('app') === 'hunter', SCHEME = HUNTER ? 'electrichunter' : 'electricman';
 const LANGS = ['tr','en','zh','hi','es','ar','fr','bn','pt','ru','id','de','ja'];
-const lang = LANGS.includes(q.get('lang')) ? q.get('lang') : 'tr';
+// dil: uygulamanın gönderdiği dil, yoksa cihaz dili, o da desteklenmiyorsa İngilizce
+const deviceLang = () => { for (const l of (navigator.languages || [navigator.language || ''])){ const b = String(l).toLowerCase().split('-')[0]; if (LANGS.includes(b)) return b; } return 'en'; };
+const lang = LANGS.includes(q.get('lang')) ? q.get('lang') : deviceLang();
+// 31 Ekim 2026: uygulamada seçilen giriş yolu (google | apple | email | review); sayfa yalnız onu gösterir, ara soru yok
+const METHOD = ['google','apple','email','review'].includes(q.get('method')) ? q.get('method') : '';
 document.documentElement.lang = lang; if (lang === 'ar') document.documentElement.dir = 'rtl';
-let L = {}; try { L = await (await fetch('/i18n/' + lang + '.json')).json(); } catch {}
+let L = {}; try { L = await (await fetch('/i18n/' + lang + '.json')).json(); } catch { try { L = await (await fetch('/i18n/en.json')).json(); } catch {} }
 const T = (k, v = {}) => String(L[k] ?? k).replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m);
 const err = t => { $('err').textContent = t || ''; };
 const msg = e => L['e' + e] ? T('e' + e) : T('eNET');
@@ -87,9 +91,14 @@ const handoffURL = () => '/api/em/native/handoff?' + new URLSearchParams({challe
 // (emülatörde doğrulandı); kullanıcı çoğu zaman bunu görmeyip girişte kalıyor. Bu yüzden Google'dan sonra otomatik
 // geçiş yapılmaz; "Oyuna dön" düğmesi gösterilir ve dokunuşla (taze kullanıcı hareketi) uygulama doğrudan açılır.
 // Düğme birkaç saniye sonra yeniden etkinleşir; geçiş engellenirse tekrar dokunulabilir.
-function handBack(){ err(''); $('continue').disabled = true; setTimeout(() => { $('continue').disabled = false; }, 3000); location.assign(handoffURL()); }
+// 31 Ekim 2026: girişten hemen sonra uygulamanın özetine bağlı bilet alınır; uygulama onu yoklamayla (/native/claim) kendisi
+// alır. Özel adrese geçiş engellense, uygulama arka planda kapatılsa ya da oyuncu sekmeyi elle kapatsa da giriş tamamlanır.
+let armed = null;
+const arm = () => armed || (armed = call('/native/ticket', {challenge}).catch(() => { armed = null; }));
+async function handBack(){ err(''); $('continue').disabled = true; setTimeout(() => { $('continue').disabled = false; }, 3000); await Promise.race([arm(), new Promise(r => setTimeout(r, 1500))]); location.assign(handoffURL()); }
 async function showSignedIn(me, done = false){
   $('login').hidden = true; $('signedIn').hidden = false;
+  if (done) arm();
   if (done && L.loginDone) $('intro').textContent = T('loginDone');
   $('continue').textContent = (done && L.loginBack ? T('loginBack') : T('loginBtn')) + ' · ' + me.name;
   $('continue').onclick = handBack;
@@ -101,17 +110,20 @@ async function showLogin(){
   $('signedIn').hidden = true; $('login').hidden = false;
   $('or').textContent = T('or'); $('emailLbl').textContent = T('emailLbl'); $('codeLbl').textContent = T('codeLbl');
   $('email').placeholder = T('emailPh'); $('emailGo').textContent = T('sendCode');
-  $('gbtn').hidden = !cfg.googleClientId; $('or').hidden = !cfg.googleClientId && !cfg.appleClientId && !cfg.tiktok;
+  const want = m => !METHOD || METHOD === m;
+  $('gbtn').hidden = !cfg.googleClientId || !want('google'); $('or').hidden = !!METHOD || (!cfg.googleClientId && !cfg.appleClientId && !cfg.tiktok);
+  for (const id of ['email', 'emailLbl', 'emailGo']) $(id).closest('div,button').hidden = !want('email');
+  if (METHOD === 'review') $('review').open = true;
   // TikTok girişi henüz geliştirici (sandbox) modunda: uygulamada gösterilmez, yalnız onaylı test hesapları girebiliyor.
-  if (cfg.tiktok && q.get('platform') !== 'ios' && q.get('platform') !== 'android'){ const t = $('ttbtn'); t.hidden = false; t.textContent = T('tiktok'); t.href = '/api/em/auth/tiktok/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
-  if (cfg.appleClientId){ const t = $('applebtn'); t.hidden = false; t.textContent = T('apple'); t.href = '/api/em/auth/apple/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
+  if (cfg.tiktok && !METHOD && q.get('platform') !== 'ios' && q.get('platform') !== 'android'){ const t = $('ttbtn'); t.hidden = false; t.textContent = T('tiktok'); t.href = '/api/em/auth/tiktok/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
+  if (cfg.appleClientId && want('apple')){ const t = $('applebtn'); t.hidden = false; t.textContent = T('apple'); t.href = '/api/em/auth/apple/start?back=' + encodeURIComponent(location.pathname + '?' + [...q].filter(([k]) => k !== 'login').map(([k, v]) => k + '=' + v).join('&')); }
   // e-posta / demo: dokunuştan hemen sonra geçilir (kullanıcı hareketi taze); engellenirse düğme ekranda kalır.
   const after = async () => { const me = (await call('/me')).player; if (me){ showSignedIn(me, true); handBack(); } };
   // Google (açılır pencere): otomatik geçiş yok, "Oyuna dön" düğmesi.
   const afterPopup = async () => { const me = (await call('/me')).player; if (me) showSignedIn(me, true); };
   if (cfg.review){ $('review').hidden = false; $('reviewSum').textContent = T('reviewLogin'); $('reviewUserLbl').textContent = T('reviewUser'); $('reviewPassLbl').textContent = T('reviewPass'); $('reviewGo').textContent = T('loginBtn');
     $('reviewGo').onclick = async () => { err(''); $('reviewGo').disabled = true; try { await call('/auth/review', {username: $('reviewUser').value, password: $('reviewPass').value}); $('reviewPass').value = ''; await after(); } catch (e){ err(msg(e.message)); } $('reviewGo').disabled = false; }; }
-  if (cfg.googleClientId){
+  if (cfg.googleClientId && want('google')){
     const render = async () => {
       try {
         const {nonce} = await call('/auth/nonce', {});
@@ -135,7 +147,10 @@ async function showLogin(){
 try {
   cfg = await call('/config'); const me = (await call('/me')).player;
   if (q.get('login') === 'fail') err(T('ttFail'));
-  if (me && ['tiktok','apple','google','email','review'].includes(q.get('login'))){ showSignedIn(me); location.replace(handoffURL()); } else me ? showSignedIn(me) : showLogin();
+  if (me && ['tiktok','apple','google','email','review'].includes(q.get('login'))){ showSignedIn(me, true); await Promise.race([arm(), new Promise(r => setTimeout(r, 1500))]); location.replace(handoffURL()); }
+  else if (me) showSignedIn(me);
+  else if (METHOD === 'apple' && cfg.appleClientId && !q.get('login')){ showLogin(); location.replace($('applebtn').href); }
+  else showLogin();
 }
 catch (e){ err(msg(e.message)); }
 </script>

@@ -225,6 +225,7 @@ const SCHEMA = [
   'CREATE INDEX IF NOT EXISTS em_messages_unread ON em_messages(recipient, read)',
   'CREATE TABLE IF NOT EXISTS em_translations(msg INTEGER NOT NULL, lang TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(msg, lang))',
   'CREATE TABLE IF NOT EXISTS em_tickets(id TEXT PRIMARY KEY, player TEXT NOT NULL, challenge TEXT NOT NULL, expires INTEGER NOT NULL)',
+  'CREATE INDEX IF NOT EXISTS em_tickets_challenge ON em_tickets(challenge)',
   'CREATE TABLE IF NOT EXISTS em_reports(id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, msg INTEGER, snapshot TEXT, reason TEXT, created INTEGER NOT NULL)',
   // Electric Hunter: same TusneldaX accounts, its own progress and weekly league
   'CREATE TABLE IF NOT EXISTS eh_saves(player TEXT PRIMARY KEY, body TEXT NOT NULL, revision INTEGER NOT NULL, updated INTEGER NOT NULL)',
@@ -280,7 +281,7 @@ export async function emAPI(req, env, deps = {}){
        özel adrese giden yönlendirmeyi kesin yakalar. Oturum yoksa giriş sayfasına hata ile döner. */
     if (path === '/native/handoff' && req.method === 'GET'){
       const challenge = url.searchParams.get('challenge') || '', state = url.searchParams.get('state') || '', hunter = url.searchParams.get('app') === 'hunter';
-      const page = '/app-login?' + new URLSearchParams({challenge, state, lang: /^[a-z]{2}$/.test(url.searchParams.get('lang') || '') ? url.searchParams.get('lang') : 'tr', ...(hunter ? {app:'hunter'} : {}), platform:'ios', login:'fail'});
+      const page = '/app-login?' + new URLSearchParams({challenge, state, lang: /^[a-z]{2}$/.test(url.searchParams.get('lang') || '') ? url.searchParams.get('lang') : 'en', ...(hunter ? {app:'hunter'} : {}), platform:'ios', login:'fail'});
       if (!/^[a-f0-9]{64}$/.test(challenge) || !/^[a-f0-9]{32,64}$/.test(state)) return new Response(null, {status:303, headers:{Location: page, 'Cache-Control':'no-store'}});
       await ensureSchema(db);
       const me = await current(req, db); if (!me) return new Response(null, {status:303, headers:{Location: page, 'Cache-Control':'no-store'}});
@@ -339,6 +340,23 @@ export async function emAPI(req, env, deps = {}){
       if (!isTok(body.ticket) || typeof body.verifier !== 'string' || !/^[a-f0-9]{64}$/.test(body.verifier)) fail('LOGIN_EXPIRED', 401);
       const t = await one(db, 'DELETE FROM em_tickets WHERE id=? AND expires>? RETURNING player,challenge', await hash(body.ticket), Date.now());
       if (!t || t.challenge !== await hash(body.verifier)) fail('LOGIN_EXPIRED', 401);
+      await run(db, 'DELETE FROM em_tickets WHERE challenge=?', t.challenge);
+      const token = random();
+      await run(db, 'INSERT INTO em_sessions(id,player,expires) VALUES(?,?,?)', await hash(token), t.player, Date.now() + 180 * 86400000);
+      return reply({token});
+    }
+    /* 31 Ekim 2026: uygulama girişi yoklama ile de tamamlanır. Tarayıcıdaki giriş sayfası girişten hemen sonra uygulamanın
+       PKCE özetine bağlı bileti kendisi alır (/native/ticket); uygulama gizli doğrulayıcıyı (verifier) göndererek bileti
+       kendi oturumuyla değiştirir. Özel adresle (SCHEME://signin) dönüş engellense ya da uygulama arka planda kapatılsa da
+       uygulamaya geri gelindiğinde giriş tamamlanır. Bilet yoksa {pending:true} döner (hata değildir). */
+    if (path === '/native/claim' && req.method === 'POST'){
+      if (typeof body.verifier !== 'string' || !/^[a-f0-9]{64}$/.test(body.verifier)) fail('LOGIN_EXPIRED', 401);
+      const challenge = await hash(body.verifier);
+      await quota(db, 'claim:' + challenge, 400, 3600000); await quota(db, 'claim-ip:' + ip, 5000, 3600000); await ensureSchema(db);
+      const t = await one(db, 'SELECT id,player FROM em_tickets WHERE challenge=? AND expires>? ORDER BY expires DESC LIMIT 1', challenge, Date.now());
+      if (!t) return reply({pending:true});
+      if (!await one(db, 'DELETE FROM em_tickets WHERE id=? RETURNING id', t.id)) return reply({pending:true});
+      await run(db, 'DELETE FROM em_tickets WHERE challenge=?', challenge);
       const token = random();
       await run(db, 'INSERT INTO em_sessions(id,player,expires) VALUES(?,?,?)', await hash(token), t.player, Date.now() + 180 * 86400000);
       return reply({token});
@@ -360,7 +378,7 @@ export async function emAPI(req, env, deps = {}){
       if (typeof body.challenge !== 'string' || !/^[a-f0-9]{64}$/.test(body.challenge)) fail('INVALID_CHALLENGE');
       const ticket = random();
       await db.batch([db.prepare('DELETE FROM em_tickets WHERE expires<?').bind(Date.now()),
-        db.prepare('INSERT INTO em_tickets(id,player,challenge,expires) VALUES(?,?,?,?)').bind(await hash(ticket), me.id, body.challenge, Date.now() + 120000)]);
+        db.prepare('INSERT INTO em_tickets(id,player,challenge,expires) VALUES(?,?,?,?)').bind(await hash(ticket), me.id, body.challenge, Date.now() + 600000)]);
       return reply({ticket});
     }
     if (path === '/badges' && req.method === 'GET'){

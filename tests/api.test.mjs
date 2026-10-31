@@ -162,6 +162,20 @@ ok('league friend states in both games and two-way block');
   app.jar['__Host-em-session'] = ex.body.token;
   assert.equal((await app.call('/me')).body.player.code, meB.code);
   assert.equal((await app.call('/native/exchange', {ticket: t2.body.ticket, verifier})).status, 401); ok('native ticket exchange (one-time, PKCE)'); }
+// native app sign-in by polling: the sign-in page mints the ticket, the app claims it with the secret verifier only
+{ const crypto = await import('node:crypto'), verifier = 'ef'.repeat(32), challenge = crypto.createHash('sha256').update(verifier).digest('hex');
+  const app = new Client('6.6.6.6');
+  const p0 = await app.call('/native/claim', {verifier}); assert.equal(p0.status, 200); assert.equal(p0.body.pending, true); assert.equal(p0.body.token, undefined);
+  assert.equal((await app.call('/native/claim', {verifier: 'nothex'})).status, 401);
+  await b.call('/native/ticket', {challenge}); await b.call('/native/ticket', {challenge});
+  assert.equal((await app.call('/native/claim', {verifier: '12'.repeat(32)})).body.pending, true, 'another verifier gets nothing');
+  const c1 = await app.call('/native/claim', {verifier}); assert.equal(c1.status, 200); assert.match(c1.body.token, /^[a-f0-9]{64}$/);
+  assert.equal((await app.call('/native/claim', {verifier})).body.pending, true, 'one-time: every ticket of that challenge is gone');
+  app.jar['__Host-em-session'] = c1.body.token; assert.equal((await app.call('/me')).body.player.code, meB.code);
+  const t3 = await b.call('/native/ticket', {challenge});
+  assert.equal((await app.call('/native/exchange', {ticket: t3.body.ticket, verifier})).status, 200);
+  assert.equal((await app.call('/native/claim', {verifier})).body.pending, true, 'exchange also clears the claimable tickets');
+  ok('native sign-in claim (polling, one-time)'); }
 await b.call('/progress', {save:{max:3, coins:10, stars:{}, avatar:'zeynep'}, revision:0});
 assert.equal((await a.call('/friends')).body.friends.find(f => f.code === meB.code).avatar, 'zeynep'); ok('avatar in friend list');
 
