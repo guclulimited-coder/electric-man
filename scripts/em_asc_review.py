@@ -113,12 +113,12 @@ def submit(key, build):
         note('old submission: ' + s2)
     if key == 'mc':
         # MASTERCITY: the only (never released) version record is reused for the new version
-        api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'versionString': '1.0.46'}}}); note('version string -> 1.0.46')
+        api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'versionString': '1.0.47'}}}); note('version string -> 1.0.47')
         # 1.0.46 release note (owner approval 31 Oct 10:29): Turkish for tr, English elsewhere
         for loc in api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizations")['data']:
             lc = loc['attributes']['locale']
-            txt = ('Daha kolay giriş: tek dokunuşla Apple, Google veya e-posta; onaydan sonra oyuna kendiliğinden dönüş.' if lc.startswith('tr')
-                   else 'Easier sign-in: one tap with Apple, Google or e-mail; the game returns by itself after you confirm.')
+            txt = ('Girişsiz başla: oyun açılınca hemen oynarsın, ilerlemen telefona kaydedilir. İstersen menüden hesabını bağla, ilerlemen hesabına aktarılır.' if lc.startswith('tr')
+                   else 'Start without signing in: play right away, your progress is saved on your phone. Link your account from the menu any time and your progress moves to it.')
             safe(api, 'PATCH', f"/v1/appStoreVersionLocalizations/{loc['id']}", {'data': {'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': txt}}}); note('whatsNew ' + lc)
     # 2) release after approval, build
     api('PATCH', f"/v1/appStoreVersions/{v['id']}", {'data': {'type': 'appStoreVersions', 'id': v['id'], 'attributes': {'releaseType': 'AFTER_APPROVAL'}}}); note('releaseType AFTER_APPROVAL')
@@ -136,10 +136,9 @@ def submit(key, build):
     if rd:
         n = rd['attributes'].get('notes') or ''
         if key in ('mc', 'br'):
-            mc = (f"Build {build} (31 Oct 2026, version 1.0.46): easier sign-in. The tapped method (Sign in with Apple first, then Google, e-mail code) opens directly "
-                  "in the system sign-in sheet without an extra in-app dialog, and the game continues by itself after confirmation; app dialogs follow the device language. "
-                  "Sign-in is required at first launch (online chat, friends, shared multiplayer city, cloud saves; "
-                  "the reason is shown on the sign-in screen). Progress made earlier without an account is moved to the account on first sign-in. "
+            mc = (f"Build {build} (31 Oct 2026, version 1.0.47): no sign-in is required. The game starts with 'Play now' and progress is saved on the device. "
+                  "An account is optional ('Link your account' on the start card and in the profile menu) and only needed for online chat, friends, the shared city and cloud saves; "
+                  "progress made without an account is moved to the account when the player signs in. "
                   "Sign in with Apple is offered. Account deletion in the app: profile menu > 'Hesap ayarları ve silme', and the app menu > 'Hesabımı silme seçenekleri'. "
                   "No gambling or casino content in the iOS app. Demo account steps below are unchanged.\n\n")
             if key == 'br':
