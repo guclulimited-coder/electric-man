@@ -30,12 +30,12 @@ def run(p, platform, out):
     page = ctx.new_page(); dialogs = []
     page.on('dialog', lambda d: (dialogs.append(d.message[:80]), d.dismiss()))
     try:
-        page.goto(f"{b['url']}&native={native}", wait_until='networkidle', timeout=60000)
-        page.wait_for_timeout(2500)
+        page.goto(f"{b['url']}&native={native}", wait_until='domcontentloaded', timeout=60000)
+        page.wait_for_selector('#review-login', state='attached', timeout=30000); page.wait_for_timeout(4000)
         rl = page.locator('#review-login'); txt = rl.inner_text().strip()
         tr_left = [w for w in TURKISH if w in page.locator('body').inner_text()]
         out(f'{platform}: account page review button="{txt}" turkish_left={tr_left}')
-        rl.click(); page.wait_for_url('https://tusneldax.com/**', timeout=30000); page.wait_for_load_state('networkidle')
+        rl.click(); page.wait_for_url('https://tusneldax.com/**', timeout=30000); page.wait_for_selector('#review summary', timeout=30000)
         page.locator('#review summary').click(); page.fill('#reviewUser', os.environ['DEMO_USER']); page.fill('#reviewPass', os.environ['DEMO_PASS'])
         if os.environ.get('PROBE_DRY'): out(f'{platform}: dry run stops at the review form'); return True
         page.click('#reviewSubmit')
