@@ -40,11 +40,11 @@ def run(p, platform, out):
         if os.environ.get('PROBE_DRY'): out(f'{platform}: dry run stops at the review form'); return True
         page.click('#reviewSubmit')
         for _ in range(60):
-            if page.url.startswith(O + '/hesap.html'): break
+            if page.url.startswith(O + '/hesap'): break
             c = page.locator('#continue')
             if c.count() and c.is_visible() and c.is_enabled(): c.click()
             page.wait_for_timeout(1000)
-        if not page.url.startswith(O + '/hesap.html'): out(f'{platform}: did not return to account page ({page.url.split("?")[0]})'); return False
+        if not page.url.startswith(O + '/hesap'): out(f'{platform}: did not return to account page ({page.url.split("?")[0]})'); return False
         page.wait_for_selector('#approve', state='visible', timeout=30000)
         out(f'{platform}: back on account page, approve button="{page.locator("#approve").inner_text().strip()}"')
         try: page.click('#approve', timeout=10000)
