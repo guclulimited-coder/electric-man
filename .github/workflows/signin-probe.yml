@@ -17,14 +17,17 @@ jobs:
         with: { distribution: temurin, java-version: '17' }
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
-      - name: Oyunu uygulamaya paketle
-        run: node scripts/bundle-native.mjs android/app/src/main/assets/www
-      - name: Android SDK 36
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
-      - uses: gradle/actions/setup-gradle@v4
-        with: { gradle-version: '8.14.3' }
-      - name: Hata ayiklama APK
-        run: gradle -p android assembleDebug --no-daemon -q
+      - name: Play surumlerini (AAB) emulator paketine cevir
+        run: |
+          set -e
+          mkdir -p probe-apk && cd probe-apk
+          curl -sSL -o bt.jar https://github.com/google/bundletool/releases/download/1.17.2/bundletool-all-1.17.2.jar
+          curl -sSL -o em.aab https://raw.githubusercontent.com/guclulimited-coder/electric-man/builds/ElectricMan-1.0.35-135.aab
+          curl -sSL -o eh.aab https://raw.githubusercontent.com/guclulimited-coder/electric-man/hunter-builds/ElectricHunter-1.0.30-130.aab
+          ls -la
+          keytool -genkeypair -keystore dbg.jks -storepass android -keypass android -alias dbg -dname CN=probe -keyalg RSA -validity 30 >/dev/null 2>&1
+          for g in em eh; do java -jar bt.jar build-apks --bundle=$g.aab --output=$g.apks --mode=universal --ks=dbg.jks --ks-pass=pass:android --ks-key-alias=dbg --key-pass=pass:android && unzip -o -q $g.apks universal.apk && mv universal.apk $g.apk; done
+          ls -la *.apk
       - name: KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
