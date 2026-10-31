@@ -1103,15 +1103,15 @@ const Online = (() => {
   }
   if (Native.app) window.__emLoginDone = () => { nativeSignedIn(); };
   async function init(){
-    if (!SHOT && !me && !store.get('acct', 0)){ gate = true; $('sheet').classList.add('gate'); sheet(T('loginTitle'), `<p>…</p>`); }
+    // Sahip 31 Ekim: girişsiz başlama — açılışta zorunlu giriş kapısı yok; hesap Profil'den isteğe bağlı bağlanır.
     try { cfg = await call('/config'); } catch { cfg = null; }
-    if (!cfg){ if (!SHOT && !store.get('acct', 0)) gateOffline(); else if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } return; }
+    if (!cfg){ if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } return; }
     let meErr = false;
     // uygulama sistem tarafından kapatılırken yarım kalan giriş varsa önce onu tamamla
     if (Native.app && !SHOT){ try { await Native.call({action:'loginCheck'}); } catch {} }
     try { setMe((await call('/me')).player); } catch { meErr = true; }
     if (me){ store.set('acct', 1); if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } }
-    else if (!SHOT){ if (meErr && store.get('acct', 0)){ if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } } else gateOn(); }
+    else if (!SHOT){ if (meErr && store.get('acct', 0)){ if (gate){ gate = false; $('sheet').classList.remove('gate'); $('sheet').hidden = true; } } }
     if (me) sync().then(claimWeb);
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); say(T(pay === 'ok' ? 'payOk' : 'payFail')); }
@@ -1212,8 +1212,8 @@ const Online = (() => {
     const err = t => { $('accErr').textContent = t || ''; };
     body.querySelector('#nameSave').onclick = async () => { try { const r = await call('/profile', {name: $('em_name').value}); me.name = r.name; $('em_name').value = r.name; err(''); say(T('nameSaved', {n: r.name})); } catch (e){ err(msg(e.message)); } };
     body.querySelector('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(me.code); say(T('copied', {c: me.code})); } catch { const r = document.createRange(); r.selectNodeContents($('myCode')); getSelection().removeAllRanges(); getSelection().addRange(r); } };
-    body.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch {} setMe(null); $('sheet').hidden = true; say(T('loggedOut')); gateOn(); };
-    body.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); $('sheet').hidden = true; say(T('deleted')); gateOn(); } catch (e){ err(e.message === 'CONFIRM_DELETE' ? T('confirmDel', {w}) : msg(e.message)); } };
+    body.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch {} setMe(null); $('sheet').hidden = true; say(T('loggedOut')); };
+    body.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); $('sheet').hidden = true; say(T('deleted')); } catch (e){ err(e.message === 'CONFIRM_DELETE' ? T('confirmDel', {w}) : msg(e.message)); } };
   }
   function googleButton(onToken){
     const render = async () => {

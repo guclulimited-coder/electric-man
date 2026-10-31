@@ -2180,16 +2180,15 @@ const Online = (() => {
   }
   if (Native.app) window.__emLoginDone = () => { nativeSignedIn(); };
   async function init(){
-    if (!me && !store.get('acct', 0)){ gateShow(); gatePut(`<p class="note">…</p>`); }
+    // Sahip 31 Ekim: girişsiz başlama — açılışta zorunlu giriş kapısı yok; hesap Hesap menüsünden isteğe bağlı.
     try { cfg = await call('/config'); } catch(e){ cfg = null; }
-    if (!cfg){ if (!store.get('acct', 0)) gateOffline(); else if (gate) gateHide(); return; }
+    if (!cfg){ if (gate) gateHide(); return; }
     let meErr = false;
     // uygulama sistem tarafından kapatılırken yarım kalan giriş varsa önce onu tamamla
     if (Native.app){ try { await Native.call({action: 'loginCheck'}); } catch(e){} }
     try { setMe((await call('/me')).player); } catch(e){ meErr = true; }
     if (me){ store.set('acct', 1); if (gate) gateHide(); }
-    else if (meErr && store.get('acct', 0)){ if (gate) gateHide(); }
-    else gateOn();
+    else if (gate) gateHide();
     if (me){ await sync(); score(); await claimWeb(); startLabel(); }
     if (webPay()){ $('shopNote2').textContent = T('payNote'); }
     const pay = new URLSearchParams(location.search).get('pay');
@@ -2241,8 +2240,8 @@ const Online = (() => {
         <details><summary class="note" style="cursor:pointer">${T('o_delAcc')}</summary><p class="note">${esc(T('o_delText', {w}))}</p><div class="field"><input id="delConfirm" placeholder="${esc(w)}"><button class="buy alt" type="button" id="delGo">${T('o_del')}</button></div></details>`);
       b.querySelector('#nameSave').onclick = async () => { try { const r = await call('/profile', {name: $('ehName').value}); me.name = r.name; $('profName').textContent = r.name; toast(T('o_nameSaved', {n: r.name})); err('accErr'); } catch(e){ err('accErr', msg(e.message)); } };
       b.querySelector('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(me.code); toast(T('o_copied', {c: me.code})); } catch(e){ $('ehCode').select(); } };
-      b.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch(e){} setMe(null); toast(T('o_loggedOut')); gateOn(); };
-      b.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); toast(T('o_deleted')); gateOn(); } catch(e){ err('accErr', e.message === 'CONFIRM_DELETE' ? T('o_confirmDel', {w}) : msg(e.message)); } };
+      b.querySelector('#logout').onclick = async () => { try { await call('/logout', {}); } catch(e){} setMe(null); toast(T('o_loggedOut')); };
+      b.querySelector('#delGo').onclick = async () => { try { await call('/delete-account', {confirm: $('delConfirm').value.trim()}); setMe(null); toast(T('o_deleted')); } catch(e){ err('accErr', e.message === 'CONFIRM_DELETE' ? T('o_confirmDel', {w}) : msg(e.message)); } };
       return;
     }
     const done = async () => { setMe((await call('/me')).player); await sync(); score(); await claimWeb(); if (gate){ gateOff(); return; } toast(T('o_welcome', {name: me.name})); render(); };
