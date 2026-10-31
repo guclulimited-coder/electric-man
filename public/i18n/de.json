@@ -110,6 +110,8 @@
   "codeLbl": "6-stelliger Code",
   "sendCode": "Code senden",
   "loginBtn": "Anmelden",
+  "loginBack": "Zurück zum Spiel",
+  "loginDone": "Angemeldet. Tippe auf die Schaltfläche unten, um zum Spiel zurückzukehren.",
   "noMethods": "Anmeldemethoden sind noch nicht verfügbar.",
   "consent": "Mit der Anmeldung akzeptierst du die {terms} und die {privacy}.",
   "terms": "Nutzungsbedingungen",

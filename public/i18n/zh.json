@@ -110,6 +110,8 @@
   "codeLbl": "6 位验证码",
   "sendCode": "发送验证码",
   "loginBtn": "登录",
+  "loginBack": "返回游戏",
+  "loginDone": "已登录。点击下方按钮返回游戏。",
   "noMethods": "登录方式尚未开放。",
   "consent": "登录即表示你同意{terms}和{privacy}。",
   "terms": "使用条款",

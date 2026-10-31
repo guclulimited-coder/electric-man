@@ -110,6 +110,8 @@
   "codeLbl": "Código de 6 dígitos",
   "sendCode": "Enviar código",
   "loginBtn": "Entrar",
+  "loginBack": "Volver al juego",
+  "loginDone": "Sesión iniciada. Toca el botón de abajo para volver al juego.",
   "noMethods": "Los métodos de acceso aún no están disponibles.",
   "consent": "Al iniciar sesión, aceptas los {terms} y la {privacy}.",
   "terms": "Términos de uso",

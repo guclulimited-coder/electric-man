@@ -110,6 +110,8 @@
   "codeLbl": "6桁のコード",
   "sendCode": "コードを送信",
   "loginBtn": "ログイン",
+  "loginBack": "ゲームに戻る",
+  "loginDone": "サインインしました。下のボタンをタップしてゲームに戻ってください。",
   "noMethods": "ログイン方法はまだ準備中です。",
   "consent": "ログインすると{terms}と{privacy}に同意したことになります。",
   "terms": "利用規約",
