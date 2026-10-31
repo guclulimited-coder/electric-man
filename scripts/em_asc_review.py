@@ -202,8 +202,11 @@ def demo(key):
     v = versions(app)[0]
     a = ((api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail") or {}).get('data') or {}).get('attributes') or {}
     if not a.get('demoAccountName') or not a.get('demoAccountPassword'): note('demo account not set'); return
-    subprocess.run([sys.executable, '-m', 'pip', '-q', 'install', 'playwright==1.56.0'], check=True)
-    subprocess.run([sys.executable, '-m', 'playwright', 'install', '--with-deps', 'chromium'], check=True, stdout=subprocess.DEVNULL)
+    r = subprocess.run([sys.executable, '-m', 'pip', '-q', 'install', 'playwright==1.56.0'], capture_output=True, text=True)
+    note(f'pip playwright exit {r.returncode} ' + r.stderr.strip()[-200:])
+    if subprocess.run(['bash', '-c', 'command -v google-chrome'], capture_output=True).returncode != 0:
+        r = subprocess.run([sys.executable, '-m', 'playwright', 'install', '--with-deps', 'chromium'], capture_output=True, text=True)
+        note(f'playwright install exit {r.returncode} ' + (r.stderr or '').strip()[-200:])
     env = dict(os.environ, DEMO_USER=a['demoAccountName'], DEMO_PASS=a['demoAccountPassword'])
     r = subprocess.run([sys.executable, 'scripts/mc_demo_probe.py'], env=env, capture_output=True, text=True, timeout=900)
     for line in (r.stdout + r.stderr).splitlines()[-40:]:

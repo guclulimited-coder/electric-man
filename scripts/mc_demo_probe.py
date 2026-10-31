@@ -24,7 +24,8 @@ def run(p, platform, out):
     st, b = post('/api/auth/device/start', {'challenge': challenge})
     if st != 200: out(f'{platform}: device start {st}'); return False
     did = b['id']; native = 'a' if platform == 'android' else '3'
-    browser = p.chromium.launch()
+    try: browser = p.chromium.launch(channel='chrome')  # Google Chrome preinstalled on GitHub runners
+    except Exception: browser = p.chromium.launch()
     ctx = browser.new_context(user_agent=UA[platform], locale='en-US', viewport={'width': 412, 'height': 860}, is_mobile=True, has_touch=True)
     page = ctx.new_page(); dialogs = []
     page.on('dialog', lambda d: (dialogs.append(d.message[:80]), d.dismiss()))
