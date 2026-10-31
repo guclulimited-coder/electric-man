@@ -1,7 +1,7 @@
-name: Electric Man/Hunter App Store review
+name: Electric Man/Hunter App Store (giris duzeltmesi)
 on:
   push:
-    branches: [em-asc-review]
+    branches: [emeh-asc]
 permissions: { contents: read }
 jobs:
   asc:
