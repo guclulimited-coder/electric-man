@@ -110,6 +110,8 @@
   "codeLbl": "Code à 6 chiffres",
   "sendCode": "Envoyer le code",
   "loginBtn": "Se connecter",
+  "loginBack": "Retour au jeu",
+  "loginDone": "Connexion réussie. Touchez le bouton ci-dessous pour revenir au jeu.",
   "noMethods": "Les modes de connexion ne sont pas encore disponibles.",
   "consent": "En te connectant, tu acceptes les {terms} et la {privacy}.",
   "terms": "Conditions d'utilisation",

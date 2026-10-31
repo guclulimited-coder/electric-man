@@ -110,6 +110,8 @@
   "codeLbl": "6 haneli kod",
   "sendCode": "Kod gönder",
   "loginBtn": "Giriş yap",
+  "loginBack": "Oyuna dön",
+  "loginDone": "Giriş tamam. Oyuna dönmek için aşağıdaki düğmeye dokun.",
   "noMethods": "Giriş yöntemleri henüz açılmadı.",
   "consent": "Giriş yaparak {terms} ve {privacy} metinlerini kabul edersin.",
   "terms": "Kullanım Koşulları",

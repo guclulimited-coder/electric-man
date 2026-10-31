@@ -110,6 +110,8 @@
   "codeLbl": "6-digit code",
   "sendCode": "Send code",
   "loginBtn": "Sign in",
+  "loginBack": "Back to the game",
+  "loginDone": "Signed in. Tap the button below to return to the game.",
   "noMethods": "Sign-in methods aren't available yet.",
   "consent": "By signing in, you accept the {terms} and the {privacy}.",
   "terms": "Terms of Use",

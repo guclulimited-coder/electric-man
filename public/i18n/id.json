@@ -110,6 +110,8 @@
   "codeLbl": "Kode 6 digit",
   "sendCode": "Kirim kode",
   "loginBtn": "Masuk",
+  "loginBack": "Kembali ke game",
+  "loginDone": "Berhasil masuk. Ketuk tombol di bawah untuk kembali ke game.",
   "noMethods": "Cara masuk belum dibuka.",
   "consent": "Dengan masuk, kamu menyetujui {terms} dan {privacy}.",
   "terms": "Ketentuan Penggunaan",
