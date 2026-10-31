@@ -10,8 +10,8 @@ O = 'https://oyun.tusneldax.com'
 UA = {'android': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
       'ios': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'}
 TURKISH = ('Onayla ve uygulamaya', 'Test hesabıyla giriş', 'Google ile devam', 'E-posta koduyla', 'Giriş yap')
-def post(path, body, token=None, method='POST'):
-    h = {'Origin': O, 'Content-Type': 'application/json', 'Accept': 'application/json'}
+def post(path, body, token=None, method='POST', ua=None):
+    h = {'Origin': O, 'Content-Type': 'application/json', 'Accept': 'application/json', 'User-Agent': ua or UA['android']}
     if token: h['Authorization'] = 'Bearer ' + token
     req = urllib.request.Request(O + path, method=method, data=None if method == 'GET' else json.dumps(body).encode(), headers=h)
     try:
@@ -22,7 +22,7 @@ def post(path, body, token=None, method='POST'):
 def run(p, platform, out):
     verifier = secrets.token_hex(32); challenge = hashlib.sha256(verifier.encode()).hexdigest()
     st, b = post('/api/auth/device/start', {'challenge': challenge})
-    if st != 200: out(f'{platform}: device start {st}'); return False
+    if st != 200: out(f'{platform}: device start {st} {str(b)[:120]}'); return False
     did = b['id']; native = 'a' if platform == 'android' else '3'
     try: browser = p.chromium.launch(channel='chrome')  # Google Chrome preinstalled on GitHub runners
     except Exception: browser = p.chromium.launch()
