@@ -1,11 +1,21 @@
 {
  "label": "electric-man",
- "generated_utc": "2026-10-29T19:41:31.617269Z",
+ "generated_utc": "2026-11-02T08:45:03.210693Z",
  "play": {
   "skipped": "no PLAY_SA_JSON"
  },
  "asc": {
   "apps": {
+   "6819712674": {
+    "name": "Electric Hunter",
+    "bundleId": "com.tusneldax.electrichunter",
+    "sku": "electrichunter"
+   },
+   "6828888001": {
+    "name": "G\u00f6lge Operasyonu: Kurt Kanunu",
+    "bundleId": "com.tusneldax.golgeoperasyonu",
+    "sku": "golgeoperasyonu"
+   },
    "6817973176": {
     "name": "MASTERCITY: \u015eehir Hayat\u0131",
     "bundleId": "com.tusnelda.ustasehri",
@@ -20,17 +30,18 @@
     "name": "TUSNELDAX Bus Rush",
     "bundleId": "com.tusneldax.busrush",
     "sku": "TUSNELDAX-BUSRUSH-IOS"
-   },
-   "6819712674": {
-    "name": "Electric Hunter",
-    "bundleId": "com.tusneldax.electrichunter",
-    "sku": "electrichunter"
    }
   },
   "reporter_getVendors": "403 <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Error>\n    <Code>124</Code>\n    <Message>Your Access Token is invalid.</Message>\n</Error>\n",
-  "sales_no_vendor_probe": "400 {\n  \"errors\" : [ {\n    \"id\" : \"0a107de7-ea1f-4973-a231-f555e47be2f0\",\n    \"status\" : \"400\",\n    \"code\" : \"PARAMETER_ERROR.REQUIRED\",\n    \"title\" : \"A required parameter was not provided\",\n    \"detail\" : \"The parameter 'filter[vendorNumber]' is required but was not provided\",\n    \"source\" : {\n      \"",
+  "sales_no_vendor_probe": "400 {\n  \"errors\" : [ {\n    \"id\" : \"35d6dc4a-bb09-4362-8fa0-da69e9e7b55d\",\n    \"status\" : \"400\",\n    \"code\" : \"PARAMETER_ERROR.REQUIRED\",\n    \"title\" : \"A required parameter was not provided\",\n    \"detail\" : \"The parameter 'filter[vendorNumber]' is required but was not provided\",\n    \"source\" : {\n      \"",
   "vendors": [],
   "analytics": {
+   "6819712674": {
+    "requests": []
+   },
+   "6828888001": {
+    "requests": []
+   },
    "6817973176": {
     "requests": []
    },
@@ -39,15 +50,12 @@
    },
    "6817836111": {
     "requests": []
-   },
-   "6819712674": {
-    "requests": []
    }
   }
  },
  "notes": [
-  "::notice::[electric-man] ASC apps: 6817973176=com.tusnelda.ustasehri; 6819511421=com.tusneldax.electricman; 6817836111=com.tusneldax.busrush; 6819712674=com.tusneldax.electrichunter",
-  "::warning::[electric-man] ASC sales: vendor number unknown. reporter=403 <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?> <Error>     <Code>124</Code>     <Message>Your Access Token is invalid.</Message> </Error> probe=400 {   \"errors\" : [ {     \"id\" : \"0a107de7-ea1f-4973-a231-f555e47be2f0\",     \"status\" : \"400\",     \"code\" : \"PARAMETER_ERROR.REQUIRED\",     \"title\" :",
-  "::notice::[electric-man] ASC analytics requests: com.tusnelda.ustasehri=0; com.tusneldax.electricman=0; com.tusneldax.busrush=0; com.tusneldax.electrichunter=0"
+  "::notice::[electric-man] ASC apps: 6819712674=com.tusneldax.electrichunter; 6828888001=com.tusneldax.golgeoperasyonu; 6817973176=com.tusnelda.ustasehri; 6819511421=com.tusneldax.electricman; 6817836111=com.tusneldax.busrush",
+  "::warning::[electric-man] ASC sales: vendor number unknown. reporter=403 <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?> <Error>     <Code>124</Code>     <Message>Your Access Token is invalid.</Message> </Error> probe=400 {   \"errors\" : [ {     \"id\" : \"35d6dc4a-bb09-4362-8fa0-da69e9e7b55d\",     \"status\" : \"400\",     \"code\" : \"PARAMETER_ERROR.REQUIRED\",     \"title\" :",
+  "::notice::[electric-man] ASC analytics requests: com.tusneldax.electrichunter=0; com.tusneldax.golgeoperasyonu=0; com.tusnelda.ustasehri=0; com.tusneldax.electricman=0; com.tusneldax.busrush=0"
  ]
 }
