@@ -218,6 +218,39 @@ const $ = id => document.getElementById(id);
 /* native shell bridge (Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise}) */
 const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (window.EMNative && window.EMNative.platform) || 'web',
   call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
+
+/* 6 Kasım 2026: açılış hunisi — indirenler nerede kayboluyor? Yalnız günlük sayaç: aşama, bölüm kovası, platform, sürüm.
+   Kimlik/hesap gönderilmez; aynı gün aynı aşama cihazda bir kez sayılır (src/funnel.mjs). */
+const Funnel = (() => {
+  const G = 'em', K = G + '_funnel', V = 'w20261106', t0 = performance.now(), today = new Date().toISOString().slice(0, 10);
+  let st = {}; try { st = JSON.parse(localStorage.getItem(K) || '{}') || {}; } catch (e) { st = {}; }
+  if (!st.first) st.first = today;
+  if (st.day !== today){ st.day = today; st.sent = {}; }
+  st.sent = st.sent || {};
+  const save = () => { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} };
+  const q = []; let timer = 0;
+  function flush(){
+    timer = 0; if (!q.length) return;
+    const body = {g: G, v: V, p: Native.platform, c: st.first === today ? 'new' : 'old', e: q.splice(0, 12)};
+    try {
+      if (Native.app) Native.call({action: 'api', path: '/funnel', method: 'POST', body}).catch(() => {});
+      else fetch('/api/em/funnel', {method: 'POST', credentials: 'same-origin', keepalive: true, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).catch(() => {});
+    } catch (e) {}
+  }
+  function hit(s, d){
+    d = d || ''; const k = s + '|' + d; if (st.sent[k]) return; st.sent[k] = 1; save();
+    q.push({s, d, ms: Math.round(performance.now() - t0)}); if (!timer) timer = setTimeout(flush, 1500);
+  }
+  const lb = n => n <= 0 ? '' : n <= 3 ? 'l' + n : n <= 5 ? 'l4-5' : n <= 10 ? 'l6-10' : n <= 20 ? 'l11-20' : 'l21p';
+  hit('app_open');
+  const age = Math.round((Date.parse(today) - Date.parse(st.first)) / 864e5);
+  if (age === 1) hit('d1_return'); else if (age >= 2 && age <= 7) hit('d7_return');
+  requestAnimationFrame(() => hit('first_paint'));
+  let ready = false; const stall = setTimeout(() => { if (!ready) hit('stall'); }, 20000);
+  addEventListener('pagehide', flush); document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  return {hit, ready(){ if (ready) return; ready = true; clearTimeout(stall); hit('play_ready'); },
+    start(n){ hit('level_start', lb(n)); }, done(n){ hit('level_done', lb(n)); }, fail(n){ hit('level_fail', lb(n)); }, error(){ hit('boot_error'); }};
+})();
 // apps keep a copy of the save outside the web view (restored before the game starts)
 try { if (Native.app && window.__EM_RESTORE && !localStorage.getItem('em_max')) for (const [k, v] of Object.entries(window.__EM_RESTORE)) if (k.startsWith('em_')) localStorage.setItem(k, v); } catch (e){}
 /* store screenshot mode (?shot=1..6): demo save + mocked online data, no ads/prompts */
@@ -666,7 +699,7 @@ let level = Math.min(store.get('level', 1), MAX_LEVEL), coins = store.get('coins
 let muted = store.get('muted', false), dirCW = store.get('cw', true);
 
 function start(lv){
-  level = Math.max(1, Math.min(lv, MAX_LEVEL)); store.set('level', level);
+  level = Math.max(1, Math.min(lv, MAX_LEVEL)); store.set('level', level); Funnel.start(level);
   const g = generate(level);
   S = {W:g.W, H:g.H, tiles:g.tiles, houses:g.houses, opt:g.opt, D:g.D, moves:0,
        limit: g.D.slack === Infinity ? Infinity : g.opt + g.D.slack, history:[], actions:[], extra:0, over:false, freeHints:1, lit:new Set(), on:new Set()};
@@ -824,7 +857,7 @@ function after(){
 }
 const starSVG = (on, s=38) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.6L12 17.1 6.1 20.4l1.3-6.6L2.5 9.3l6.6-.8z" fill="${on ? '#ffc928' : '#dfe6f0'}" stroke="${on ? '#d99a00' : '#c4cfde'}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
 function win(){
-  S.over = true; setMood('win'); snd('win'); say(T('winSay'));
+  Funnel.done(level); S.over = true; setMood('win'); snd('win'); say(T('winSay'));
   S.tiles.forEach((t, i) => { if (t.kind === 'house') setTimeout(() => bounce(t.house), i * 25); });
   const stars = starsFor(S.moves, S.opt);
   const reward = stars * 5 + Math.min(level, 40);
@@ -837,7 +870,7 @@ function win(){
     last ? [{t:T('mapBtn'), alt:true, f:openMap}] : [{t:T('next'), alt:true, f:() => Ads.afterWin(() => start(level + 1))}, {t:T('retryFewer'), f:() => start(level)}]), 900);
 }
 function lose(){
-  S.over = true; setMood(mixer ? 'sit' : 'worried'); snd('fail'); say(T('loseSay'));
+  Funnel.fail(level); S.over = true; setMood(mixer ? 'sit' : 'worried'); snd('fail'); say(T('loseSay'));
   modal(T('loseTitle'), `<p>${T('loseText', {n:S.houses - S.lit.size, p:MOVES_PRICE})}</p>`, [
     {t:T('buyMoves', {p:MOVES_PRICE}), alt:true, dis: coins < MOVES_PRICE, f:() => { coins -= MOVES_PRICE; renderCoins(); S.limit += 5; S.extra += 5; S.over = false; $('modal').hidden = true; setMood(''); renderStats(); }},
     ...(coins < MOVES_PRICE ? [{t:T('shopTitle'), f:() => Shop.open()}] : []),
@@ -1352,7 +1385,7 @@ try {
   initBoard(); initHero();
   $('loading').hidden = true;
   renderSound(); Profile.render();
-  start(level);
+  start(level); Funnel.ready();
   if (SHOT) setTimeout(shotScene, 2500);
   else { if (!Profile.gender) setTimeout(() => Profile.ask(), 600);
   Ads.launch(); Shop.restorePending(); }
@@ -1360,7 +1393,7 @@ try {
   Online.init();
 } catch (e){
   $('loading').hidden = false;
-  $('loading').textContent = T('noGL');
+  $('loading').textContent = T('noGL'); Funnel.error();
   console.error(e);
 }
 function shotScene(){

@@ -299,6 +299,38 @@ const $ = id => document.getElementById(id);
 /* native shell bridge: the Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise} */
 const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (window.EMNative && window.EMNative.platform) || 'web',
   call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
+/* 6 Kasım 2026: açılış hunisi — indirenler nerede kayboluyor? Yalnız günlük sayaç: aşama, bölüm kovası, platform, sürüm.
+   Kimlik/hesap gönderilmez; aynı gün aynı aşama cihazda bir kez sayılır (src/funnel.mjs). */
+const Funnel = (() => {
+  const G = 'eh', K = G + '_funnel', V = 'w20261106', t0 = performance.now(), today = new Date().toISOString().slice(0, 10);
+  let st = {}; try { st = JSON.parse(localStorage.getItem(K) || '{}') || {}; } catch (e) { st = {}; }
+  if (!st.first) st.first = today;
+  if (st.day !== today){ st.day = today; st.sent = {}; }
+  st.sent = st.sent || {};
+  const save = () => { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} };
+  const q = []; let timer = 0;
+  function flush(){
+    timer = 0; if (!q.length) return;
+    const body = {g: G, v: V, p: Native.platform, c: st.first === today ? 'new' : 'old', e: q.splice(0, 12)};
+    try {
+      if (Native.app) Native.call({action: 'api', path: '/funnel', method: 'POST', body}).catch(() => {});
+      else fetch('/api/em/funnel', {method: 'POST', credentials: 'same-origin', keepalive: true, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).catch(() => {});
+    } catch (e) {}
+  }
+  function hit(s, d){
+    d = d || ''; const k = s + '|' + d; if (st.sent[k]) return; st.sent[k] = 1; save();
+    q.push({s, d, ms: Math.round(performance.now() - t0)}); if (!timer) timer = setTimeout(flush, 1500);
+  }
+  const lb = n => n <= 0 ? '' : n <= 3 ? 'l' + n : n <= 5 ? 'l4-5' : n <= 10 ? 'l6-10' : n <= 20 ? 'l11-20' : 'l21p';
+  hit('app_open');
+  const age = Math.round((Date.parse(today) - Date.parse(st.first)) / 864e5);
+  if (age === 1) hit('d1_return'); else if (age >= 2 && age <= 7) hit('d7_return');
+  requestAnimationFrame(() => hit('first_paint'));
+  let ready = false; const stall = setTimeout(() => { if (!ready) hit('stall'); }, 20000);
+  addEventListener('pagehide', flush); document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  return {hit, ready(){ if (ready) return; ready = true; clearTimeout(stall); hit('play_ready'); },
+    start(n){ hit('level_start', lb(n)); }, done(n){ hit('level_done', lb(n)); }, fail(n){ hit('level_fail', lb(n)); }, error(){ hit('boot_error'); }};
+})();
 try { if (Native.app && window.__EM_RESTORE && !localStorage.getItem('pa-save')) for (const [k, v] of Object.entries(window.__EM_RESTORE)) if (k.startsWith('pa-')) localStorage.setItem(k, v); } catch(e){}
 // ---------------------------------------------------------------- languages: Turkish + the 12 most spoken, same set as Electric Man
 const LANG_NAMES = {tr:'Türkçe', en:'English', zh:'中文', hi:'हिन्दी', es:'Español', ar:'العربية', fr:'Français', bn:'বাংলা', pt:'Português', ru:'Русский', id:'Bahasa Indonesia', de:'Deutsch', ja:'日本語'};
@@ -2056,6 +2088,7 @@ function warmUp(){
   for (const b of bolts.splice(nb)) b.l.visible = false;
 }
 async function startGame(){
+  Funnel.start(curIsl + 1);
   if (!CREA){ $('startBtn').disabled = true; await creaOrTimeout(); $('startBtn').disabled = false; }
   audio(); resetGame(); if (!warmed){ warmed = true; $('startBtn').disabled = true; const bt = $('startBtn').textContent; $('startBtn').textContent = T('loadingWorld'); await new Promise(r => setTimeout(r, 30)); warmUp(); $('startBtn').disabled = false; $('startBtn').textContent = bt; } running = true; paused = false; onTitle = false; meBar.visible = true;
   for (const id of ['title', 'over', 'paused']) $(id).hidden = true;
@@ -2078,7 +2111,7 @@ function respawnHere(){
 }
 let intro = 0;
 function gameOver(){
-  running = false; sfx.boom();
+  Funnel.fail(curIsl + 1); running = false; sfx.boom();
   $('overEyebrow').textContent = T('islandN', {n: curIsl + 1});
   $('tKills').textContent = player.kills; $('tEat').textContent = player.eaten; $('tWave').textContent = curIsl + 1;
   $('over').hidden = false; for (const id of ['hint', 'joy', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = true;
@@ -2774,7 +2807,7 @@ function updatePlayer(dt, t){
   setBar(meBar, player.hp / player.maxHp); meBar.quaternion.copy(camera.quaternion); meShBar.visible = !!shield; if (shield){ setBar(meShBar, shield.cur / shield.max); meShBar.quaternion.copy(camera.quaternion); }
   updateProp(dt);
   if (shield){ if (shield.wait > 0) shield.wait -= dt; else shield.cur = Math.min(shield.max, shield.cur + shield.max * .2 * dt); shieldMesh.material.opacity = Math.max(shield.cur > 0 ? .08 + .06 * Math.sin(t * 4) : 0, shieldMesh.material.opacity - dt * 1.5); shieldMesh.rotation.y += dt; }
-  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ curIsl = k; if (!islands[k].scaled) scaleIsland(islands[k]); saveGame(); applyTheme(themeOf(k)); banner(k >= STORY_N ? T('endlessIsl', {n: k + 1}) : T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); storyArrive(k); if (!islands[k + 1]) buildIsland(k + 1); islandVis(); renderWave(); Online.score(); }  if (++visTick % 20 === 0) islandVis(); player.root.position.copy(player.pos);
+  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ if (k > curIsl) Funnel.done(k); curIsl = k; if (!islands[k].scaled) scaleIsland(islands[k]); saveGame(); applyTheme(themeOf(k)); banner(k >= STORY_N ? T('endlessIsl', {n: k + 1}) : T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); storyArrive(k); if (!islands[k + 1]) buildIsland(k + 1); islandVis(); renderWave(); Online.score(); }  if (++visTick % 20 === 0) islandVis(); player.root.position.copy(player.pos);
   // face toward heading, with a twist during a swing
   let target = player.face; if (player.swing > 0){ player.swing -= dt; target += Math.sin((player.swing / .22) * Math.PI) * .9; }
   const cur = player.model ? player.model.rotation.y : 0; let d = target - cur; d = Math.atan2(Math.sin(d), Math.cos(d));
@@ -3131,7 +3164,7 @@ renderSlots(); renderStats();
 // store screenshots: ?shot=1 exposes a small handle so the capture script can stage scenes
 if (new URLSearchParams(location.search).has('shot')) window.__eh = {Kid, Cine, storyArrive, get curIslN(){ return curIsl; }, renderer, Perf, GFX, scene, camera, get composer(){ return composer; }, get bloom(){ return bloom; }, draw, player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, Evo, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
 window.__dbg = () => ({alive: enemies.filter(e => !e.dead).length, chasing: enemies.filter(e => !e.dead && e.state === 'chase').length, corpses: corpses.length, isl: curIsl, pos: player.pos.toArray().map(v => +v.toFixed(1)), hp: Math.round(player.hp), kills: player.kills, eaten: player.eaten, hook: hook.state, gear: gear.map(g => g.id + g.lv).join(','), active});
-loop();
+loop(); Funnel.ready();
 Online.init(); Shop.pending(); renderAdBtn();
 if (Native.app) $('shopNote2').hidden = true;
 Promise.race([loadSerhat(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + (window.__ehErr || ''))), 25000))]).then(attach).catch(err => { console.warn('Serhat modeli yüklenemedi', err); attach(fallbackModel()); $('loadTxt').hidden = false; $('loadTxt').textContent = T('modelFail'); });

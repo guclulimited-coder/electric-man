@@ -13,6 +13,7 @@ async function leagueFriendships(db, me){
    audited Bus Rush backend. */
 import {replay, MAX_LEVEL} from './engine.mjs';
 import {PAY_SCHEMA, payEnabled, payStart, payCallback, payClaim} from './pay.mjs';
+import {funnelEvent, funnelStats, keyOk} from './funnel.mjs';
 
 const ROOT = '/api/em', COOKIE = '__Host-em-session', NONCE = '__Host-em-nonce';
 const enc = new TextEncoder();
@@ -297,6 +298,16 @@ export async function emAPI(req, env, deps = {}){
     if (path === '/config') return reply({googleClientId: env.EM_GOOGLE_CLIENT_ID || null, appleClientId: env.EM_APPLE_SERVICE_ID || null, email: emailEnabled(env), tiktok: ttEnabled(env), review: !!(env.EM_REVIEW_USER && env.EM_REVIEW_PASS_SHA256), purchases: false, webPay: payEnabled(env), maxLevel: MAX_LEVEL});
     const body = req.method === 'POST' ? await bounded(req) : {};
 
+    // 6 Kasım 2026: açılış hunisi (yalnız günlük sayaç, kimlik yok) — src/funnel.mjs
+    if (path === '/funnel' && req.method === 'POST'){
+      await quota(db, 'funnel:' + ip, 300, 3600000);
+      const n = await funnelEvent(req, db, body);
+      return reply({ok: !!n}, n ? 202 : 400);
+    }
+    if (path === '/admin/funnel' && req.method === 'GET'){
+      if (!(await keyOk(env, req.headers.get('x-funnel-key')))) fail('NOT_FOUND', 404);
+      return reply(await funnelStats(db, url));
+    }
     if (path === '/auth/nonce' && req.method === 'POST'){
       await quota(db, 'auth:' + ip, 40, 3600000);
       const n = random();

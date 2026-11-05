@@ -1,0 +1,23 @@
+// 6 Kasım 2026: açılış hunisi — sayaç, ayıklama, okuma anahtarı.
+import {DatabaseSync} from 'node:sqlite';
+import assert from 'node:assert/strict';
+import {funnelEvent, funnelStats, keyOk, levelBucket, resetFunnelForTests} from '../src/funnel.mjs';
+const db0 = new DatabaseSync(':memory:');
+const stmt = (q, v = []) => ({bind: (...a) => stmt(q, a), run: async () => db0.prepare(q).run(...v), all: async () => ({results: db0.prepare(q).all(...v)}), _exec(){ return db0.prepare(q).run(...v); }});
+const db = {prepare: q => stmt(q), batch: async l => { l.forEach(s => s._exec()); return []; }};
+resetFunnelForTests();
+const req = (ua = 'Mozilla/5.0 (Linux; Android 14) Mobile', c = 'TR') => ({headers: new Headers({'user-agent': ua}), cf: {country: c}});
+const now = Date.parse('2026-11-06T10:00:00Z');
+assert.equal(await funnelEvent(req(), db, {g: 'em', v: 'w1', c: 'new', e: [{s: 'app_open'}, {s: 'app_open'}, {s: 'play_ready', ms: 2500}, {s: 'level_done', d: 'l1'}, {s: 'evil'}]}, now), 4);
+assert.equal(await funnelEvent(req('Dalvik/2.1.0'), db, {g: 'eh', p: 'android', e: [{s: 'app_open'}, {s: 'level_fail', d: 'l2'}]}, now), 2);
+assert.equal(await funnelEvent(req(), db, {g: 'xx', e: [{s: 'app_open'}]}, now), null);
+assert.equal(await funnelEvent(req(), db, {g: 'em', e: [{s: 'level_done', d: 'DROP TABLE'}]}, now), 1);
+const st = await funnelStats(db, new URL('https://x/?days=3'), now);
+const em = st.days['2026-11-06'].em, eh = st.days['2026-11-06'].eh;
+assert.equal(em.stages.app_open, 1); assert.equal(em.newInstalls.play_ready, 1); assert.equal(em.details.level_done.l1, 1);
+assert.equal(em.stages.level_done, 2); assert.equal(em.timing.play_ready.p50, 3000); assert.equal(em.countries.TR, 1);
+assert.equal(eh.byPlatform['android-app'].level_fail, 1);
+assert.deepEqual([1, 3, 5, 9, 15, 40].map(levelBucket), ['l1', 'l3', 'l4-5', 'l6-10', 'l11-20', 'l21p']);
+const k = 'a'.repeat(40), h = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('em-funnel:' + k)))].map(b => b.toString(16).padStart(2, '0')).join('');
+assert.equal(await keyOk({FUNNEL_KEY_SHA256: h}, k), true); assert.equal(await keyOk({FUNNEL_KEY_SHA256: h}, 'b'.repeat(40)), false); assert.equal(await keyOk({}, k), false);
+console.log('funnel: ok');
