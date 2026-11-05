@@ -14,7 +14,7 @@ MODE = open('store/em-asc-mode.txt').read().split()
 APPS = {'em': ('6819511421', 'com.tusneldax.electricman', 'Electric Man'), 'eh': ('6819712674', 'com.tusneldax.electrichunter', 'Electric Hunter'), 'mc': ('6817973176', 'com.tusnelda.ustasehri', 'MASTERCITY'), 'br': ('6817836111', 'com.tusneldax.busrush', 'TUSNELDAX Bus Rush')}
 BASE = 'https://api.appstoreconnect.apple.com'
 LOG = []
-def note(m): LOG.append(str(m).replace('\n', ' ')); print(m, flush=True)
+def note(m): LOG.append(' '.join(str(m).split())); print(m, flush=True)
 import atexit
 atexit.register(lambda: print('::notice title=ASC ' + ' '.join(MODE) + '::' + '%0A'.join(LOG[-150:])))
 _t = [None, 0]
@@ -244,8 +244,11 @@ def answer(key):
     sub = next((s for s in subs if s['attributes']['state'] in ('UNRESOLVED_ISSUES', 'READY_FOR_REVIEW')), None)
     if not sub: note('no open submission: ' + str([s['attributes']['state'] for s in subs])); sys.exit(6)
     note(f"submission {sub['id']} {sub['attributes']['state']} items={len(items(sub['id']))}")
-    r = safe(api, 'PATCH', f"/v1/reviewSubmissions/{sub['id']}", {'data': {'type': 'reviewSubmissions', 'id': sub['id'], 'attributes': {'submitted': True}}})
-    note('RESUBMITTED' if r is not None else 'NOT RESUBMITTED')
+    try:
+        api('PATCH', f"/v1/reviewSubmissions/{sub['id']}", {'data': {'type': 'reviewSubmissions', 'id': sub['id'], 'attributes': {'submitted': True}}}); note('RESUBMITTED')
+    except RuntimeError as e:
+        m = str(e); i = m.find('associatedErrors')
+        for k in range(0, 3000, 450): note('ERR ' + m[i + k:i + k + 450])
     time.sleep(15)
     note(f"final {api('GET', f'/v1/reviewSubmissions/{sub[chr(105)+chr(100)]}')['data']['attributes']['state']} / version {versions(app)[0]['attributes']['appStoreState']}")
 
