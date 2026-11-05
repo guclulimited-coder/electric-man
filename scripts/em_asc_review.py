@@ -252,6 +252,15 @@ def answer(key):
     time.sleep(15)
     note(f"final {api('GET', f'/v1/reviewSubmissions/{sub[chr(105)+chr(100)]}')['data']['attributes']['state']} / version {versions(app)[0]['attributes']['appStoreState']}")
 
+def certs():
+    """Read-only: which certificate each provisioning profile (app) uses."""
+    for c in api('GET', '/v1/certificates?limit=50')['data']:
+        a = c['attributes']; note(f"cert {c['id']} {a.get('certificateType')} {a.get('name')} exp={str(a.get('expirationDate'))[:10]}")
+    for pr in api('GET', '/v1/profiles?limit=100&include=certificates,bundleId&fields[profiles]=name,profileState,profileType,createdDate,certificates,bundleId')['data']:
+        a = pr['attributes']; cs = [x['id'] for x in (pr['relationships']['certificates'].get('data') or [])]
+        note(f"profile {a.get('name')} {a.get('profileType')} {a.get('profileState')} created={str(a.get('createdDate'))[:10]} certs={cs}")
+
+if MODE[0] == 'certs': certs()
 if MODE[0] == 'answer': answer(MODE[1])
 if MODE[0] == 'agecheck': agecheck(MODE[1])
 if MODE[0] == 'demo': demo(MODE[1])
