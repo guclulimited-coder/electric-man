@@ -42,7 +42,9 @@ adb shell "kill -9 \$(pidof $P)"; sleep 2
 note "A app killed" "pid now='$(adb shell pidof $P | tr -d '\r')' top=$(top)"
 chromews; out=$(J 9222 review app-login 0); note "A sign-in page" "$(echo "$out" | tr '\n' ' ')"
 sleep 15; t=$(top); note "A after sign-in" "top=$t"
-if [[ "$t" != *electricman* ]]; then adb shell input keyevent BACK; sleep 30; note "A back pressed" "top=$(top)"; else sleep 20; fi
+if [[ "$t" != *electricman* ]]; then adb shell input keyevent BACK; sleep 15; note "A back pressed" "top=$(top)"; fi
+# process was killed: a real player taps the app icon again — the pending sign-in must complete on its own (/native/claim)
+if [[ "$(top)" != *electricman* ]]; then adb shell am start -n $P/.MainActivity >/dev/null; note "A reopened from icon" "yes"; sleep 40; else sleep 20; fi
 shot A3-oyuna-donus
 note "A ws2" "$(appws $P)"
 s=$(J 9223 eval index.html "JSON.stringify({gate: !!document.querySelector('#sheet.gate:not([hidden])'), signedIn: !document.getElementById('accountDot').hidden, charSelect: !document.getElementById('modal').hidden, modalTitle: document.getElementById('modal').hidden ? '' : document.getElementById('modal').innerText.slice(0, 60)})")
