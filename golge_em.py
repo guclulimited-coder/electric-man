@@ -1,7 +1,7 @@
 """Gölge Operasyonu – electric-man tarafı: yalnız Apple kimlik işleri (paket kimliği, geçici dağıtım sertifikası,
 App Store profili). Sertifika paketi, usta-sehri golge-ios CI'sinin türetilmiş açık anahtarına şifrelenir
 (X25519 + AES-GCM); düz metin hiçbir yere yazılmaz. Yer yoksa yalnız eh-ios-cert kaydındaki CI sertifikası
-iptal edilir ve kayıt yeni sertifika ile güncellenir (Electric Hunter/Man CI'si bir sonraki koşuda onu döndürür).
+— artık hiçbir sertifika iptal edilmez; üç uygulama ortak kalıcı CI sertifikasını kullanır.
 MASTERCITY sertifikasına dokunulmaz. Uygulama kaydı oluşturulmaz (API izin vermez), inceleme gönderimi yoktur."""
 import base64, json, os, pathlib, re, secrets, subprocess, sys, textwrap, time, urllib.error, urllib.request
 import jwt
@@ -51,40 +51,13 @@ if cfg.get('stage') != 'sign':
     sys.exit(0)
 recipient = X25519PublicKey.from_public_bytes(base64.b64decode(cfg['recipient']))
 
-k = temp / 'g.key'; csr = temp / 'g.csr'
-subprocess.run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(k), '-out', str(csr), '-subj', '/CN=Golge Operasyonu CI/O=TusneldaX/C=TR'], check=True, capture_output=True)
-csr_b64 = ''.join(l for l in csr.read_text().splitlines() if not l.startswith('-----'))
-sign_id = 'Apple Distribution'
-
-
-def make():
-    global sign_id
-    for ctype, ident in [('DISTRIBUTION', 'Apple Distribution'), ('IOS_DISTRIBUTION', 'iPhone Distribution')]:
-        r = api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': ctype, 'csrContent': csr_b64}}}, ok=(409,))
-        if '_error' not in r:
-            sign_id = ident; return r['data']
-    return None
-
-
-cert = make()
-if not cert:
-    prev = pathlib.Path('prev-cert/eh-ios-cert.txt'); pid = prev.read_text().strip() if prev.exists() else ''
-    if pid:
-        r = api('DELETE', '/v1/certificates/' + pid, ok=(404, 409))
-        note('warning', 'cert', 'revoked previous recorded CI certificate ' + pid + (' (' + str(r['_error']) + ')' if '_error' in r else ''))
-        time.sleep(5); cert = make()
-if not cert:
-    note('error', 'cert', 'Apple distribution certificate limit reached'); sys.exit(1)
-pathlib.Path('prev-cert/eh-ios-cert.txt').write_text(cert['id'] + '\n')
-note('notice', 'cert', 'new CI certificate ' + cert['id'] + ' (' + sign_id + ')')
-der = temp / 'g.cer'; der.write_bytes(base64.b64decode(cert['attributes']['certificateContent']))
-pem = temp / 'g.pem'; subprocess.run(['openssl', 'x509', '-inform', 'DER', '-in', str(der), '-out', str(pem)], check=True)
-pw = secrets.token_urlsafe(24); p12 = temp / 'g.p12'
-r = subprocess.run(['openssl', 'pkcs12', '-export', '-legacy', '-inkey', str(k), '-in', str(pem), '-out', str(p12), '-passout', 'pass:' + pw], capture_output=True)
-if r.returncode:
-    r = subprocess.run(['openssl', 'pkcs12', '-export', '-inkey', str(k), '-in', str(pem), '-out', str(p12), '-passout', 'pass:' + pw], capture_output=True)
-if r.returncode:
-    note('error', 'pkcs12', r.stderr[:200]); sys.exit(1)
+# Ortak kalıcı CI sertifikası (electric-man ci-signing dalı; sahip onayı 5 Kasım 23:50). Burada sertifika açılmaz/iptal edilmez.
+sys.path.insert(0, 'ci-vault'); import ci_vault
+_v = ci_vault.load('ci-vault/ci-cert.enc.json')
+cert = {'id': _v['certId']}; sign_id = _v['signId']; pw = _v['password']
+p12 = temp / 'g.p12'; p12.write_bytes(base64.b64decode(_v['p12']))
+k = csr = der = pem = temp / 'g.unused'
+note('notice', 'cert', 'shared CI certificate ' + cert['id'] + ' (' + sign_id + ')')
 name = 'Golge Operasyonu CI ' + time.strftime('%Y%m%d%H%M%S')
 prof = api('POST', '/v1/profiles', {'data': {'type': 'profiles', 'attributes': {'name': name, 'profileType': 'IOS_APP_STORE'},
            'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': bid['id']}}, 'certificates': {'data': [{'type': 'certificates', 'id': cert['id']}]}}}})['data']

@@ -1,7 +1,7 @@
 # Gölge Operasyonu (usta-unity) için yalnız Apple kimlik işleri: paket kimliği, geçici dağıtım sertifikası, profil.
 # Sahip isteği 30 Ekim 2026: "Bir sürümü de test flight yükle deneyecem". Bu dal Electric Man kodunu içermez.
 # Sertifika paketi usta-sehri golge-ios CI'sinin açık anahtarına şifrelenip bu dala yazılır (düz metin yok).
-# Sertifika kaydı eh-ios-cert dalında tutulur; Electric Hunter/Man CI'si aynı kaydı kullanmaya devam eder.
+# Ortak kalıcı CI sertifikası ci-signing dalından okunur; sertifika açılmaz, iptal edilmez.
 name: Golge Operasyonu Apple signing identity
 on:
   push:
@@ -20,8 +20,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
-          ref: eh-ios-cert
-          path: prev-cert
+          ref: ci-signing
+          path: ci-vault
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -37,6 +38,5 @@ jobs:
         run: |
           set -euo pipefail
           git config --global user.name ci; git config --global user.email ci@tusneldax.com
-          cd prev-cert && git add eh-ios-cert.txt && git commit -qm "Golge Operasyonu iOS certificate (shared CI slot)" && git push -q && cd ..
           git add golge-sign.enc.json && git commit -qm "Golge sealed signing bundle [skip ci]" && git push -q
-          echo "::notice title=published::eh-ios-cert updated, sealed bundle on golge-ios"
+          echo "::notice title=published::sealed bundle on golge-ios (shared CI certificate)"
