@@ -260,6 +260,36 @@ def certs():
         a = pr['attributes']; cs = [x['id'] for x in (pr['relationships']['certificates'].get('data') or [])]
         note(f"profile {a.get('name')} {a.get('profileType')} {a.get('profileState')} created={str(a.get('createdDate'))[:10]} certs={cs}")
 
+def prep(key, build):
+    """Attach a new build to the version, keep the reviewer note, add READY_TO_SUBMIT in-app purchases to the open
+    submission. Does NOT submit: the owner presses the submit button himself (5 Nov 23:50)."""
+    app, _, name = APPS[key]
+    for i in range(80):
+        bs = api('GET', f'/v1/builds?filter[app]={app}&filter[version]={build}&limit=5')['data']
+        st = bs[0]['attributes']['processingState'] if bs else 'MISSING'
+        if st == 'VALID': break
+        time.sleep(15)
+    note(f'{name}: build {build} {st}')
+    if st != 'VALID': sys.exit(3)
+    b = bs[0]; v = versions(app)[0]; note(f"version {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+    if b['attributes'].get('usesNonExemptEncryption') is None:
+        safe(api, 'PATCH', f"/v1/builds/{b['id']}", {'data': {'type': 'builds', 'id': b['id'], 'attributes': {'usesNonExemptEncryption': False}}})
+    api('PATCH', f"/v1/appStoreVersions/{v['id']}/relationships/build", {'data': {'type': 'builds', 'id': b['id']}}); note(f'build {build} attached')
+    subs = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&limit=10')['data']
+    sub = next((s for s in subs if s['attributes']['state'] in ('READY_FOR_REVIEW', 'UNRESOLVED_ISSUES')), None)
+    if not sub:
+        sub = api('POST', '/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions', 'attributes': {'platform': 'IOS'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']
+    note(f"submission {sub['id']} {sub['attributes'].get('state')}")
+    its = items(sub['id'])
+    if not any((i.get('relationships', {}).get('appStoreVersion', {}).get('data') or {}).get('id') == v['id'] for i in its):
+        safe(api, 'POST', '/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems', 'relationships': {'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': sub['id']}}, 'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': v['id']}}}}})
+    for x in [x for x in iaps(app) if x['attributes'].get('state') in ('READY_TO_SUBMIT', 'DEVELOPER_ACTION_NEEDED', 'REJECTED')]:
+        r = safe(api, 'POST', '/v1/inAppPurchaseSubmissions', {'data': {'type': 'inAppPurchaseSubmissions', 'relationships': {'inAppPurchaseV2': {'data': {'type': 'inAppPurchases', 'id': x['id']}}}}})
+        note(f"iap {x['attributes'].get('productId')}: " + ('added' if r is not None else 'NOT added'))
+    note(f"items now: {len(items(sub['id']))} (not submitted — owner submits)")
+    v = versions(app)[0]; note(f"FINAL {name}: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+
+if MODE[0] == 'prep': prep(MODE[1], MODE[2])
 if MODE[0] == 'certs': certs()
 if MODE[0] == 'answer': answer(MODE[1])
 if MODE[0] == 'agecheck': agecheck(MODE[1])
