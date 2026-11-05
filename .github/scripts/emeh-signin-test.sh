@@ -34,7 +34,8 @@ adb shell am start -n $P/.MainActivity >/dev/null; sleep 35; shot A1-ilk-acilis
 note "A ws" "$(appws $P)"
 s=$(J 9223 eval index.html "JSON.stringify({gate: !!document.querySelector('#sheet.gate:not([hidden])'), charSelect: !document.getElementById('modal').hidden, ways: [...document.querySelectorAll('[data-login]')].map(b => b.dataset.login + '=' + b.textContent), lang: document.documentElement.lang})")
 note "A first screen" "$s"
-echo "$s" | grep -q '\\"gate\\":true' && echo "$s" | grep -q '\\"charSelect\\":false' && echo "$s" | grep -q 'Continue with Google' || bad "A first screen" "$s"
+echo "$s" | grep -q '\\"gate\\":false' || bad "A first screen (guest start expected)" "$s"
+J 9223 eval index.html "document.getElementById('modal').hidden || document.querySelector('#modal button')?.click(), document.getElementById('accountBtn').click(), 1" >/dev/null; sleep 4
 J 9223 eval index.html "document.querySelector('[data-login=review]').click(), 1" >/dev/null; sleep 10; shot A2-giris-sayfasi
 note "A after tap" "top=$(top)"
 adb shell "kill -9 \$(pidof $P)"; sleep 2
@@ -46,7 +47,7 @@ shot A3-oyuna-donus
 note "A ws2" "$(appws $P)"
 s=$(J 9223 eval index.html "JSON.stringify({gate: !!document.querySelector('#sheet.gate:not([hidden])'), signedIn: !document.getElementById('accountDot').hidden, charSelect: !document.getElementById('modal').hidden, modalTitle: document.getElementById('modal').hidden ? '' : document.getElementById('modal').innerText.slice(0, 60)})")
 note "A result" "$s"
-echo "$s" | grep -q '\\"signedIn\\":true' && echo "$s" | grep -q '\\"gate\\":false' || bad "A result" "sign-in not completed after process death: $s"
+echo "$s" | grep -q '\\"signedIn\\":true' || bad "A result" "sign-in not completed after process death: $s"
 shot A4-son
 
 # ---------------- B: Electric Hunter (Bengali, polling only) ----------------
@@ -56,16 +57,21 @@ adb shell am start -n $P/.MainActivity >/dev/null; sleep 40; shot B1-ilk-acilis
 note "B ws" "$(appws $P)"
 s=$(J 9223 eval index.html "JSON.stringify({gate: !document.getElementById('gateBox').hidden, startHidden: document.getElementById('startBtn').hidden, ways: [...document.querySelectorAll('[data-login]')].map(b => b.dataset.login + '=' + b.textContent), lang: document.documentElement.lang})")
 note "B first screen" "$s"
-echo "$s" | grep -q '\\"gate\\":true' || bad "B first screen" "$s"
+echo "$s" | grep -q '\\"gate\\":false' || bad "B first screen (guest start expected)" "$s"
+J 9223 eval index.html "document.getElementById('startBtn').click(), 1" >/dev/null; sleep 20
+J 9223 eval index.html "document.getElementById('profBtn').click(), 1" >/dev/null; sleep 3
+J 9223 eval index.html "document.querySelector('[data-tab=account]').click(), 1" >/dev/null; sleep 3
 J 9223 eval index.html "document.querySelector('[data-login=review]').click(), 1" >/dev/null; sleep 10; shot B2-giris-sayfasi
 chromews; out=$(J 9222 review app-login 25); note "B sign-in page (jump back blocked)" "$(echo "$out" | tr '\n' ' ')"
 sleep 8; t=$(top); note "B after polling" "top=$t"
 [[ "$t" == *electrichunter* ]] && note "B came back by itself" "yes" || { note "B came back by itself" "no (pressing back)"; adb shell input keyevent BACK; sleep 10; }
 shot B3-oyuna-donus
 note "B ws2" "$(appws $P)"
-s=$(J 9223 eval index.html "JSON.stringify({gate: !document.getElementById('gateBox').hidden, title: !document.getElementById('title').hidden, running: typeof running !== 'undefined' ? running : null})")
+J 9223 eval index.html "document.getElementById('profBtn').click(), 1" >/dev/null; sleep 3
+J 9223 eval index.html "document.querySelector('[data-tab=account]').click(), 1" >/dev/null; sleep 4
+s=$(J 9223 eval index.html "JSON.stringify({gate: !document.getElementById('gateBox').hidden, signedIn: !document.querySelector('[data-login]')})")
 note "B result" "$s"
-echo "$s" | grep -q '\\"gate\\":false' || bad "B result" "polling sign-in not completed: $s"
+echo "$s" | grep -q '\\"signedIn\\":true' || bad "B result" "polling sign-in not completed: $s"
 sleep 10; shot B4-son
 note "summary" "failures=$FAILS"
 exit 0
