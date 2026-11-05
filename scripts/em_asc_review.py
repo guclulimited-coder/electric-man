@@ -272,6 +272,15 @@ def prep(key, build):
     note(f'{name}: build {build} {st}')
     if st != 'VALID': sys.exit(3)
     b = bs[0]; v = versions(app)[0]; note(f"version {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+    # a submission still waiting with the old (invalid-signature) build is withdrawn so the new build can be attached
+    for s0 in api('GET', f'/v1/reviewSubmissions?filter[app]={app}&limit=10')['data']:
+        if s0['attributes']['state'] == 'WAITING_FOR_REVIEW':
+            if safe(api, 'PATCH', f"/v1/reviewSubmissions/{s0['id']}", {'data': {'type': 'reviewSubmissions', 'id': s0['id'], 'attributes': {'canceled': True}}}) is not None: note('withdrew waiting submission ' + s0['id'])
+    for i in range(60):
+        v = versions(app)[0]
+        if v['attributes']['appStoreState'] in ('DEVELOPER_REJECTED', 'PREPARE_FOR_SUBMISSION', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'): break
+        time.sleep(15)
+    note('version state: ' + v['attributes']['appStoreState'])
     if b['attributes'].get('usesNonExemptEncryption') is None:
         safe(api, 'PATCH', f"/v1/builds/{b['id']}", {'data': {'type': 'builds', 'id': b['id'], 'attributes': {'usesNonExemptEncryption': False}}})
     api('PATCH', f"/v1/appStoreVersions/{v['id']}/relationships/build", {'data': {'type': 'builds', 'id': b['id']}}); note(f'build {build} attached')
