@@ -24,3 +24,6 @@ EM_APPLE_SERVICE_ID = "com.tusneldax.electricman.web"
 # the password itself is given to Apple in App Store Connect › App Review Information.
 EM_REVIEW_USER = "appreview@tusneldax.com"
 EM_REVIEW_PASS_SHA256 = "68176be556e649f001f3a36c2eed9dc614f37d632d17544a84dce3f917167ba0"
+
+# 6 Kasım 2026 açılış hunisi okuma anahtarının özeti (anahtar ASC gizli anahtarından türetilir; funnel-stats dalı okur).
+FUNNEL_KEY_SHA256 = "0db51e93ee9a565bce3a71e937631c6328aeec8738354b00465167d81e826d5e"
