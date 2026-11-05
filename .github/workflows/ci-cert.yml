@@ -1,0 +1,25 @@
+name: Shared CI signing certificate
+on:
+  push:
+    branches: [ci-signing]
+permissions: { contents: write }
+concurrency: { group: ci-cert, cancel-in-progress: false }
+jobs:
+  cert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+          REVOKE_ONLY: 48G62GT4JY
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/v/bin/python" ci_cert_create.py
+          if ! git diff --quiet -- ci-cert.enc.json 2>/dev/null || [ -n "$(git status --porcelain ci-cert.enc.json)" ]; then
+            git config user.name ci && git config user.email ci@tusneldax.com
+            git add ci-cert.enc.json && git commit -qm "Shared CI certificate sealed [skip ci]" && git push -q
+          fi
