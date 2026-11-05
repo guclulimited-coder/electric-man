@@ -1,0 +1,16 @@
+name: Electric Man/Hunter açılış hunisi
+on:
+  push:
+    branches: [funnel-stats]
+permissions: { contents: read }
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/v" && "$RUNNER_TEMP/v/bin/pip" -q install 'cryptography==44.0.0'
+          "$RUNNER_TEMP/v/bin/python" funnel_stats.py
