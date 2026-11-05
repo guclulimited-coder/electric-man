@@ -213,6 +213,43 @@ def demo(key):
         note(line[:300])
     note(f'demo probe exit {r.returncode}')
 
+def answer(key):
+    """Reply to a 2.1 Information Needed rejection: upload the screen recording as a review attachment,
+    put the answers on top of the reviewer note (demo steps kept), resubmit the same version (owner sent the recording 5 Nov 22:49)."""
+    import hashlib, os
+    app, _, name = APPS[key]
+    v = versions(app)[0]; note(f"{name}: {v['attributes']['versionString']} {v['attributes']['appStoreState']}")
+    rd = api('GET', f"/v1/appStoreVersions/{v['id']}/appStoreReviewDetail")['data']
+    path = 'store/review/electric-hunter-review.mov'; data = open(path, 'rb').read(); fname = os.path.basename(path)
+    have = safe(api, 'GET', f"/v1/appStoreReviewDetails/{rd['id']}/appStoreReviewAttachments") or {'data': []}
+    if any(a['attributes'].get('fileName') == fname and (a['attributes'].get('assetDeliveryState') or {}).get('state') in ('UPLOAD_COMPLETE', 'COMPLETE') for a in have['data']):
+        note('attachment already there')
+    else:
+        att = api('POST', '/v1/appStoreReviewAttachments', {'data': {'type': 'appStoreReviewAttachments', 'attributes': {'fileName': fname, 'fileSize': len(data)}, 'relationships': {'appStoreReviewDetail': {'data': {'type': 'appStoreReviewDetails', 'id': rd['id']}}}}})['data']
+        for op in att['attributes']['uploadOperations']:
+            req = urllib.request.Request(op['url'], method=op['method'], data=data[op['offset']:op['offset'] + op['length']], headers={h['name']: h['value'] for h in op.get('requestHeaders') or []})
+            with urllib.request.urlopen(req, timeout=300) as r: r.read()
+        api('PATCH', f"/v1/appStoreReviewAttachments/{att['id']}", {'data': {'type': 'appStoreReviewAttachments', 'id': att['id'], 'attributes': {'uploaded': True, 'sourceFileChecksum': hashlib.md5(data).hexdigest()}}})
+        for i in range(40):
+            st = (api('GET', f"/v1/appStoreReviewAttachments/{att['id']}")['data']['attributes'].get('assetDeliveryState') or {})
+            if st.get('state') in ('COMPLETE', 'FAILED'): break
+            time.sleep(10)
+        note('attachment: ' + json.dumps(st)[:300])
+        if st.get('state') == 'FAILED': sys.exit(5)
+    head = open('store/review/eh-notes.txt').read().strip()
+    n = rd['attributes'].get('notes') or ''
+    if not n.startswith('Answers to Guideline 2.1'):
+        api('PATCH', f"/v1/appStoreReviewDetails/{rd['id']}", {'data': {'type': 'appStoreReviewDetails', 'id': rd['id'], 'attributes': {'notes': (head + '\n\n' + n)[:3990]}}}); note('reviewer note: answers added')
+    subs = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&limit=10')['data']
+    sub = next((s for s in subs if s['attributes']['state'] in ('UNRESOLVED_ISSUES', 'READY_FOR_REVIEW')), None)
+    if not sub: note('no open submission: ' + str([s['attributes']['state'] for s in subs])); sys.exit(6)
+    note(f"submission {sub['id']} {sub['attributes']['state']} items={len(items(sub['id']))}")
+    r = safe(api, 'PATCH', f"/v1/reviewSubmissions/{sub['id']}", {'data': {'type': 'reviewSubmissions', 'id': sub['id'], 'attributes': {'submitted': True}}})
+    note('RESUBMITTED' if r is not None else 'NOT RESUBMITTED')
+    time.sleep(15)
+    note(f"final {api('GET', f'/v1/reviewSubmissions/{sub[chr(105)+chr(100)]}')['data']['attributes']['state']} / version {versions(app)[0]['attributes']['appStoreState']}")
+
+if MODE[0] == 'answer': answer(MODE[1])
 if MODE[0] == 'agecheck': agecheck(MODE[1])
 if MODE[0] == 'demo': demo(MODE[1])
 if MODE[0] == 'check': check(MODE[1:] or None)

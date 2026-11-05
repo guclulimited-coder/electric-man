@@ -1,0 +1,15 @@
+Answers to Guideline 2.1 (Information Needed), 5 Nov 2026:
+
+1. Screen recording: attached to this App Review Information section (electric-hunter-review.mov, 2.5 min, physical iPhone, latest iOS). It starts at app launch and shows: playing without an account, signing in (Profile > Account > Sign in), friends chat with "Report" (Şikayet et) and "Block" (Engelle), the shop with the consumable coin packs, and account deletion (Profile > Account > Delete account: type SİL and confirm).
+
+2. Purpose and audience: Electric Hunter is a casual action game for a general audience. The player is Serhat, an electrician pulled into an alien dimension through a portal. He hooks monsters with his cable, swallows them to grow stronger and upgrades his electrician tools (pliers, cutter, screwdriver, staple gun). It offers short, light-hearted action sessions.
+
+3. How to use: launch the app and tap the start button; the game is playable without an account and progress is saved on the device. An optional account (Profile > Account > Sign in; Sign in with Apple, Google or an e-mail code) saves progress to the cloud and enables friends, leagues and chat. Reviewers can create an account with Sign in with Apple or any e-mail address; the demo account below also works.
+
+4. External services: our own server on Cloudflare Workers (accounts, progress, friends, chat, leagues); Sign in with Apple and Google Sign-In (authentication); Google AdMob (ads, including optional rewarded ads); Apple StoreKit (consumable coin packs); Cloudflare Workers AI (optional translation of chat messages).
+
+5. Regions: the app works the same in all regions. Only the interface language changes; features and content do not differ by region.
+
+6. Regulated industry / third-party material: not applicable. No gambling. Art, characters and music are original or licensed to the developer.
+
+User-generated content: chat is only possible between players who accepted each other as friends. Every conversation has Report and Block; reported messages are kept for our review and offending accounts are removed. Messages are deleted after 90 days.
