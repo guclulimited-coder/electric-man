@@ -316,7 +316,8 @@ public class MainActivity extends AppCompatActivity {
     /** Asks the server whether the sign-in page has finished; runs every few seconds while a sign-in is pending. */
     private void poll() {
         final String verifier = loginVerifier;
-        if (verifier == null) return;
+        // Play çökmesi (v136): etkinlik kapanırken bekleyen yoklama kapalı iş havuzuna düşüyordu (RejectedExecutionException)
+        if (verifier == null || io.isShutdown() || isFinishing()) return;
         if (System.currentTimeMillis() - loginStarted > LOGIN_TTL) {
             if (loginProxy != null) { reply(loginProxy, loginId, "LOGIN_EXPIRED", null); loginProxy = null; }
             clearPending();
@@ -421,6 +422,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         main.removeCallbacksAndMessages(null);
+        main.removeCallbacks(pollTask);
         if (web != null) web.destroy();
         billing.close();
         io.shutdown();
