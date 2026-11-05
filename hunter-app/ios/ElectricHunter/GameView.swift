@@ -4,18 +4,24 @@ import AuthenticationServices
 import CryptoKit
 import Security
 
-/// Session token for the game API, kept in the Keychain (this device only).
+/// Session token for the game API, kept in the Keychain (this device only). The pending sign-in (PKCE verifier + state)
+/// is kept there too under its own account, so a sign-in survives the app being closed by the system meanwhile.
 enum SessionVault {
-    static let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+    static func q(_ account: String) -> [String: Any] { [kSecClass as String: kSecClassGenericPassword,
                                        kSecAttrService as String: "com.tusneldax.electrichunter.session",
-                                       kSecAttrAccount as String: "player"]
-    static func read() -> String? {
+                                       kSecAttrAccount as String: account] }
+    static var query: [String: Any] { q("player") }
+    static func read() -> String? { read(query) }
+    @discardableResult static func write(_ value: String?) -> Bool { write(value, query) }
+    static func readPending() -> String? { read(q("pending-login")) }
+    @discardableResult static func writePending(_ value: String?) -> Bool { write(value, q("pending-login")) }
+    static func read(_ query: [String: Any]) -> String? {
         var q = query; q[kSecReturnData as String] = true; q[kSecMatchLimit as String] = kSecMatchLimitOne
         var out: CFTypeRef?
         guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data else { return nil }
         return String(data: d, encoding: .utf8)
     }
-    @discardableResult static func write(_ value: String?) -> Bool {
+    @discardableResult static func write(_ value: String?, _ query: [String: Any]) -> Bool {
         guard let value = value else { SecItemDelete(query as CFDictionary); return true }
         let data = Data(value.utf8)
         let st = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
@@ -71,6 +77,7 @@ struct GameView: UIViewRepresentable {
         view.navigationDelegate = context.coordinator
         view.uiDelegate = context.coordinator
         context.coordinator.view = view
+        context.coordinator.watchForeground()
         // store screenshots: `-emShot 1..6 -emShotLang tr` launch arguments open the game's demo scenes
         let shot = UserDefaults.standard.integer(forKey: "emShot")
         let shotLang = UserDefaults.standard.string(forKey: "emShotLang") ?? ""
@@ -121,7 +128,8 @@ struct GameView: UIViewRepresentable {
                 guard let data = body["data"] as? String, data.utf8.count <= 2_000_000 else { replyHandler(nil, "TOO_LARGE"); return }
                 UserDefaults.standard.set(data, forKey: "emStore"); replyHandler(["ok": true], nil)
             case "api": api(body, replyHandler)
-            case "login": login(lang: body["lang"] as? String ?? "tr", replyHandler)
+            case "login": login(lang: body["lang"] as? String ?? "en", method: body["method"] as? String ?? "", replyHandler)
+            case "loginCheck": loginCheck(replyHandler)
             case "ad":
                 guard let root = view?.window?.rootViewController else { replyHandler(nil, "SCREEN_UNAVAILABLE"); return }
                 ads.show(kind: body["kind"] as? String ?? "", from: root, reply: replyHandler)
@@ -168,35 +176,114 @@ struct GameView: UIViewRepresentable {
             return hex(b)
         }
         /// Sign-in runs on electricman.tusneldax.com in the system browser sheet; the page hands back a one-time
-        /// ticket bound to our PKCE challenge, which we exchange for this app's own session.
-        private func login(lang: String, _ reply: @escaping (Any?, String?) -> Void) {
+        /// ticket bound to our PKCE challenge, which we exchange for this app's own session. 31 Oct 2026: the page also
+        /// mints that ticket right after sign-in, and we claim it with the secret verifier every few seconds (and when the
+        /// app comes back to the foreground), so sign-in completes even if the jump back to the app is blocked.
+        static let loginTTL: TimeInterval = 15 * 60
+        var pending: (verifier: String, state: String, started: Date)?
+        var pollTimer: Timer?
+        var loginReply: ((Any?, String?) -> Void)?
+        var claiming = false
+        var observer: NSObjectProtocol?
+
+        deinit { if let o = observer { NotificationCenter.default.removeObserver(o) } }
+        func watchForeground() {
+            guard observer == nil else { return }
+            observer = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
+                guard let self = self, self.auth == nil else { return }
+                self.claimNow { ok in if ok { self.view?.evaluateJavaScript("window.__emLoginDone&&window.__emLoginDone()", completionHandler: nil) } }
+            }
+        }
+        private func savePending() {
+            guard let p = pending, let d = try? JSONSerialization.data(withJSONObject: ["v": p.verifier, "s": p.state, "t": p.started.timeIntervalSince1970]),
+                  let text = String(data: d, encoding: .utf8) else { return }
+            SessionVault.writePending(text)
+        }
+        private func restorePending() {
+            guard pending == nil else { return }
+            guard let text = SessionVault.readPending(), let o = (try? JSONSerialization.jsonObject(with: Data(text.utf8))) as? [String: Any],
+                  let v = o["v"] as? String, let st = o["s"] as? String, let t = o["t"] as? Double,
+                  v.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil, Date().timeIntervalSince1970 - t < Coordinator.loginTTL else { SessionVault.writePending(nil); return }
+            pending = (v, st, Date(timeIntervalSince1970: t))
+        }
+        private func clearPending() { pending = nil; SessionVault.writePending(nil); pollTimer?.invalidate(); pollTimer = nil }
+
+        /// One claim attempt on the main queue; completion(true) once the app session is stored.
+        private func claimNow(_ done: @escaping (Bool) -> Void) {
+            restorePending()
+            guard let p = pending, !claiming else { done(false); return }
+            if Date().timeIntervalSince(p.started) > Coordinator.loginTTL { clearPending(); done(false); return }
+            claiming = true
+            Task {
+                var token: String?
+                if let r = try? await self.request("/native/claim", ["verifier": p.verifier]),
+                   r.0 == 200, let t = (r.1 as? [String: Any])?["token"] as? String, t.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil { token = t }
+                await MainActor.run {
+                    self.claiming = false
+                    guard let token = token, self.pending?.verifier == p.verifier, SessionVault.write(token) else { done(false); return }
+                    self.clearPending(); done(true)
+                }
+            }
+        }
+        private func finish(_ error: String?) {
+            pollTimer?.invalidate(); pollTimer = nil
+            guard let reply = loginReply else { return }
+            loginReply = nil
+            if let error = error { reply(nil, error) } else { reply(["ok": true], nil) }
+        }
+        private func loginCheck(_ reply: @escaping (Any?, String?) -> Void) {
+            restorePending()
+            guard pending != nil else { reply(["pending": false], nil); return }
+            claimNow { ok in reply(ok ? ["ok": true] : ["pending": self.pending != nil], nil) }
+        }
+
+        private func login(lang: String, method: String, _ reply: @escaping (Any?, String?) -> Void) {
             guard auth == nil, let verifier = randomHex(32), let state = randomHex(16) else { reply(nil, "LOGIN_BUSY"); return }
             let challenge = hex(Array(SHA256.hash(data: Data(verifier.utf8))))
+            pending = (verifier, state, Date()); savePending()
+            loginReply = reply
             var c = URLComponents(string: origin + "/app-login")!
             c.queryItems = [URLQueryItem(name: "challenge", value: challenge), URLQueryItem(name: "state", value: state),
-                            URLQueryItem(name: "lang", value: lang.range(of: "^[a-z]{2}$", options: .regularExpression) != nil ? lang : "tr"),
+                            URLQueryItem(name: "lang", value: lang.range(of: "^[a-z]{2}$", options: .regularExpression) != nil ? lang : "en"),
                             URLQueryItem(name: "platform", value: "ios"), URLQueryItem(name: "app", value: "hunter")]
+            if ["google", "apple", "email", "review"].contains(method) { c.queryItems?.append(URLQueryItem(name: "method", value: method)) }
             auth = ASWebAuthenticationSession(url: c.url!, callbackURLScheme: "electrichunter") { [weak self] callback, error in
+              DispatchQueue.main.async {
                 guard let self = self else { reply(nil, "LOGIN_CANCELLED"); return }
                 self.auth = nil
+                self.pollTimer?.invalidate(); self.pollTimer = nil
+                guard self.loginReply != nil else { return }   // already finished by a claim
                 guard error == nil, let callback = callback, callback.host == "signin",
                       let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems,
                       items.first(where: { $0.name == "state" })?.value == state,
                       let ticket = items.first(where: { $0.name == "ticket" })?.value,
-                      ticket.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil else { reply(nil, "LOGIN_CANCELLED"); return }
-                Task {
-                    do {
-                        let (status, json) = try await self.request("/native/exchange", ["ticket": ticket, "verifier": verifier])
-                        let token = (json as? [String: Any])?["token"] as? String ?? ""
-                        if status == 200, token.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil, SessionVault.write(token) {
-                            await MainActor.run { reply(["ok": true], nil) }
-                        } else { await MainActor.run { reply(nil, "LOGIN_EXPIRED") } }
-                    } catch { await MainActor.run { reply(nil, "CONNECTION_FAILED") } }
+                      ticket.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil else {
+                    // closed without the jump back: the player may still have signed in, so ask once more
+                    self.claimNow { ok in self.finish(ok ? nil : "LOGIN_CANCELLED") }
+                    return
                 }
+                Task {
+                    let r = try? await self.request("/native/exchange", ["ticket": ticket, "verifier": verifier])
+                    let token = (r?.1 as? [String: Any])?["token"] as? String ?? ""
+                    await MainActor.run {
+                        if r?.0 == 200, token.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil, SessionVault.write(token) {
+                            self.clearPending(); self.finish(nil)
+                        } else { self.claimNow { ok in self.finish(ok ? nil : (r == nil ? "CONNECTION_FAILED" : "LOGIN_EXPIRED")) } }
+                    }
+                }
+              }
             }
             auth?.presentationContextProvider = self
             auth?.prefersEphemeralWebBrowserSession = false
-            if auth?.start() != true { auth = nil; reply(nil, "LOGIN_UNAVAILABLE") }
+            if auth?.start() != true { auth = nil; clearPending(); finish("LOGIN_UNAVAILABLE"); return }
+            pollTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
+                guard let self = self, self.loginReply != nil else { return }
+                self.claimNow { ok in
+                    guard ok else { return }
+                    self.finish(nil)
+                    self.auth?.cancel(); self.auth = nil   // close the sign-in sheet: straight back into the game
+                }
+            }
         }
     }
 }
