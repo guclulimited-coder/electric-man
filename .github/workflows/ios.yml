@@ -25,6 +25,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ci-signing
+          path: ci-vault
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -92,19 +97,14 @@ jobs:
           bid_name = env['BUNDLE_ID']
           found = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + bid_name)['data'] if b['attributes']['identifier'] == bid_name]
           bid = found[0] if found else api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': bid_name, 'name': 'Electric Man', 'platform': 'IOS'}}})['data']
-          # temporary certificate
-          k = temp / 'em.key'; csr = temp / 'em.csr'
-          subprocess.run(['openssl', 'req', '-new', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(k), '-out', str(csr), '-subj', '/CN=Electric Man CI/O=TusneldaX/C=TR'], check=True, capture_output=True)
-          csr_b64 = ''.join(l for l in csr.read_text().splitlines() if not l.startswith('-----'))
-          cert = api('POST', '/v1/certificates', {'data': {'type': 'certificates', 'attributes': {'certificateType': 'DISTRIBUTION', 'csrContent': csr_b64}}})['data']
-          (temp / 'em-cert-id').write_text(cert['id'])
-          der = temp / 'em.cer'; der.write_bytes(base64.b64decode(cert['attributes']['certificateContent']))
-          pem = temp / 'em.pem'; subprocess.run(['openssl', 'x509', '-inform', 'DER', '-in', str(der), '-out', str(pem)], check=True)
-          pw = secrets.token_urlsafe(24); p12 = temp / 'em.p12'
-          r = subprocess.run(['openssl', 'pkcs12', '-export', '-legacy', '-inkey', str(k), '-in', str(pem), '-out', str(p12), '-passout', 'pass:' + pw], capture_output=True, text=True)
-          if r.returncode:  # LibreSSL has no -legacy and already writes the classic format
-              r = subprocess.run(['openssl', 'pkcs12', '-export', '-inkey', str(k), '-in', str(pem), '-out', str(p12), '-passout', 'pass:' + pw], capture_output=True, text=True)
-          if r.returncode: print('::error::pkcs12 export failed: ' + r.stderr[:300].replace(chr(10), ' ')); sys.exit(1)
+          # shared persistent CI distribution certificate (ci-signing branch, sealed with a key derived from the ASC API key).
+          # No certificate is created or revoked here any more: one app's upload can no longer invalidate another app's build.
+          sys.path.insert(0, 'ci-vault'); import ci_vault
+          v = ci_vault.load('ci-vault/ci-cert.enc.json')
+          cert = {'id': v['certId']}; sign_id = v['signId']; pw = v['password']
+          p12 = temp / 'em.p12'; p12.write_bytes(base64.b64decode(v['p12']))
+          (temp / 'em-sign-id').write_text(sign_id)
+          print('::notice::shared CI certificate ' + cert['id'] + ' (' + sign_id + ')')
           kc = str(temp / 'em.keychain-db'); kpw = secrets.token_urlsafe(24)
           for args in [['create-keychain', '-p', kpw, kc], ['set-keychain-settings', '-lut', '21600', kc], ['unlock-keychain', '-p', kpw, kc],
                        ['import', str(p12), '-P', pw, '-A', '-t', 'cert', '-f', 'pkcs12', '-k', kc], ['set-key-partition-list', '-S', 'apple-tool:,apple:,codesign:', '-s', '-k', kpw, kc],
@@ -121,15 +121,15 @@ jobs:
           for d in [pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles', pathlib.Path.home() / 'Library/Developer/Xcode/UserData/Provisioning Profiles']:
               d.mkdir(parents=True, exist_ok=True); (d / (info['UUID'] + '.mobileprovision')).write_bytes(pf.read_bytes())
           pathlib.Path('ExportOptions.plist').write_bytes(plistlib.dumps({'method': 'app-store-connect', 'destination': 'upload', 'signingStyle': 'manual', 'teamID': env['TEAM_ID'],
-              'signingCertificate': 'Apple Distribution', 'provisioningProfiles': {bid_name: info['Name']}, 'manageAppVersionAndBuildNumber': False, 'uploadSymbols': True}))
+              'signingCertificate': sign_id, 'provisioningProfiles': {bid_name: info['Name']}, 'manageAppVersionAndBuildNumber': False, 'uploadSymbols': True}))
           (temp / 'em-profile-name').write_text(info['Name'])
           apps = api('GET', '/v1/apps?filter[bundleId]=' + bid_name)['data']
-          print('::notice::temporary distribution certificate ' + cert['id'] + ', profile ' + info['Name'] + ', app record ' + (apps[0]['id'] if apps else 'MISSING'))
+          print('::notice::distribution certificate ' + cert['id'] + ', profile ' + info['Name'] + ', app record ' + (apps[0]['id'] if apps else 'MISSING'))
           PY
           PROFILE_NAME_CI=$(cat "$RUNNER_TEMP/em-profile-name")
           AUTH=(-authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           xcodebuild -project ios/ElectricMan.xcodeproj -scheme ElectricMan -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
+            -archivePath build/ElectricMan.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$(cat $RUNNER_TEMP/em-sign-id)" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME_CI" DEVELOPMENT_TEAM="$TEAM_ID" OTHER_CODE_SIGN_FLAGS="--keychain $RUNNER_TEMP/em.keychain-db" \
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" $AD_SETTINGS archive > archive.log 2>&1 \
             || { set +e; { grep -E "error:|Signing|signing" archive.log | sort -u | head -20; tail -15 archive.log; } | while read -r l; do echo "::error::$l"; done; exit 1; }
