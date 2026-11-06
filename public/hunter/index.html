@@ -2463,9 +2463,8 @@ async function watchAd(){
   adBusy = false; renderAdBtn(); if (panelOpen === 'shop') renderShop();
 }
 $('adBtn').addEventListener('click', () => { if (running) watchAd(); });
-// one-time rewards: rate the game, follow TusneldaX. Fill in the real profile links before release.
+// one-time rewards: follow TusneldaX. (6 Kasım 2026: mağaza puanı karşılığı ödül kaldırıldı — Apple 3.2.2 / Google Play puan teşviki yasak.) Fill in the real profile links before release.
 const SOCIAL = [
-  {id: 'review', name: T('s_review'), reward: 500, url: Native.platform === 'ios' ? 'https://apps.apple.com/app/id6819712674?action=write-review' : Native.platform === 'android' ? 'https://play.google.com/store/apps/details?id=com.tusneldax.electrichunter' : null, appOnly: true},
   {id: 'instagram', name: T('s_instagram'), reward: 250, url: null},
   {id: 'tiktok', name: T('s_tiktok'),    reward: 250, url: null},
   {id: 'youtube', name: T('s_youtube'),    reward: 250, url: null},
