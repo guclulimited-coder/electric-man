@@ -15,4 +15,4 @@ jobs:
           ASC_KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
           ASC_ISSUER_ID: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
           ASC_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
-        run: python scripts/asc-availability.py open && python scripts/asc-availability.py read
+        run: python scripts/asc-availability.py status

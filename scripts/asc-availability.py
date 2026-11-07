@@ -12,6 +12,11 @@ def api(m,p,body=None):
     if r.status_code>=300: print('::warning::',m,p.split('?')[0],r.status_code,r.text[:300].replace('\n',' ')); return None
     return r.json() if r.text else {}
 mode=sys.argv[1] if len(sys.argv)>1 else 'read'
+if mode=='status':
+    for a in api('GET','/v1/apps?limit=50')['data']:
+        v=api('GET',f"/v1/apps/{a['id']}/appStoreVersions?limit=3&filter[platform]=IOS") or {'data':[]}
+        print('::notice::'+a['attributes']['name']+': '+' | '.join(f"{x['attributes']['versionString']} {x['attributes']['appStoreState']}" for x in v['data']))
+    sys.exit(0)
 SKIP={'CHN'}
 apps=api('GET','/v1/apps?limit=50')['data']
 for a in apps:
