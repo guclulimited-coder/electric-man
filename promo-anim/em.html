@@ -1,0 +1,80 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script></head><body>
+<script type="module">
+// Electric Man tanıtım animasyonu (7 Kasım 2026): kablolar döner, akım trafodan evlere ulaşır, mahalle aydınlanır. Karakter: Serhat (oyunun modeli).
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+const q = new URLSearchParams(location.search), W = +q.get('w') || 1080, H = +q.get('h') || 1920;
+const R = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true}); R.setSize(W, H); R.setPixelRatio(1);
+R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.1; R.shadowMap.enabled = true; document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.background = new THREE.Color(0x0a1022); S.fog = new THREE.Fog(0x0a1022, 30, 90);
+const cam = new THREE.PerspectiveCamera(W > H ? 40 : 55, W / H, .1, 300);
+const comp = new EffectComposer(R); comp.addPass(new RenderPass(S, cam)); const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 1.0, .5, .78); comp.addPass(bloom); comp.addPass(new OutputPass());
+const hemi = new THREE.HemisphereLight(0x8090c8, 0x141824, .7); S.add(hemi);
+const key = new THREE.DirectionalLight(0xb8c8ff, .9); key.position.set(-8, 16, 10); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, {left: -16, right: 16, top: 16, bottom: -16}); S.add(key);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({color: 0x1f3a2a, roughness: 1})); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; S.add(ground);
+// ızgara: 5x6 hücre; yol trafodan (0,0) üç eve
+const N = 2.2, cols = 5, rows = 6, ox = -(cols - 1) * N / 2, oz = -(rows - 1) * N / 2;
+const cellPos = (c, r) => new THREE.Vector3(ox + c * N, 0, oz + r * N);
+const path = [[0,0],[1,0],[1,1],[1,2],[2,2],[3,2],[3,3],[3,4],[2,4],[2,5]], branch1 = [[3,2],[4,2]], branch2 = [[1,2],[0,2],[0,3]];
+const plateM = new THREE.MeshStandardMaterial({color: 0x2c3442, roughness: .7, metalness: .2});
+for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++){ const m = new THREE.Mesh(new THREE.BoxGeometry(N * .94, .25, N * .94), plateM); m.position.copy(cellPos(c, r)).setY(.12); m.receiveShadow = true; S.add(m); }
+// hücre bağlantıları
+const conn = new Map(); const link = (a, b) => { for (const [x, y] of [[a, b], [b, a]]){ const k = x.join(); if (!conn.has(k)) conn.set(k, new Set()); conn.get(k).add(`${y[0] - x[0]},${y[1] - x[1]}`); } };
+for (const p of [path, branch1, branch2]) for (let i = 1; i < p.length; i++) link(p[i - 1], p[i]);
+const wireM = []; const tiles = []; let ts = 9; const rnd = () => (ts = (ts * 16807) % 2147483647) / 2147483647;
+for (const [k, set] of conn){ const [c, r] = k.split(',').map(Number), g = new THREE.Group(); g.position.copy(cellPos(c, r)).setY(.3); S.add(g);
+  const m = new THREE.MeshStandardMaterial({color: 0x3a2a1a, emissive: 0x30e0ff, emissiveIntensity: 0, roughness: .4, metalness: .3}); wireM.push(m); m.userData.cell = k;
+  for (const d of set){ const [dx, dz] = d.split(',').map(Number); const seg = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, N / 2, 10), m); seg.rotation.z = dx ? Math.PI / 2 : 0; seg.rotation.x = dz ? Math.PI / 2 : 0; seg.position.set(dx * N / 4, .02, dz * N / 4); seg.castShadow = true; g.add(seg); }
+  const hub = new THREE.Mesh(new THREE.SphereGeometry(.2, 12, 8), m); g.add(hub);
+  const wrong = (1 + Math.floor(rnd() * 3)) * Math.PI / 2; tiles.push({g, k, wrong, fix: 1.5 + tiles.length * .8}); g.rotation.y = wrong; }
+// trafo
+const tr = new THREE.Group(); tr.position.copy(cellPos(0, 0)).add(new THREE.Vector3(-N, 0, 0)); S.add(tr);
+const trBox = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 1.4), new THREE.MeshStandardMaterial({color: 0x6a7480, metalness: .6, roughness: .35})); trBox.position.y = .9; trBox.castShadow = true; tr.add(trBox);
+const bolt = new THREE.Mesh(new THREE.PlaneGeometry(.6, .6), new THREE.MeshStandardMaterial({color: 0xffd23f, emissive: 0xffb000, emissiveIntensity: 1.5, side: THREE.DoubleSide})); bolt.position.set(.71, 1.1, 0); bolt.rotation.y = Math.PI / 2; tr.add(bolt);
+const trL = new THREE.PointLight(0x40e0ff, 0, 8, 1.5); trL.position.set(0, 2.2, 0); tr.add(trL);
+// evler: yol sonlarında
+const houses = []; const housePal = [0xd98a5b, 0xc9b28e, 0x9bb0c4, 0xd0675a, 0xe0c27a];
+function house(c, r, dx, dz, i){ const g = new THREE.Group(); g.position.copy(cellPos(c, r)).add(new THREE.Vector3(dx * N, 0, dz * N)); S.add(g);
+  const b = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.5, 1.7), new THREE.MeshStandardMaterial({color: housePal[i % 5], roughness: .8})); b.position.y = .75; b.castShadow = true; g.add(b);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(1.45, 1, 4), new THREE.MeshStandardMaterial({color: 0x8a3020, roughness: .8})); roof.position.y = 2; roof.rotation.y = Math.PI / 4; roof.castShadow = true; g.add(roof);
+  const wm = new THREE.MeshStandardMaterial({color: 0x10141c, emissive: 0xffc070, emissiveIntensity: 0}); for (const s of [-1, 1]){ const w = new THREE.Mesh(new THREE.PlaneGeometry(.4, .45), wm); w.position.set(s * .4, .85, .86); g.add(w); const w2 = w.clone(); w2.position.set(.86, .85, s * .4); w2.rotation.y = Math.PI / 2; g.add(w2); }
+  const L = new THREE.PointLight(0xffb060, 0, 7, 1.6); L.position.set(0, 1.2, 1.4); g.add(L); houses.push({wm, L}); }
+house(2, 5, 0, 1, 0); house(4, 2, 1, 0, 1); house(0, 3, 0, 1, 2);
+// arka plandaki karanlık mahalle (sonra yanar)
+const bg = []; for (let i = 0; i < 40; i++){ const a = rnd() * 6.283, d = 13 + rnd() * 25; const g = new THREE.Group(); g.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); S.add(g);
+  const hgt = 1.4 + rnd() * 3; const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, hgt, 1.8), new THREE.MeshStandardMaterial({color: housePal[i % 5], roughness: .85})); b.position.y = hgt / 2; g.add(b);
+  const wm = new THREE.MeshStandardMaterial({color: 0x10141c, emissive: 0xffc070, emissiveIntensity: 0}); const w = new THREE.Mesh(new THREE.PlaneGeometry(1.2, hgt * .5), wm); w.position.set(0, hgt * .55, .91); g.add(w); g.lookAt(0, 0, 0); bg.push({wm, on: 16 + d * .12 + rnd() * 1.5}); }
+// Serhat
+const b64glb = async u => { const t = await (await fetch(u)).text(), bin = Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)); return new Promise((ok, no) => new GLTFLoader().parse(bin.buffer, '', ok, no)); };
+const sg = await b64glb('../public/serhat.txt'); const ser = sg.scene; ser.traverse(m => { if (m.isMesh){ m.castShadow = true; m.frustumCulled = false; } });
+{ const b = new THREE.Box3().setFromObject(ser); ser.scale.setScalar(1.9 / (b.max.y - b.min.y)); } S.add(ser); ser.position.set(ox - N * 1.2, 0, oz + N * 1.6); ser.rotation.y = Math.PI * .6;
+const mix = new THREE.AnimationMixer(ser), act = {}; for (const n of ['Idle', 'Wave', 'Dance']){ const c = sg.animations.find(a => a.name === n); act[n] = mix.clipAction(c); act[n].play(); }
+// akım darbesi parçacıkları yol boyunca
+const flow = [path, branch1, branch2].map(p => p.map(([c, r]) => cellPos(c, r).setY(.45)));
+const FP = 60, fG = new THREE.BufferGeometry(), fP = new Float32Array(FP * 3 * 3); fG.setAttribute('position', new THREE.BufferAttribute(fP, 3));
+const fM = new THREE.PointsMaterial({color: 0xaaf6ff, size: .35, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false}); S.add(new THREE.Points(fG, fM));
+const ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x), V = (x, y, z) => new THREE.Vector3(x, y, z);
+const camKeys = [[0, V(0, 6, 15), V(0, 0, 0)], [5, V(-4, 8, 9), V(-1, 0, -1)], [11, V(3, 11, 10), V(0, 0, 0)], [14, V(0, 6, 9), V(0, .5, 1)], [19, V(-5, 4, 6), V(-2.5, 1, 1)], [25, V(0, 22, 26), V(0, 0, -2)]];
+function camAt(t){ let i = 0; while (i < camKeys.length - 2 && t > camKeys[i + 1][0]) i++; const [t0, p0, l0] = camKeys[i], [t1, p1, l1] = camKeys[i + 1], f = ease((t - t0) / (t1 - t0)); cam.position.lerpVectors(p0, p1, f); return l0.clone().lerp(l1, f); }
+const powerOn = 1.5 + tiles.length * .8 + .6; // tüm kablolar doğru
+window.renderAt = function(t){
+  tiles.forEach(T => { const f = ease((t - T.fix) / .45); T.g.rotation.y = T.wrong * (1 - f); T.g.position.y = .3 + Math.sin(Math.min(1, Math.max(0, (t - T.fix) / .45)) * Math.PI) * .35; });
+  const on = t > powerOn; trL.intensity = on ? 10 + Math.sin(t * 20) * 3 : 0;
+  // akım: hücre sırasına göre yanar
+  wireM.forEach(m => { const k = m.userData.cell, idx = Math.max(...[path, branch1, branch2].map((p, pi) => { const j = p.findIndex(x => x.join() === k); return j < 0 ? -1 : j + (pi ? 5 : 0); })); m.emissiveIntensity = on ? ease((t - powerOn - idx * .22) / .3) * 2.2 : 0; });
+  let n = 0; fM.opacity = on ? 1 : 0;
+  for (const pts of flow){ for (let k = 0; k < FP; k++, n++){ const u = ((k / FP) + (t - powerOn) * .35) % 1, seg = u * (pts.length - 1), i = Math.floor(seg), f = seg - i; const a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)]; fP.set([a.x + (b.x - a.x) * f, .5, a.z + (b.z - a.z) * f], n * 3); } }
+  fG.attributes.position.needsUpdate = true;
+  houses.forEach((h, i) => { const f = ease((t - powerOn - 2.2 - i * .5) / .5); h.wm.emissiveIntensity = f * 2.5; h.L.intensity = f * 6; });
+  bg.forEach(b => b.wm.emissiveIntensity = ease((t - b.on) / .5) * 1.8);
+  for (const k in act) act[k].setEffectiveWeight(0); (t > powerOn + 3 && t < 20 ? act.Dance : t > 20 ? act.Wave : act.Idle).setEffectiveWeight(1); mix.setTime(t);
+  hemi.intensity = .7 + ease((t - powerOn) / 3) * .25;
+  cam.lookAt(camAt(t)); comp.render();
+};
+window.READY = true;
+</script></body></html>
