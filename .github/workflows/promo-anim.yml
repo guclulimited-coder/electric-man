@@ -16,7 +16,7 @@ jobs:
       - run: |
           cd promo-anim
           while read page w h dur out only; do node render.mjs $page $w $h $dur out/$out $only; done < jobs.txt
-          for d in out/*/; do n=$(basename $d); if ls $d/00000.jpg >/dev/null 2>&1; then ffmpeg -v error -y -framerate 30 -i $d/%05d.jpg -c:v libx264 -crf 18 -preset medium -pix_fmt yuv420p out/$n.mp4 && rm -rf $d; fi; done
+          for d in out/*/; do n=$(basename $d); if ls $d/00000.jpg >/dev/null 2>&1; then true; fi; done
           ls -la out
       - if: always()
         run: |
