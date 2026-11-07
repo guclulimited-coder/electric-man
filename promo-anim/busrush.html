@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script></head><body>
+<script type="module">
+// Bus Rush tanıtım animasyonu (7 Kasım 2026): kilitlenmiş renkli otobüs otoparkı çözülür, yolcular kendi rengindeki otobüse biner.
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+const q = new URLSearchParams(location.search), W = +q.get('w') || 1080, H = +q.get('h') || 1920;
+const R = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true}); R.setSize(W, H); R.setPixelRatio(1);
+R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05; R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.background = new THREE.Color(0x8fd0ff);
+const cam = new THREE.PerspectiveCamera(W > H ? 38 : 50, W / H, .1, 300);
+const comp = new EffectComposer(R); comp.addPass(new RenderPass(S, cam)); comp.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), .35, .4, .92)); comp.addPass(new OutputPass());
+S.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.3));
+const sun = new THREE.DirectionalLight(0xfff2dd, 2.2); sun.position.set(10, 22, 12); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, {left: -18, right: 18, top: 18, bottom: -18}); S.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({color: 0x7fc46a, roughness: 1})); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; S.add(ground);
+const lot = new THREE.Mesh(new THREE.BoxGeometry(14, .2, 14), new THREE.MeshStandardMaterial({color: 0x4a5160, roughness: .9})); lot.position.y = .1; lot.receiveShadow = true; S.add(lot);
+for (let i = -3; i <= 3; i++){ const l = new THREE.Mesh(new THREE.PlaneGeometry(.08, 13), new THREE.MeshBasicMaterial({color: 0xf2f2f2})); l.rotation.x = -Math.PI / 2; l.position.set(i * 2, .21, 0); S.add(l); }
+// çıkış yolu ve durak (üstte)
+const road = new THREE.Mesh(new THREE.BoxGeometry(30, .18, 4), new THREE.MeshStandardMaterial({color: 0x30343c, roughness: .8})); road.position.set(0, .09, -9.2); road.receiveShadow = true; S.add(road);
+for (let i = -7; i <= 7; i++){ const d = new THREE.Mesh(new THREE.PlaneGeometry(1, .15), new THREE.MeshBasicMaterial({color: 0xffe066})); d.rotation.x = -Math.PI / 2; d.position.set(i * 2, .19, -9.2); S.add(d); }
+const stop = new THREE.Mesh(new THREE.BoxGeometry(10, .3, 2.2), new THREE.MeshStandardMaterial({color: 0xd8dde6, roughness: .7})); stop.position.set(0, .15, -12.4); stop.receiveShadow = true; S.add(stop);
+const COL = [0xff4757, 0x3d8bff, 0xffc93c, 0x2ed573, 0xa55eea, 0xff8a3d];
+// otobüsler: sıkışık otopark (yön: ön -z)
+let rs = 21; const rnd = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
+function bus(color){ const g = new THREE.Group(); const m = new THREE.MeshStandardMaterial({color, roughness: .35, metalness: .1});
+  const body = new THREE.Mesh(new RoundedBoxGeometry(1.5, 1.25, 3.6, 3, .22), m); body.position.y = .85; body.castShadow = true; g.add(body);
+  const glass = new THREE.MeshStandardMaterial({color: 0x24334a, roughness: .1, metalness: .4});
+  const wf = new THREE.Mesh(new THREE.BoxGeometry(1.3, .5, .05), glass); wf.position.set(0, 1.1, -1.81); g.add(wf);
+  for (const sx of [-1, 1]){ const ws = new THREE.Mesh(new THREE.BoxGeometry(.05, .42, 2.8), glass); ws.position.set(sx * .76, 1.12, .1); g.add(ws); }
+  const roofC = new THREE.Mesh(new RoundedBoxGeometry(1.2, .12, 2.6, 2, .05), new THREE.MeshStandardMaterial({color: 0xffffff, roughness: .5})); roofC.position.y = 1.5; g.add(roofC);
+  for (const [x, z] of [[-.7, -1.2], [.7, -1.2], [-.7, 1.2], [.7, 1.2]]){ const w = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .2, 14), new THREE.MeshStandardMaterial({color: 0x1c1c22})); w.rotation.z = Math.PI / 2; w.position.set(x, .32, z); g.add(w); }
+  const hl = new THREE.MeshStandardMaterial({color: 0xffffee, emissive: 0xfff6c0, emissiveIntensity: 1.5}); for (const sx of [-.5, .5]){ const l = new THREE.Mesh(new THREE.SphereGeometry(.09, 8, 6), hl); l.position.set(sx, .55, -1.82); g.add(l); }
+  S.add(g); return g; }
+const buses = []; const slots = [];
+for (let c = 0; c < 6; c++) for (let r = 0; r < 3; r++) slots.push([-5 + c * 2, -3.2 + r * 4.2]);
+slots.forEach(([x, z], i) => { const color = COL[(i * 7 + 3) % 6], b = bus(color); b.position.set(x, .2, z); b.userData = {color, x, z, rot: rnd() < .35 ? (rnd() < .5 ? .25 : -.25) : 0}; b.rotation.y = b.userData.rot; buses.push(b); });
+// çözülme sırası: ön sıradan başlayarak, her biri yola çıkıp sağa/sola gider
+const order = buses.map((b, i) => i).sort((a, b) => buses[a].userData.z - buses[b].userData.z || buses[a].userData.x - buses[b].userData.x);
+order.forEach((bi, k) => { buses[bi].userData.go = 5 + k * .62; buses[bi].userData.dir = buses[bi].userData.x < 0 ? -1 : 1; });
+// yolcular: durakta renk renk kuyruk
+const pax = []; for (let i = 0; i < 26; i++){ const c = COL[i % 6], g = new THREE.Group(); const m = new THREE.MeshStandardMaterial({color: c, roughness: .5});
+  const bdy = new THREE.Mesh(new THREE.CapsuleGeometry(.16, .32, 4, 10), m); bdy.position.y = .5; bdy.castShadow = true; g.add(bdy);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.15, 12, 10), new THREE.MeshStandardMaterial({color: 0xf2c9a0, roughness: .6})); head.position.y = .92; g.add(head);
+  g.position.set(-4.6 + (i % 13) * .75, .3, -12.1 - Math.floor(i / 13) * .55); S.add(g); pax.push({g, c, leave: 6 + i * .5}); }
+// konfeti
+const CF = 300, cG = new THREE.BufferGeometry(), cP = new Float32Array(CF * 3), cC = new Float32Array(CF * 3);
+for (let i = 0; i < CF; i++){ const c = new THREE.Color(COL[i % 6]); cC.set([c.r, c.g, c.b], i * 3); } cG.setAttribute('position', new THREE.BufferAttribute(cP, 3)); cG.setAttribute('color', new THREE.BufferAttribute(cC, 3));
+const conf = new THREE.Points(cG, new THREE.PointsMaterial({size: .22, vertexColors: true, transparent: true, opacity: 0})); S.add(conf);
+// çevre ağaçları
+for (let i = 0; i < 40; i++){ const a = rnd() * 6.283, d = 12 + rnd() * 20; const t = new THREE.Group(); t.position.set(Math.cos(a) * d, 0, Math.sin(a) * d + 2); if (Math.abs(t.position.z + 9) < 3.5) continue;
+  const tr = new THREE.Mesh(new THREE.CylinderGeometry(.15, .2, 1, 8), new THREE.MeshStandardMaterial({color: 0x7a5232})); tr.position.y = .5; t.add(tr);
+  const cr = new THREE.Mesh(new THREE.IcosahedronGeometry(.9 + rnd() * .5, 0), new THREE.MeshStandardMaterial({color: 0x3fa34d, flatShading: true})); cr.position.y = 1.6; cr.castShadow = true; t.add(cr); S.add(t); }
+const ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x), V = (x, y, z) => new THREE.Vector3(x, y, z);
+const camKeys = [[0, V(0, 9, 13), V(0, 0, 0)], [4, V(0, 18, 10), V(0, 0, -2)], [12, V(4, 16, 12), V(0, 0, -3)], [18, V(-3, 12, 4), V(0, 0, -9)], [25, V(0, 26, 14), V(0, 0, -3)]];
+function camAt(t){ let i = 0; while (i < camKeys.length - 2 && t > camKeys[i + 1][0]) i++; const [t0, p0, l0] = camKeys[i], [t1, p1, l1] = camKeys[i + 1], f = ease((t - t0) / (t1 - t0));
+  cam.position.lerpVectors(p0, p1, f); const l = l0.clone().lerp(l1, f); if (H > W) cam.position.sub(l).multiplyScalar(1.35).add(l); return l; }
+window.renderAt = function(t){
+  buses.forEach(b => { const u = b.userData, k = t - u.go;
+    if (k < 0){ // sıkışık: hafif titreme
+      b.position.set(u.x + (t > 1.5 && t < 4.5 ? Math.sin(t * 40 + u.x) * .03 : 0), .2, u.z); b.rotation.y = u.rot; return; }
+    // 1) otoparktan yukarı çık (0-1 sn), 2) yolda dön, 3) uzaklaş
+    if (k < 1){ const f = ease(k); b.position.set(u.x, .2, u.z + ( -9.2 - u.z) * f); b.rotation.y = u.rot * (1 - f); }
+    else { const f = (k - 1); b.rotation.y = -u.dir * Math.PI / 2 * ease(Math.min(1, f * 2)); b.position.set(u.x + u.dir * f * f * 6, .2, -9.2); }
+    b.visible = Math.abs(b.position.x) < 40; });
+  pax.forEach(p => { const k = t - p.leave; if (k < 0){ p.g.position.y = .3 + Math.abs(Math.sin(t * 6 + p.leave)) * .05; p.g.visible = true; return; } const f = ease(k / .6); p.g.position.y = .3 + Math.sin(f * Math.PI) * .9; p.g.scale.setScalar(1 - f * .9); p.g.visible = f < 1; });
+  const cf = t - 20.5; conf.material.opacity = cf > 0 ? 1 : 0;
+  for (let i = 0; i < CF; i++){ const a = i * 2.39, sp = .6 + (i % 7) * .12; cP.set([Math.cos(a) * (1 + cf * 2.5 * sp), Math.max(.2, 1 + cf * 9 * sp - cf * cf * 4.9), -3 + Math.sin(a) * (1 + cf * 2.5 * sp)], i * 3); }
+  cG.attributes.position.needsUpdate = true;
+  cam.lookAt(camAt(t)); comp.render();
+};
+window.READY = true;
+</script></body></html>
