@@ -68,7 +68,7 @@ window.renderAt = function(t){
   // akım: hücre sırasına göre yanar
   wireM.forEach(m => { const k = m.userData.cell, idx = Math.max(...[path, branch1, branch2].map((p, pi) => { const j = p.findIndex(x => x.join() === k); return j < 0 ? -1 : j + (pi ? 5 : 0); })); m.emissiveIntensity = on ? ease((t - powerOn - idx * .22) / .3) * 2.2 : 0; });
   let n = 0; fM.opacity = on ? 1 : 0;
-  for (const pts of flow){ for (let k = 0; k < FP; k++, n++){ const u = ((k / FP) + (t - powerOn) * .35) % 1, seg = u * (pts.length - 1), i = Math.floor(seg), f = seg - i; const a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)]; fP.set([a.x + (b.x - a.x) * f, .5, a.z + (b.z - a.z) * f], n * 3); } }
+  for (const pts of flow){ for (let k = 0; k < FP; k++, n++){ const u = ((((k / FP) + (t - powerOn) * .35) % 1) + 1) % 1, seg = u * (pts.length - 1), i = Math.floor(seg), f = seg - i; const a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)]; fP.set([a.x + (b.x - a.x) * f, .5, a.z + (b.z - a.z) * f], n * 3); } }
   fG.attributes.position.needsUpdate = true;
   houses.forEach((h, i) => { const f = ease((t - powerOn - 2.2 - i * .5) / .5); h.wm.emissiveIntensity = f * 2.5; h.L.intensity = f * 6; });
   bg.forEach(b => b.wm.emissiveIntensity = ease((t - b.on) / .5) * 1.8);
