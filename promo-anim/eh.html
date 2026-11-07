@@ -1,0 +1,113 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script></head><body>
+<script type="module">
+// Electric Hunter tanıtım animasyonu (6-7 Kasım 2026). Oyunun kendi modelleri: Serhat, canavarlar, boss. Zaman belirlenimli: renderAt(t).
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { loadCreatures } from '../public/hunter/creatures.js';
+const q = new URLSearchParams(location.search), W = +q.get('w') || 1080, H = +q.get('h') || 1920;
+const R = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true}); R.setSize(W, H); R.setPixelRatio(1);
+R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.1; R.shadowMap.enabled = true; document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.fog = new THREE.FogExp2(0x2a0a1e, .028);
+const cam = new THREE.PerspectiveCamera(W > H ? 45 : 60, W / H, .1, 400);
+const comp = new EffectComposer(R); comp.addPass(new RenderPass(S, cam)); const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), .9, .5, .82); comp.addPass(bloom); comp.addPass(new OutputPass());
+// gökyüzü
+const skyMat = new THREE.ShaderMaterial({side: THREE.BackSide, depthWrite: false, uniforms: {}, vertexShader: 'varying vec3 p;void main(){p=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader: 'varying vec3 p;void main(){float h=p.y;vec3 c=mix(vec3(.55,.12,.08),vec3(.05,.02,.09),smoothstep(-.05,.6,h));c+=vec3(.9,.35,.15)*pow(max(0.,1.-abs(h-.02)*6.),3.)*.6;gl_FragColor=vec4(c,1.);}'});
+S.add(new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), skyMat));
+// yıldızlar
+{ const g = new THREE.BufferGeometry(), n = 900, p = new Float32Array(n * 3); let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n; i++){ const a = r() * 6.283, e = .15 + r() * 1.3; p.set([Math.cos(a) * Math.cos(e) * 250, Math.sin(e) * 250, Math.sin(a) * Math.cos(e) * 250], i * 3); }
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3)); S.add(new THREE.Points(g, new THREE.PointsMaterial({color: 0xffe0d0, size: 1.2, fog: false}))); }
+// zemin
+{ const g = new THREE.PlaneGeometry(220, 220, 160, 160); g.rotateX(-Math.PI / 2); const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++){ const x = p.getX(i), z = p.getZ(i), d = Math.hypot(x, z); p.setY(i, (Math.sin(x * .21) * Math.cos(z * .17) * 1.2 + Math.sin(x * .9 + z * .7) * .18) * Math.min(1, Math.max(0, (d - 9) / 14))); }
+  g.computeVertexNormals(); const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color: 0x6a2418, roughness: .95})); m.receiveShadow = true; S.add(m); }
+// kayalar ve kristaller
+let rs = 3; const rnd = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
+for (let i = 0; i < 70; i++){ const a = rnd() * 6.283, d = 14 + rnd() * 70, h = 2 + rnd() * 9;
+  const m = new THREE.Mesh(new THREE.ConeGeometry(.6 + rnd() * 2.2, h, 5), new THREE.MeshStandardMaterial({color: 0x3a1410, roughness: .9, flatShading: true}));
+  m.position.set(Math.cos(a) * d, h / 2 - .3, Math.sin(a) * d - 10); m.rotation.set(rnd() * .3, rnd() * 3, rnd() * .3); S.add(m);
+  if (rnd() < .35){ const c = new THREE.Mesh(new THREE.OctahedronGeometry(.5 + rnd() * .8), new THREE.MeshStandardMaterial({color: 0x40e0ff, emissive: 0x18a8ff, emissiveIntensity: 2.2})); c.position.set(m.position.x + 1.5, .6, m.position.z); S.add(c); } }
+S.add(new THREE.HemisphereLight(0xff9a70, 0x2a0818, .9));
+const sun = new THREE.DirectionalLight(0xffc49a, 1.6); sun.position.set(-20, 30, 10); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, {left: -20, right: 20, top: 20, bottom: -20}); S.add(sun);
+// portal
+const PZ = -14, portal = new THREE.Group(); portal.position.set(0, 3.2, PZ); S.add(portal);
+const ring = new THREE.Mesh(new THREE.TorusGeometry(2.8, .22, 16, 80), new THREE.MeshStandardMaterial({color: 0xb060ff, emissive: 0x9a40ff, emissiveIntensity: 3})); portal.add(ring);
+const disk = new THREE.Mesh(new THREE.CircleGeometry(2.7, 64), new THREE.ShaderMaterial({transparent: true, uniforms: {t: {value: 0}, o: {value: 0}}, vertexShader: 'varying vec2 u;void main(){u=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader: 'uniform float t,o;varying vec2 u;void main(){vec2 p=u-.5;float r=length(p)*2.,a=atan(p.y,p.x);float s=sin(a*5.+r*14.-t*6.)*.5+.5;vec3 c=mix(vec3(.25,.05,.6),vec3(.6,.85,1.),s*(1.-r));gl_FragColor=vec4(c*(1.6-r),o*(1.-smoothstep(.85,1.,r)));}'}));
+portal.add(disk); const plight = new THREE.PointLight(0xa060ff, 0, 30, 1.5); portal.add(plight);
+// kıvılcım parçacıkları
+const SP = 400, spG = new THREE.BufferGeometry(), spP = new Float32Array(SP * 3); spG.setAttribute('position', new THREE.BufferAttribute(spP, 3));
+const sparks = new THREE.Points(spG, new THREE.PointsMaterial({color: 0x9fe8ff, size: .12, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false})); S.add(sparks);
+// şimşek
+const boltMat = new THREE.LineBasicMaterial({color: 0xbff4ff, transparent: true, blending: THREE.AdditiveBlending}); const bolts = [];
+for (let i = 0; i < 4; i++){ const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(24 * 3), 3)); const l = new THREE.Line(g, boltMat); l.visible = false; S.add(l); bolts.push(l); }
+const boltLight = new THREE.PointLight(0x9ae6ff, 0, 18, 1.6); S.add(boltLight);
+function setBolt(i, a, b, seed){ const l = bolts[i], p = l.geometry.attributes.position; let s = seed * 9301 + 49297; const r = () => ((s = (s * 9301 + 49297) % 233280) / 233280 - .5);
+  for (let k = 0; k < 24; k++){ const f = k / 23, j = k === 0 || k === 23 ? 0 : .55; p.setXYZ(k, a.x + (b.x - a.x) * f + r() * j, a.y + (b.y - a.y) * f + r() * j, a.z + (b.z - a.z) * f + r() * j); } p.needsUpdate = true; l.visible = true; }
+// yükleyiciler
+const b64glb = async u => { const t = await (await fetch(u)).text(), bin = Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)); return new Promise((ok, no) => new GLTFLoader().parse(bin.buffer, '', ok, no)); };
+const prep = (o, sc) => { o.scale.setScalar(sc); o.traverse(m => { if (m.isMesh){ m.castShadow = true; m.frustumCulled = false; } }); return o; };
+const [serG, bossG, CREA] = await Promise.all([b64glb('../public/hunter/serhat.txt'), b64glb('../public/hunter/boss-demon.txt'), loadCreatures(THREE, '../public/hunter/creatures.bin')]);
+const fitH = (o, h) => { const b = new THREE.Box3().setFromObject(o); return h / Math.max(.01, b.max.y - b.min.y); };
+const ser = serG.scene; prep(ser, 1); ser.scale.setScalar(fitH(ser, 1.8)); S.add(ser); const serMix = new THREE.AnimationMixer(ser);
+const A = n => serMix.clipAction(serG.animations.find(a => a.name === n));
+const serAct = {Idle: A('Idle'), Walk: A('Walk'), Run: A('Run')}; Object.values(serAct).forEach(a => a.play());
+const aura = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({color: 0x48c8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false})); S.add(aura);
+const boss = bossG.scene; prep(boss, 1); boss.scale.setScalar(fitH(boss, 5.2)); S.add(boss); const bossMix = new THREE.AnimationMixer(boss);
+const bAct = {Idle: bossMix.clipAction(bossG.animations.find(a => a.name === 'Idle')), Punch: bossMix.clipAction(bossG.animations.find(a => a.name === 'Punch'))}; Object.values(bAct).forEach(a => a.play());
+const bossLight = new THREE.PointLight(0xff3020, 0, 25, 1.4); S.add(bossLight);
+function creature(type){ const M = CREA.meta[type], body = new THREE.Group(), mat = new THREE.MeshStandardMaterial({vertexColors: true, roughness: .55});
+  const add = (pt, par) => { const m = new THREE.Mesh(CREA.geos[pt.idx], mat); m.castShadow = true; par.add(m); return m; };
+  for (const pt of M.parts) if (pt.role === 'body') add(pt, body);
+  const h = M.parts.find(pt => pt.role === 'head'); if (h){ const hg = new THREE.Group(); hg.position.fromArray(h.pivot); body.add(hg); add(h, hg);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), new THREE.MeshBasicMaterial({color: M.eyeColor || 0xff5a1a})); (h.eyes || []).forEach(e => { const m = eye.clone(); m.position.set(e[0] - h.pivot[0], e[1] - h.pivot[1], e[2] - h.pivot[2] + .02); hg.add(m); }); }
+  const legs = [], lp = M.parts.find(pt => pt.role === 'leg'); if (lp) (M.legs || []).forEach((L, i) => { const g = new THREE.Group(); g.position.fromArray(L); if (L[0] < 0) g.scale.x = -1; g.userData.ph = i % 2 ? Math.PI : 0; body.add(g); add(lp, g); legs.push(g); });
+  for (const [role, list] of [['arm', M.arms], ['wing', M.wings]]){ const pt = M.parts.find(x => x.role === role); if (pt) (list || []).forEach(L => { const g = new THREE.Group(); g.position.fromArray(L); if (L[0] < 0) g.scale.x = -1; g.userData.role = role; body.add(g); add(pt, g); legs.push(g); }); }
+  body.scale.setScalar((M.scale || 1) * 1.3); const w = new THREE.Group(); w.add(body); S.add(w);
+  w.userData.anim = t => legs.forEach(g => { g.rotation.x = Math.sin(t * 12 + (g.userData.ph || 0)) * .5; if (g.userData.role === 'wing') g.rotation.z = Math.sin(t * 11) * .7; });
+  return w; }
+let mons_i = 0; const mons = [['goz', -6, -2], ['akrep', 6.5, -1], ['tank', 0, 5.5]].map(([t, x, z]) => ({o: creature(t), x, z, eat: 12.2 + mons_i++ * 2.1}));
+
+// yardımcılar
+const ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x), lerp = (a, b, f) => a + (b - a) * f;
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const camKeys = [[0, V(0, 2.2, 10), V(0, 3, PZ)], [4, V(0, 2.4, 6), V(0, 2.6, PZ)], [8, V(3.5, 1.6, 4), V(0, 1.2, -4)], [11, V(0, 6.5, 9), V(0, .8, -1)], [18.5, V(-2.5, 4.5, 8), V(0, 1, -2)], [20, V(2, 1.2, 6), V(0, 4, -9)], [25, V(0, 1.4, 7.5), V(0, 3, -6)]];
+function camAt(t){ let i = 0; while (i < camKeys.length - 2 && t > camKeys[i + 1][0]) i++; const [t0, p0, l0] = camKeys[i], [t1, p1, l1] = camKeys[i + 1], f = ease((t - t0) / (t1 - t0));
+  cam.position.lerpVectors(p0, p1, f); const l = l0.clone().lerp(l1, f); return l; }
+window.renderAt = function(t){
+  // portal açılışı
+  const po = ease((t - .5) / 2); ring.scale.setScalar(Math.max(.001, po)); disk.material.uniforms.o.value = po; disk.material.uniforms.t.value = t; plight.intensity = po * 40 * (1 + Math.sin(t * 9) * .15); ring.rotation.z = t * .6;
+  // Serhat: portaldan çıkar (3-8 yürü), 8-11 koş, sonra dur
+  const sz = t < 3 ? PZ - 1 : t < 8 ? lerp(PZ, -6, (t - 3) / 5) : t < 11 ? lerp(-6, 0, ease((t - 8) / 3)) : 0;
+  ser.position.set(0, 0, sz); ser.visible = t > 2.6; ser.rotation.y = t > 19 ? Math.PI : 0;
+  const wW = t > 3 && t < 8 ? 1 : 0, wR = t >= 8 && t < 11 ? 1 : 0; serAct.Walk.setEffectiveWeight(wW); serAct.Run.setEffectiveWeight(wR); serAct.Idle.setEffectiveWeight(1 - wW - wR);
+  serMix.setTime(t);
+  // yutulan canavarlar: güç artışı
+  let eaten = 0, boltOn = false; bolts.forEach(b => b.visible = false); boltLight.intensity = 0; const hand = V(0, 1.3, sz + .3);
+  mons.forEach((m, i) => { const o = m.o, appear = 9.5 + i * .4, e = m.eat; o.visible = t > appear && t < e + .9;
+    const ap = ease((t - appear) / 1.2), px = lerp(m.x * 1.8, m.x, ap), pz = lerp(m.z * 1.6 - 3, m.z, ap); o.position.set(px, 0, pz); o.lookAt(0, 0, sz); o.userData.anim(t);
+    if (t > e - .8 && t < e){ setBolt(i, hand, V(px, 1, pz), Math.floor(t * 20) + i); boltOn = true; boltLight.position.set(px, 1.5, pz); boltLight.intensity = 30; }
+    if (t >= e){ const f = ease((t - e) / .8); o.position.lerp(V(0, 1.2, sz), f); o.scale.setScalar(Math.max(.01, 1 - f)); eaten += ease((t - e) / 1.2); } });
+  const grow = 1 + eaten * .08; ser.scale.setScalar(fitH0 * grow);
+  aura.position.set(0, 1 * grow, sz); aura.scale.set(.9 * grow, 1.25 * grow, .9 * grow); aura.material.opacity = Math.min(.35, eaten * .1) * (.8 + Math.sin(t * 12) * .2) + (t > 22 ? ease((t - 22) / 2) * .4 : 0);
+  // kıvılcımlar
+  for (let k = 0; k < SP; k++){ const ph = (k * 0.618 + t * .7) % 1, a = k * 2.399, r = .5 + ph * 2.2 * (eaten / 3 + .3); spP[k * 3] = Math.cos(a + t) * r; spP[k * 3 + 1] = ph * 3.2 * grow; spP[k * 3 + 2] = sz + Math.sin(a + t) * r; }
+  spG.attributes.position.needsUpdate = true; sparks.material.opacity = t > 12 ? Math.min(1, eaten * .45) : 0;
+  // boss: 19 sn'de yerden yükselir
+  const bp = ease((t - 19) / 2.2); boss.visible = t > 18.8; boss.position.set(0, lerp(-6, 0, bp), -9); bossLight.position.set(0, 4, -6); bossLight.intensity = bp * 45 * (1 + Math.sin(t * 5) * .2);
+  bAct.Punch.setEffectiveWeight(t > 22 ? 1 : 0); bAct.Idle.setEffectiveWeight(t > 22 ? 0 : 1); bossMix.setTime(Math.max(0, t - 19));
+  // son: Serhat şimşekle karşılık verir
+  if (t > 23.2){ setBolt(3, V(0, 1.4 * grow, sz - .3), V(0, 3.5, -8.5), Math.floor(t * 24)); boltLight.position.set(0, 2.5, -5); boltLight.intensity = 50; }
+  const look = camAt(t); const shake = t > 20 && t < 22 ? Math.sin(t * 60) * .06 : 0; cam.position.y += shake; cam.lookAt(look);
+  bloom.strength = .8 + (boltOn ? .5 : 0); comp.render();
+};
+const fitH0 = ser.scale.x;
+window.READY = true;
+</script></body></html>

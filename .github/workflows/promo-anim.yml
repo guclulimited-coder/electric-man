@@ -1,0 +1,25 @@
+name: Tanıtım animasyonu çizimi (yayın yok)
+on:
+  push:
+    branches: [promo-anim]
+permissions: { contents: write }
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: cd promo-anim && npm init -y >/dev/null && npm i playwright@1.48.2 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+      - run: python3 -m http.server 8000 >/dev/null 2>&1 &
+      - run: |
+          cd promo-anim
+          while read page w h dur out only; do node render.mjs $page $w $h $dur out/$out $only; done < jobs.txt
+          for d in out/*/; do n=$(basename $d); if ls $d/00000.jpg >/dev/null 2>&1; then ffmpeg -v error -y -framerate 30 -i $d/%05d.jpg -c:v libx264 -crf 18 -preset medium -pix_fmt yuv420p out/$n.mp4 && rm -rf $d; fi; done
+          ls -la out
+      - if: always()
+        run: |
+          cd promo-anim/out || exit 0
+          git init -q -b promo-anim-out && git config user.name ci && git config user.email ci@tusneldax.com && git add . && git commit -qm "anim $GITHUB_RUN_ID"
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" promo-anim-out
