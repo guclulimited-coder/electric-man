@@ -49,9 +49,9 @@ function segs(mask){ const s = []; const E = {1:[0,-.5], 2:[.5,0], 4:[0,.5], 8:[
   return arms.map(b => [E[b], [0, 0]]); }
 function build(th){
   if (th.close){ cam.position.set(1.1, 1.5, 1.7); cam.lookAt(.15, .1, -.3); } else { cam.position.set(0, 6.4, 7.4); cam.lookAt(0, -.2, .2); }
-  scene = new THREE.Scene(); scene.background = new THREE.Color(th.bg); scene.environment = ENV; scene.environmentIntensity = th.night ? .15 : .55; R.toneMappingExposure = th.snow ? .85 : 1; scene.fog = new THREE.Fog(th.bg, 14, 30);
-  scene.add(new THREE.HemisphereLight(th.night ? 0x5470a0 : 0xffffff, th.night ? 0x0a0f1a : 0x8a7a60, th.night ? .5 : th.snow ? .7 : 1.4));
-  const sun = new THREE.DirectionalLight(th.night ? 0x8fa8ff : 0xfff2dc, th.night ? .6 : th.snow ? 1.3 : 2.2); sun.position.set(-4, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, {left:-5, right:5, top:5, bottom:-5}); scene.add(sun);
+  scene = new THREE.Scene(); scene.background = new THREE.Color(th.bg); scene.environment = ENV; scene.environmentIntensity = th.night ? .12 : .35; R.toneMappingExposure = th.snow ? .75 : .9; scene.fog = new THREE.Fog(th.bg, 22, 45);
+  scene.add(new THREE.HemisphereLight(th.night ? 0x5470a0 : 0xffffff, th.night ? 0x0a0f1a : 0x8a7a60, th.night ? .35 : th.snow ? .35 : .55));
+  const sun = new THREE.DirectionalLight(th.night ? 0x8fa8ff : 0xfff2dc, th.night ? .5 : th.snow ? 1.6 : 2.4); sun.position.set(-4, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, {left:-5, right:5, top:5, bottom:-5}); scene.add(sun);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), std(new THREE.Color(th.bg).multiplyScalar(th.night ? .6 : .82), {roughness:1})); ground.rotation.x = -Math.PI / 2; ground.position.y = -.36; ground.receiveShadow = true; scene.add(ground);
   const base = new THREE.Mesh(new RoundedBoxGeometry(5.6, .36, 5.6, 4, .1), std(0xffffff, {map:noiseTex(th.base, .08, 3, th.sag && !th.snow), roughness:.95})); base.position.y = -.2; base.castShadow = true; base.receiveShadow = true; scene.add(base);
   const tileM = std(0xffffff, {map:noiseTex(th.tile, th.deco === 'duct' ? .1 : .05, 2, th.sag && !th.snow), roughness: th.snow ? .3 : .8, metalness: th.deco === 'tray' ? .5 : 0});
