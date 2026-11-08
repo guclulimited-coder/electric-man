@@ -8,11 +8,18 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 const q = new URLSearchParams(location.search), W = +q.get('w') || 900, H = +q.get('h') || 1100;
 const R = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true}); R.setSize(W, H); R.setPixelRatio(1);
 R.toneMapping = THREE.ACESFilmicToneMapping; R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; document.body.appendChild(R.domElement);
-const cam = new THREE.PerspectiveCamera(38, W / H, .1, 100); cam.position.set(0, 9.2, 6.6); cam.lookAt(0, 0, .35);
+const pmrem = new THREE.PMREMGenerator(R); const ENV = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+const cam = new THREE.PerspectiveCamera(36, W / H, .1, 100); cam.position.set(0, 9.2, 6.6); cam.lookAt(0, 0, .35);
 const std = (c, o = {}) => new THREE.MeshStandardMaterial({color:c, roughness:.7, ...o});
+const phys = (c, o = {}) => new THREE.MeshPhysicalMaterial({color:c, roughness:.35, clearcoat:.8, clearcoatRoughness:.25, ...o});
+const noiseTex = (base, amp, scale, lines) => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); const col = new THREE.Color(base); g.fillStyle = '#' + col.getHexString(); g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 4000; i++){ const v = (Math.random() - .5) * amp; const cc = col.clone().offsetHSL(0, 0, v); g.fillStyle = '#' + cc.getHexString(); const r = Math.random() * scale + .5; g.fillRect(Math.random() * 256, Math.random() * 256, r, r); }
+  if (lines) for (let i = 0; i < 40; i++){ g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 1 + Math.random() * 2; g.beginPath(); const y = Math.random() * 256; g.moveTo(0, y); g.bezierCurveTo(80, y + 6, 170, y - 6, 256, y + 3); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 // harita: 1=K 2=D 4=G 8=B
 const GRID = [
@@ -41,49 +48,51 @@ function segs(mask){ const s = []; const E = {1:[0,-.5], 2:[.5,0], 4:[0,.5], 8:[
   if (mask === 5) return [[E[1], E[4]]]; if (mask === 10) return [[E[8], E[2]]];
   return arms.map(b => [E[b], [0, 0]]); }
 function build(th){
-  if (th.close){ cam.position.set(1.2, 2.6, 1.9); cam.lookAt(.2, 0, -.4); } else { cam.position.set(0, 9.2, 6.6); cam.lookAt(0, 0, .35); }
-  scene = new THREE.Scene(); scene.background = new THREE.Color(th.bg); scene.fog = new THREE.Fog(th.bg, 14, 30);
+  if (th.close){ cam.position.set(1.1, 1.5, 1.7); cam.lookAt(.15, .1, -.3); } else { cam.position.set(0, 6.4, 7.4); cam.lookAt(0, -.2, .2); }
+  scene = new THREE.Scene(); scene.background = new THREE.Color(th.bg); scene.environment = ENV; scene.environmentIntensity = th.night ? .15 : .55; R.toneMappingExposure = th.snow ? .85 : 1; scene.fog = new THREE.Fog(th.bg, 14, 30);
   scene.add(new THREE.HemisphereLight(th.night ? 0x5470a0 : 0xffffff, th.night ? 0x0a0f1a : 0x8a7a60, th.night ? .5 : th.snow ? .7 : 1.4));
   const sun = new THREE.DirectionalLight(th.night ? 0x8fa8ff : 0xfff2dc, th.night ? .6 : th.snow ? 1.3 : 2.2); sun.position.set(-4, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, {left:-5, right:5, top:5, bottom:-5}); scene.add(sun);
-  const base = new THREE.Mesh(new RoundedBoxGeometry(5.6, .3, 5.6, 3, .08), std(th.base, {roughness:.95})); base.position.y = -.2; base.receiveShadow = true; scene.add(base);
-  const tileM = std(th.tile, {roughness: th.snow ? .3 : .85, metalness: th.deco === 'tray' ? .3 : 0});
-  const BR = std(0x7a4a24, {roughness:.5}), BL = std(0x2f6fd0, {roughness:.5}), YG = std(0x5fae3a, {roughness:.5}), CU = std(0xc77b3a, {metalness:1, roughness:.3});
-  const ON = c => std(c, {emissive:new THREE.Color(c).lerp(new THREE.Color(0xffa040), .35), emissiveIntensity:.55, roughness:.4});
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), std(new THREE.Color(th.bg).multiplyScalar(th.night ? .6 : .82), {roughness:1})); ground.rotation.x = -Math.PI / 2; ground.position.y = -.36; ground.receiveShadow = true; scene.add(ground);
+  const base = new THREE.Mesh(new RoundedBoxGeometry(5.6, .36, 5.6, 4, .1), std(0xffffff, {map:noiseTex(th.base, .08, 3, th.sag && !th.snow), roughness:.95})); base.position.y = -.2; base.castShadow = true; base.receiveShadow = true; scene.add(base);
+  const tileM = std(0xffffff, {map:noiseTex(th.tile, th.deco === 'duct' ? .1 : .05, 2, th.sag && !th.snow), roughness: th.snow ? .3 : .8, metalness: th.deco === 'tray' ? .5 : 0});
+  const BR = phys(0x6b3b17), BL = phys(0x1f5fcc), YG = phys(0x58b030), CU = std(0xd8894a, {metalness:1, roughness:.22});
+  const ON = c => phys(c, {emissive:new THREE.Color(c).lerp(new THREE.Color(0xffa040), .35), emissiveIntensity:.55, roughness:.4});
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const r = g.createRadialGradient(32,32,0,32,32,32); r.addColorStop(0,'rgba(255,255,255,1)'); r.addColorStop(.3,'rgba(255,220,120,.8)'); r.addColorStop(1,'rgba(255,160,0,0)'); g.fillStyle = r; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
   const pulseM = new THREE.SpriteMaterial({map:glowTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending});
   GRID.forEach((row, r) => row.forEach((cell, c) => {
     const g = new THREE.Group(); g.position.set(c - 2, 0, r - 2); scene.add(g); const key = r + ',' + c;
-    const tile = new THREE.Mesh(new RoundedBoxGeometry(.9, .1, .9, 2, .025), typeof cell === 'string' && cell[0] === 'H' ? std(th.snow ? 0xdfe8f0 : th.night ? 0x24402c : 0x7fc46a, {roughness:.95}) : tileM); tile.receiveShadow = true; g.add(tile);
+    const tile = new THREE.Mesh(new RoundedBoxGeometry(.9, .14, .9, 3, .035), typeof cell === 'string' && cell[0] === 'H' ? std(th.snow ? 0xdfe8f0 : th.night ? 0x24402c : 0x7fc46a, {roughness:.95}) : tileM); tile.receiveShadow = true; tile.castShadow = true; tile.position.y = .02; g.add(tile);
     if (typeof cell === 'string'){
       if (cell === 'T'){ const t = new THREE.Mesh(new RoundedBoxGeometry(.5, .5, .4, 2, .03), std(0x9aa3ad, {metalness:.5, roughness:.4})); t.position.y = .3; t.castShadow = true; g.add(t);
         const s = new THREE.Mesh(new THREE.BoxGeometry(.16, .16, .01), std(0xffd23f, {emissive:0xffb800, emissiveIntensity:.5})); s.position.set(0, .34, .205); g.add(s); }
       else { const col = [0xe5484d, 0x3a8dde, 0xf2a93b, 0x8f5bd6, 0x2fb39a][(r + c) % 5]; const h = new THREE.Group(); h.position.y = .05; g.add(h);
         const wall = new THREE.Mesh(new THREE.BoxGeometry(.48, .32, .4), std(new THREE.Color(col).lerp(new THREE.Color(0xffffff), .3))); wall.position.y = .16; wall.castShadow = true; h.add(wall);
         const roof = new THREE.Mesh(new THREE.ConeGeometry(.4, .24, 4), std(th.snow ? 0xffffff : new THREE.Color(col).multiplyScalar(.6))); roof.rotation.y = Math.PI / 4; roof.position.y = .44; roof.castShadow = true; h.add(roof);
-        [-.12, .12].forEach(x => { const w = new THREE.Mesh(new THREE.BoxGeometry(.09, .09, .01), std(0xfff2b0, {emissive:0xffd060, emissiveIntensity:1.6})); w.position.set(x, .18, .205); h.add(w); }); }
+        const dr = new THREE.Mesh(new THREE.BoxGeometry(.08, .14, .012), std(0x5a3b22)); dr.position.set(0, .07, .205); h.add(dr); const ch = new THREE.Mesh(new THREE.BoxGeometry(.06, .16, .06), std(0x8a5a44)); ch.position.set(.13, .5, -.06); ch.castShadow = true; h.add(ch);
+        [-.15, .15].forEach(x => { const w = new THREE.Mesh(new THREE.BoxGeometry(.09, .09, .01), std(0xfff2b0, {emissive:0xffd060, emissiveIntensity:1.6})); w.position.set(x, .2, .205); h.add(w); const fr = new THREE.Mesh(new THREE.BoxGeometry(.11, .11, .006), std(0xffffff)); fr.position.set(x, .2, .201); h.add(fr); }); }
       return; }
     const mask = cell, on = POWER.has(key), broken = key === BROKEN;
     if (th.old){ segs(mask).forEach(s => { const pts = s.map(p => V(p[0], .165, p[1])); const curve = new THREE.CatmullRomCurve3(pts.length > 2 ? pts : [pts[0], pts[0].clone().lerp(pts[1], .5), pts[1]]);
         const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, .036, 10), on ? std(0xff9d1c, {emissive:0xff8a00, emissiveIntensity:.55}) : std(0x23262e, {roughness:.5})); m.castShadow = true; g.add(m); }); return; }
-    const Y = .13;
+    const Y = .2;
     segs(mask).forEach(s => {
       const pts = s.length > 2 ? s : [s[0], [(s[0][0] + s[1][0]) / 2, (s[0][1] + s[1][1]) / 2], s[1]];
       const base = th.sag && s.length === 2 && (s[1][0] !== 0 || s[1][1] !== 0 || true) ? null : null;
       const centre = new THREE.CatmullRomCurve3(pts.map((p, i) => { const k = i / (pts.length - 1); const y = th.sag ? Y + .3 - .18 * Math.sin(Math.PI * k) : Y; return V(p[0], y, p[1]); }));
       if (th.sag && s.length === 2 && s[1][0] === 0 && s[1][1] === 0){ /* kol: kenardan merkeze */ }
       const N = 60, cols = [BR, BL, YG];
-      cols.forEach((mat, wi) => { const wp = []; for (let i = 0; i <= N; i++){ const k = i / N, p = centre.getPointAt(k), t = centre.getTangentAt(k); const side = new THREE.Vector3().crossVectors(t, V(0,1,0)).normalize(); const up = new THREE.Vector3().crossVectors(side, t).normalize(); const a = k * Math.PI * 7 + wi * 2 * Math.PI / 3; wp.push(p.clone().addScaledVector(side, Math.cos(a) * .016).addScaledVector(up, Math.sin(a) * .016)); }
-        const wm = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(wp), 120, .0115, 8), on && !broken ? ON(mat.color) : broken ? std(0x7a2a30, {emissive:0xff3b2b, emissiveIntensity:.35}) : mat); wm.castShadow = true; g.add(wm); });
+      cols.forEach((mat, wi) => { const wp = []; for (let i = 0; i <= N; i++){ const k = i / N, p = centre.getPointAt(k), t = centre.getTangentAt(k); const side = new THREE.Vector3().crossVectors(t, V(0,1,0)).normalize(); const up = new THREE.Vector3().crossVectors(side, t).normalize(); const a = k * Math.PI * 9 + wi * 2 * Math.PI / 3; wp.push(p.clone().addScaledVector(side, Math.cos(a) * .027).addScaledVector(up, Math.sin(a) * .027)); }
+        const wm = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(wp), 200, .021, 12), on && !broken ? ON(mat.color) : broken ? std(0x7a2a30, {emissive:0xff3b2b, emissiveIntensity:.35}) : mat); wm.castShadow = true; g.add(wm); });
       // bakır uçlar
-      [0, 1].forEach(e => { if (e === 1 && s.length === 2 && s[1][0] === 0 && s[1][1] === 0) return; const p = centre.getPointAt(e ? .995 : .005); const cu = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .05, 10), CU); cu.position.copy(p); const t = centre.getTangentAt(e ? .995 : .005); cu.quaternion.setFromUnitVectors(V(0,1,0), t); g.add(cu); });
-      if (on && !broken) for (let i = 0; i < 2; i++){ const sp = new THREE.Sprite(pulseM); sp.scale.setScalar(.13); sp.position.copy(centre.getPointAt((i + .4) / 2.4)); g.add(sp); }
+      [0, 1].forEach(e => { if (e === 1 && s.length === 2 && s[1][0] === 0 && s[1][1] === 0) return; const p = centre.getPointAt(e ? .995 : .005); const t = centre.getTangentAt(e ? .995 : .005); const kl = new THREE.Group(); kl.position.copy(p); kl.quaternion.setFromUnitVectors(V(0,0,1), t); g.add(kl); const body = new THREE.Mesh(new RoundedBoxGeometry(.13, .07, .08, 2, .012), std(0xf2f2ee, {roughness:.35})); body.castShadow = true; kl.add(body); [-.04, 0, .04].forEach((x, i) => { const sc = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .02, 10), std(0xc9ccd1, {metalness:1, roughness:.25})); sc.position.set(x, .04, 0); kl.add(sc); const cu = new THREE.Mesh(new THREE.CylinderGeometry(.007, .007, .05, 8), CU); cu.rotation.x = Math.PI / 2; cu.position.set(x, 0, (e ? -1 : 1) * .055); kl.add(cu); }); });
+      if (on && !broken) for (let i = 0; i < 2; i++){ const sp = new THREE.Sprite(pulseM); sp.scale.setScalar(.16); sp.position.copy(centre.getPointAt((i + .4) / 2.4)); g.add(sp); }
       // mekân süsleri
-      if (th.deco === 'clip') [.3, .7].forEach(k => { const p = centre.getPointAt(k), t = centre.getTangentAt(k); const cl = new THREE.Mesh(new THREE.TorusGeometry(.04, .009, 6, 12, Math.PI), std(0xdedede, {metalness:.4, roughness:.3})); cl.position.copy(p).setY(Y - .02); cl.rotation.y = Math.atan2(t.x, t.z) + Math.PI / 2; g.add(cl); });
+      if (th.deco === 'clip') [.3, .7].forEach(k => { const p = centre.getPointAt(k), t = centre.getTangentAt(k); const cl = new THREE.Mesh(new THREE.TorusGeometry(.04, .009, 6, 12, Math.PI), std(0xdedede, {metalness:.4, roughness:.3})); cl.position.copy(p).setY(Y - .03); cl.scale.setScalar(1.6); cl.rotation.y = Math.atan2(t.x, t.z) + Math.PI / 2; g.add(cl); });
       if (th.deco === 'duct'){ const len = centre.getLength(); const d = new THREE.Mesh(new THREE.TubeGeometry(centre, 30, .055, 4), std(0x30343a, {roughness:.9, transparent:true, opacity:.55})); d.position.y = -.035; g.add(d); }
       if (th.deco === 'tray'){ const tr = new THREE.Mesh(new THREE.TubeGeometry(centre, 30, .07, 4, false), std(0xb9c0c8, {metalness:.8, roughness:.35, side:THREE.DoubleSide, transparent:true, opacity:.85})); tr.position.y = -.04; tr.scale.y = .5; g.add(tr); }
     });
-    if ([3,6,12,9,5,10].includes(mask) === false || true){ const hub = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .05, 12), std(0x2b2f36, {metalness:.3})); hub.position.y = th.sag ? .43 : .14; if ([7,11,13,14,15].includes(mask)) g.add(hub); }
-    if (th.deco === 'pole') [1,2,4,8].forEach(b => { if (mask & b){ const E = {1:[0,-.45], 2:[.45,0], 4:[0,.45], 8:[-.45,0]}[b]; const po = new THREE.Mesh(new THREE.CylinderGeometry(.025, .03, .48, 8), std(0x6b4423)); po.position.set(E[0], .26, E[1]); po.castShadow = true; g.add(po);
+    if ([3,6,12,9,5,10].includes(mask) === false || true){ const hub = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .05, 12), std(0x2b2f36, {metalness:.3})); hub.position.y = th.sag ? .5 : .2; hub.scale.setScalar(1.4); if ([7,11,13,14,15].includes(mask)) g.add(hub); }
+    if (th.deco === 'pole') [1,2,4,8].forEach(b => { if (mask & b){ const E = {1:[0,-.45], 2:[.45,0], 4:[0,.45], 8:[-.45,0]}[b]; const po = new THREE.Mesh(new THREE.CylinderGeometry(.028, .036, .56, 10), std(0xffffff, {map:noiseTex(0x6b4423, .12, 1, true), roughness:.9})); po.position.set(E[0], .3, E[1]); po.castShadow = true; g.add(po); const arm = new THREE.Mesh(new THREE.BoxGeometry(.2, .025, .025), std(0x5a3a1e)); arm.position.set(E[0], .52, E[1]); arm.rotation.y = b & 5 ? 0 : Math.PI / 2; arm.castShadow = true; g.add(arm); [-.08, .08].forEach(o => { const ins = new THREE.Mesh(new THREE.CylinderGeometry(.012, .018, .04, 10), phys(0x9fd0c8, {transmission:.3})); ins.position.set(E[0] + (b & 5 ? o : 0), .55, E[1] + (b & 5 ? 0 : o)); g.add(ins); });
         if (th.snow){ const sn = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 6), std(0xffffff)); sn.position.set(E[0], .51, E[1]); sn.scale.y = .6; g.add(sn); } } });
     if (th.deco === 'duct' && (r + c) % 3 === 0){ const mh = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, .012, 20), std(0x7a7f86, {metalness:.6, roughness:.45})); mh.position.set(.28, .056, .28); g.add(mh); }
     if (th.deco === 'tray' && (r + c) % 2 === 0){ const st = new THREE.Mesh(new THREE.BoxGeometry(.86, .012, .05), std(0xffd000)); st.position.set(0, .056, .42); g.add(st); }
