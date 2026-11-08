@@ -37,7 +37,7 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
 body.em-night{background:#0b1220}
 body.em-night .brand small,body.em-night .tool{color:#d6e4ff}
 body.em-night #app{background:radial-gradient(2px 2px at 20% 12%,#fff,transparent),radial-gradient(2px 2px at 70% 8%,#cfe0ff,transparent),radial-gradient(1.5px 1.5px at 45% 18%,#fff,transparent),radial-gradient(160% 60% at 50% 115%,#1b2d24 0 42%,transparent 43%),linear-gradient(#05080f,#0b1220 55%,#16223a)}
-.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px 0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 0}
 .brand{font-family:var(--f-display);font-size:15px;white-space:nowrap;letter-spacing:.04em;line-height:1;min-width:0;color:#1f4fb0;text-shadow:0 2px 0 #fff}
 .brand small{display:block;font-family:var(--f-body);font-weight:700;font-size:10.5px;letter-spacing:.1em;color:#1f4f8a;text-shadow:none;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chips{display:flex;gap:4px;align-items:center;flex:0 0 auto}
