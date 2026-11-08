@@ -18,3 +18,4 @@ hunter-app/ios/ElectricHunter/www/
 hunter-app/ios/*.xcodeproj/
 hunter-app/android/app/build/
 hunter-app/android/.gradle/
+__pycache__/
