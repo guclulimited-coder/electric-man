@@ -33,6 +33,10 @@ body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);oversc
     radial-gradient(160% 60% at 50% 115%, var(--hill) 0 42%, transparent 43%),
     linear-gradient(var(--sky-top), var(--sky-mid) 55%, #d9f3ff)}
 
+/* Gökdelenler semti: gece gökyüzü (map ekranı hariç) */
+body.em-night{background:#0b1220}
+body.em-night .brand small,body.em-night .tool{color:#d6e4ff}
+body.em-night #app{background:radial-gradient(2px 2px at 20% 12%,#fff,transparent),radial-gradient(2px 2px at 70% 8%,#cfe0ff,transparent),radial-gradient(1.5px 1.5px at 45% 18%,#fff,transparent),radial-gradient(160% 60% at 50% 115%,#1b2d24 0 42%,transparent 43%),linear-gradient(#05080f,#0b1220 55%,#16223a)}
 .top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px 0}
 .brand{font-family:var(--f-display);font-size:15px;white-space:nowrap;letter-spacing:.04em;line-height:1;min-width:0;color:#1f4fb0;text-shadow:0 2px 0 #fff}
 .brand small{display:block;font-family:var(--f-body);font-weight:700;font-size:10.5px;letter-spacing:.1em;color:#1f4f8a;text-shadow:none;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -320,7 +324,7 @@ function glowTexture(){
 /* ================= board scene ================= */
 const canvas = $('boardCanvas');
 let renderer, scene, camera, raycaster, glowTex;
-const MAT = {}, GEO = {};
+const MAT = {}, GEO = {}, LIGHTS = {};
 function initBoard(){
   renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -329,13 +333,13 @@ function initBoard(){
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(30, 1, .1, 100);
   raycaster = new THREE.Raycaster();
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8fbf6a, 1.6));
-  const sun = new THREE.DirectionalLight(0xfff2d8, 2.6);
+  LIGHTS.hemi = new THREE.HemisphereLight(0xffffff, 0x8fbf6a, 1.6); scene.add(LIGHTS.hemi);
+  const sun = new THREE.DirectionalLight(0xfff2d8, 2.6); LIGHTS.sun = sun;
   sun.position.set(-4, 10, 6); sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024); sun.shadow.camera.left = -7; sun.shadow.camera.right = 7; sun.shadow.camera.top = 7; sun.shadow.camera.bottom = -7;
   sun.shadow.bias = -0.0008; sun.shadow.radius = 4;
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xbfe0ff, .7); fill.position.set(5, 4, -3); scene.add(fill);
+  const fill = new THREE.DirectionalLight(0xbfe0ff, .7); fill.position.set(5, 4, -3); scene.add(fill); LIGHTS.fill = fill;
   glowTex = glowTexture();
 
   MAT.tile = std(0xf1ebde, {roughness:.9});
@@ -347,7 +351,11 @@ function initBoard(){
   MAT.sheath = std(0x23262e, {roughness:.5});
   MAT.sheathOn = std(0xff9d1c, {roughness:.4, emissive:0xff8a00, emissiveIntensity:.55});
   MAT.sheathBroken = std(0x7a2a30, {roughness:.55, emissive:0xff3b2b, emissiveIntensity:.3});
-  MAT.plug = std(0xd9a441, {roughness:.28, metalness:.85});
+  MAT.plug = std(0xf2f2ee, {roughness:.35}); // klemens gövdesi
+  MAT.screw = std(0xc9ccd1, {roughness:.25, metalness:1});
+  MAT.pole = std(0x6b4423, {roughness:.9}); MAT.insul = std(0x9fd0c8, {roughness:.2});
+  MAT.w = [0x6b3b17, 0x1f5fcc, 0x58b030].map(c => std(c, {roughness:.32}));
+  MAT.wOn = [0x6b3b17, 0x1f5fcc, 0x58b030].map(c => std(c, {roughness:.32, emissive:new THREE.Color(c).lerp(new THREE.Color(0xffa040), .4), emissiveIntensity:.55}));
   MAT.clip = std(0xf4f6f9, {roughness:.4});
   MAT.pulse = new THREE.SpriteMaterial({map:glowTex, color:0xfff2b0, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending});
   MAT.hub = std(0x4d5876, {roughness:.4, metalness:.3});
@@ -370,37 +378,89 @@ function initBoard(){
   MAT.trunk = std(0x7a5232, {roughness:.9});
 
   GEO.tile = slab(.9, .9, .1, .12, .025);
-  // a real cable: thin rubber-insulated line with a gentle wave, held by small clips, brass ferrules at the edges
-  GEO.plug = new THREE.CylinderGeometry(.05, .05, .07, 14); GEO.plug.rotateX(Math.PI/2);
+  // gerçek kablo: kahverengi (faz), mavi (nötr), sarı-yeşil (toprak) üç tel birbirine bükülü; uçlarda vidalı klemens
+  GEO.plug = new THREE.BoxGeometry(.13, .07, .08);
+  GEO.screws = mergeGeometries([-.04, 0, .04].map(x => new THREE.CylinderGeometry(.012, .012, .02, 10).translate(x, .04, 0)));
   GEO.hub = slab(.24, .24, .09, .05, .02);
   GEO.bolt = new THREE.CylinderGeometry(.045, .045, .03, 6);
-  const R0 = .036, Y = .165, V3 = (x, y, z) => new THREE.Vector3(x, y, z);
-  const wave = (a, b, amp) => { const pts = []; for (let i = 0; i <= 20; i++){ const k = i / 20, off = Math.sin(k * Math.PI * 2) * amp; const x = a[0] + (b[0] - a[0]) * k, z = a[2] + (b[2] - a[2]) * k; const len = Math.hypot(b[0] - a[0], b[2] - a[2]) || 1; pts.push(V3(x + off * (b[2] - a[2]) / len, Y, z - off * (b[0] - a[0]) / len)); } return new THREE.CatmullRomCurve3(pts); };
-  const arc = () => { const pts = []; for (let i = 0; i <= 20; i++){ const th = Math.PI - i / 20 * Math.PI / 2; pts.push(V3(.5 + .5 * Math.cos(th), Y, -.5 + .5 * Math.sin(th))); } return new THREE.CatmullRomCurve3(pts); };
-  GEO.curves = {
-    straight: [wave([0,0,-.5], [0,0,.5], .035)],
-    corner: [arc()],
-    tee: [wave([0,0,-.5], [0,0,.5], .035), wave([0,0,0], [.5,0,0], .03)],
-    cross: [wave([0,0,-.5], [0,0,.5], .035), wave([-.5,0,0], [.5,0,0], .035)],
-  };
-  const tube = c => new THREE.TubeGeometry(c, 40, R0, 10, false);
-  const clipsFor = (curves, ts) => {
-    const parts = [];
-    curves.forEach((c, ci) => (ts[ci] || []).forEach(t => {
-      const g = new THREE.TorusGeometry(R0 + .012, .011, 6, 12, Math.PI);
-      const p = c.getPointAt(t), d = c.getTangentAt(t);
-      g.rotateY(Math.atan2(d.x, d.z)); g.translate(p.x, Y - .004, p.z); parts.push(g);
-    }));
-    return parts.length ? mergeGeometries(parts) : null;
-  };
-  const CLIP_T = {straight:[[.25, .75]], corner:[[.5]], tee:[[.22, .78], [.6]], cross:[[.2, .8], [.2, .8]]};
-  ['straight', 'corner', 'tee', 'cross'].forEach(k => { GEO[k] = GEO.curves[k].map(tube); GEO['clip_' + k] = clipsFor(GEO.curves[k], CLIP_T[k]); });
-  GEO.stub = tube(new THREE.LineCurve3(V3(0, Y, 0), V3(0, Y, -.5)));
+  GEO.pole = new THREE.CylinderGeometry(.028, .036, 1, 10); GEO.pole.translate(0, .5, 0);
+  GEO.arm = new THREE.BoxGeometry(.2, .025, .025);
+  GEO.insul = new THREE.CylinderGeometry(.012, .018, .04, 10);
+  GEO.manhole = new THREE.CylinderGeometry(.13, .13, .012, 20);
+  GEO.stripe = new THREE.BoxGeometry(.86, .012, .05);
+  GEO.cable = {};
   GEO.spark = new THREE.SphereGeometry(.03, 6, 6);
   GEO.cloud = new THREE.SphereGeometry(.22, 14, 10);
   addEventListeners();
 }
-const SHARED = () => new Set(Object.values(GEO).flat().filter(g => g && g.isBufferGeometry));
+const CABLE_Y = .165, SAG_UP = .3;
+function cableSet(sag){
+  if (GEO.cable[sag]) return GEO.cable[sag];
+  const Y = CABLE_Y, V3 = (x, y, z) => new THREE.Vector3(x, y, z), UP = V3(0, 1, 0);
+  const wave = (a, b, amp) => { const pts = []; for (let i = 0; i <= 20; i++){ const k = i / 20, off = Math.sin(k * Math.PI * 2) * amp; const x = a[0] + (b[0] - a[0]) * k, z = a[2] + (b[2] - a[2]) * k; const len = Math.hypot(b[0] - a[0], b[2] - a[2]) || 1; pts.push(V3(x + off * (b[2] - a[2]) / len, Y, z - off * (b[0] - a[0]) / len)); } return new THREE.CatmullRomCurve3(pts); };
+  const arc = () => { const pts = []; for (let i = 0; i <= 20; i++){ const th = Math.PI - i / 20 * Math.PI / 2; pts.push(V3(.5 + .5 * Math.cos(th), Y, -.5 + .5 * Math.sin(th))); } return new THREE.CatmullRomCurve3(pts); };
+  const lift = c => { if (!sag) return c; const pts = []; for (let i = 0; i <= 24; i++){ const k = i / 24, q = c.getPointAt(k); pts.push(V3(q.x, Y + SAG_UP - .2 * Math.sin(Math.PI * k), q.z)); } return new THREE.CatmullRomCurve3(pts); };
+  const curves = {
+    straight: [wave([0,0,-.5], [0,0,.5], .025)],
+    corner: [arc()],
+    tee: [wave([0,0,-.5], [0,0,.5], .025), wave([0,0,0], [.5,0,0], .02)],
+    cross: [wave([0,0,-.5], [0,0,.5], .025), wave([-.5,0,0], [.5,0,0], .025)],
+  };
+  Object.keys(curves).forEach(k => curves[k] = curves[k].map(lift));
+  const wires = curve => [0, 1, 2].map(wi => { const len = curve.getLength(), N = Math.max(40, Math.round(len * 110)), wp = [];
+    for (let i = 0; i <= N; i++){ const k = i / N, q = curve.getPointAt(k), t = curve.getTangentAt(k); const side = V3(0,0,0).crossVectors(t, UP).normalize(), up = V3(0,0,0).crossVectors(side, t).normalize(); const a = k * len / .22 * Math.PI * 2 + wi * Math.PI * 2 / 3; wp.push(q.clone().addScaledVector(side, Math.cos(a) * .026).addScaledVector(up, Math.sin(a) * .026)); }
+    const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(wp), N * 2, .019, 8, false); g.userData.wi = wi; return g; });
+  const clipsFor = (cs, ts) => { const parts = []; cs.forEach((c, ci) => (ts[ci] || []).forEach(t => { const g = new THREE.TorusGeometry(.058, .011, 6, 12, Math.PI); const q = c.getPointAt(t), d = c.getTangentAt(t); g.rotateY(Math.atan2(d.x, d.z)); g.translate(q.x, Y - .004, q.z); parts.push(g); })); return parts.length ? mergeGeometries(parts) : null; };
+  const CLIP_T = {straight:[[.25, .75]], corner:[[.5]], tee:[[.22, .78], [.6]], cross:[[.2, .8], [.2, .8]]};
+  const set = {curves, endY: sag ? Y + SAG_UP : Y};
+  Object.keys(curves).forEach(k => { set[k] = curves[k].map(wires); set['clip_' + k] = sag ? null : clipsFor(curves[k], CLIP_T[k]); });
+  set.stub = wires(lift(new THREE.LineCurve3(V3(0, Y, -.5), V3(0, Y, 0))));
+  return GEO.cable[sag] = set;
+}
+/* ---------- bölüm mekânları: her 50 bölümde bir ---------- */
+const ST = {
+  koy:    {base:0x9a7348, edge:0x6b4a2a, tile:0xd9c39a, grass:0x9cc96b, hemi:1.5, sun:2.6, sag:true, wood:true},
+  sahil:  {base:0xe2cf9c, edge:0xb59a63, tile:0xf4ead3, grass:0x9fd27a, hemi:1.6, sun:2.7},
+  orman:  {base:0x3f7a3a, edge:0x5a4128, tile:0xcdbf98, grass:0x5fa14e, hemi:1.4, sun:2.4, sag:true, wood:true},
+  dag:    {base:0xe3ebf3, edge:0xb9c6d3, tile:0xaec8df, grass:0xe4ecf3, hemi:1.1, sun:2.2, sag:true, snow:true},
+  sehir:  {base:0x55595f, edge:0x3c3f44, tile:0xb9bcc0, grass:0x86c36a, hemi:1.5, sun:2.5, manhole:true},
+  sanayi: {base:0x3b3f46, edge:0x2a2d32, tile:0x6f757e, grass:0x7fbf66, hemi:1.4, sun:2.4, stripes:true, metal:true},
+  liman:  {base:0x3d5568, edge:0x2b3b48, tile:0x8a98a6, grass:0x7fbf66, hemi:1.4, sun:2.5, stripes:true, metal:true},
+  kampus: {base:0x5fb556, edge:0x8a6a48, tile:0xf1ebde, grass:0x8fd46e, hemi:1.6, sun:2.6},
+  carsi:  {base:0x9b6b4e, edge:0x6e4a35, tile:0xe1cdb2, grass:0x8fcf6c, hemi:1.5, sun:2.6, manhole:true},
+  bogaz:  {base:0x4a6f8c, edge:0x34506a, tile:0xd3dbe2, grass:0x86c36a, hemi:1.5, sun:2.6, manhole:true},
+  adalar: {base:0xd9c79a, edge:0x9c8460, tile:0xf6efe0, grass:0x9fd27a, hemi:1.6, sun:2.7, sag:true, wood:true},
+  vadi:   {base:0x6fa04e, edge:0x5a4128, tile:0xd7c9a2, grass:0x7fbf5e, hemi:1.5, sun:2.6, sag:true, wood:true},
+  gol:    {base:0x4f8a6a, edge:0x3d5c48, tile:0xdfe6dc, grass:0x74b866, hemi:1.4, sun:2.4},
+  kale:   {base:0x6e6a64, edge:0x4b4844, tile:0xb3aca2, grass:0x7aa860, hemi:.9, sun:1.6, manhole:true},
+  gokdelen:{base:0x1d2a3d, edge:0x141c2a, tile:0x2e3c52, grass:0x2a4a34, hemi:.45, sun:.5, night:true},
+};
+// oyundaki 15 semt sırasıyla (her semt 20 bölüm): Köy, Sahil, Orman, Dağ Evleri, Şehir Merkezi, Sanayi, Liman, Kampüs, Çarşı, Boğaz, Adalar, Vadi, Göl Kenarı, Kale, Gökdelenler
+const THEMES = ['koy','sahil','orman','dag','sehir','sanayi','liman','kampus','carsi','bogaz','adalar','vadi','gol','kale','gokdelen'].map(k => ST[k]);
+const themeIndex = L => Math.max(0, Math.min(THEMES.length - 1, Math.floor((L - 1) / 20)));
+let TH = null;
+function noiseTex(base, amp, lines){
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); const col = new THREE.Color(base);
+  g.fillStyle = '#' + col.getHexString(); g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 1400; i++){ g.fillStyle = '#' + col.clone().offsetHSL(0, 0, (Math.random() - .5) * amp).getHexString(); const r = Math.random() * 2 + .5; g.fillRect(Math.random() * 128, Math.random() * 128, r, r); }
+  if (lines) for (let i = 0; i < 18; i++){ g.strokeStyle = 'rgba(0,0,0,.09)'; g.lineWidth = 1 + Math.random(); g.beginPath(); const y = Math.random() * 128; g.moveTo(0, y); g.bezierCurveTo(40, y + 3, 85, y - 3, 128, y + 2); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function applyTheme(L){
+  const th = THEMES[themeIndex(L)]; if (TH === th) return; TH = th;
+  const set = (m, color, amp, lines) => { if (m.map) m.map.dispose(); m.map = noiseTex(color, amp, lines); m.color.set(0xffffff); m.needsUpdate = true; };
+  set(MAT.base, th.base, .08, th.wood); set(MAT.baseEdge, th.edge, .06, th.wood); set(MAT.tile, th.tile, th.manhole ? .1 : .05, th.wood);
+  MAT.tile.metalness = th.metal ? .45 : 0; MAT.tile.roughness = th.snow ? .35 : th.metal ? .5 : .9;
+  MAT.tileGrass.color.set(th.grass);
+  LIGHTS.hemi.intensity = th.hemi; LIGHTS.sun.intensity = th.sun; LIGHTS.fill.intensity = th.night ? .25 : .7;
+  scene.background = null; document.body.classList.toggle('em-night', !!th.night);
+  MAT.winOn.emissiveIntensity = th.night ? 2.2 : 1.5;
+  GEO.curves = cableSet(!!th.sag).curves;
+  if (TH.snow && !SNOW){ const n = 220, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++){ pos[i*3] = (Math.random() - .5) * 10; pos[i*3+1] = Math.random() * 3; pos[i*3+2] = (Math.random() - .5) * 10; } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); SNOW = new THREE.Points(g, new THREE.PointsMaterial({color:0xffffff, size:.05, transparent:true, opacity:.9, depthWrite:false})); scene.add(SNOW); }
+  if (SNOW) SNOW.visible = !!TH.snow;
+}
+let SNOW = null, flashT = 0;
+const SHARED = () => { const out = new Set(), walk = v => { if (!v) return; if (v.isBufferGeometry) out.add(v); else if (Array.isArray(v)) v.forEach(walk); else if (typeof v === 'object' && !v.isCurve) Object.values(v).forEach(walk); }; walk(GEO); return out; };
 
 let BOARD = null, clockT = 0;
 const tweens = [];
@@ -409,7 +469,7 @@ function tween(dur, fn, done){ tweens.push({t0:performance.now(), dur, fn, done}
 const ARM_ANGLE = {1:0, 2:-Math.PI/2, 4:Math.PI, 8:Math.PI/2};
 function buildBoard3D(){
   if (BOARD){ const keep = SHARED(); scene.remove(BOARD); BOARD.traverse(o => { if (o.geometry && !keep.has(o.geometry)) o.geometry.dispose(); }); }
-  tweens.length = 0;
+  tweens.length = 0; applyTheme(level); const CS = cableSet(!!TH.sag);
   BOARD = new THREE.Group(); scene.add(BOARD);
   const W = S.W, H = S.H, ox = -(W - 1) / 2, oz = -(H - 1) / 2;
   const edge = new THREE.Mesh(slab(W + .5, H + .5, .2, .35, .04), MAT.baseEdge); edge.position.y = -.34; edge.receiveShadow = true; BOARD.add(edge);
@@ -420,11 +480,14 @@ function buildBoard3D(){
     const tile = new THREE.Mesh(GEO.tile, tileMat); tile.receiveShadow = true; g.add(tile);
     if (t.kind === 'cable'){
       const rg = new THREE.Group(); g.add(rg); t.rg = rg; rg.rotation.y = -t.rot * Math.PI / 2; t.target = rg.rotation.y;
-      t.sheaths = GEO[t.shape].map(geo => mesh(geo, MAT.sheath, 0, 0, 0, rg));
-      if (GEO['clip_' + t.shape]) mesh(GEO['clip_' + t.shape], MAT.clip, 0, 0, 0, rg).castShadow = false;
+      t.sheaths = CS[t.shape].flat().map(geo => { const m = mesh(geo, MAT.w[geo.userData.wi], 0, 0, 0, rg); m.userData.wi = geo.userData.wi; return m; });
+      if (CS['clip_' + t.shape]) mesh(CS['clip_' + t.shape], MAT.clip, 0, 0, 0, rg).castShadow = false;
       const arms = BASE[t.shape];
-      [1,2,4,8].forEach(b => { if (arms & b){ const a = ARM_ANGLE[b]; const p = mesh(GEO.plug, MAT.plug, -Math.sin(a) * .45, .165, -Math.cos(a) * .45, rg); p.rotation.y = a; } });
-      if (t.shape === 'tee' || t.shape === 'cross') t.hub = mesh(GEO.hub, MAT.hub, 0, .13, 0, rg);
+      [1,2,4,8].forEach(b => { if (arms & b){ const a = ARM_ANGLE[b], x = -Math.sin(a) * .45, z = -Math.cos(a) * .45; const p = mesh(GEO.plug, MAT.plug, x, CS.endY, z, rg); p.rotation.y = a; const sc = mesh(GEO.screws, MAT.screw, x, CS.endY, z, rg); sc.rotation.y = a; sc.castShadow = false;
+        if (TH.sag){ const po = mesh(GEO.pole, MAT.pole, -Math.sin(a) * .47, .05, -Math.cos(a) * .47, rg); po.scale.y = CS.endY - .08; const ar = mesh(GEO.arm, MAT.pole, -Math.sin(a) * .47, CS.endY - .05, -Math.cos(a) * .47, rg); ar.rotation.y = a + Math.PI / 2; } } });
+      if (t.shape === 'tee' || t.shape === 'cross') t.hub = mesh(GEO.hub, MAT.hub, 0, CS.endY - .035, 0, rg);
+      if (TH.manhole && (t.r * 7 + t.c * 3) % 4 === 0) mesh(GEO.manhole, MAT.metal, .3, .056, .3, g).castShadow = false;
+      if (TH.stripes && (t.r + t.c) % 2 === 0) mesh(GEO.stripe, MAT.yellow, 0, .056, .42, g).castShadow = false;
       t.pulses = GEO.curves[t.shape].map(() => { const sp = new THREE.Sprite(MAT.pulse); sp.scale.setScalar(.2); sp.visible = false; rg.add(sp); return sp; });
       if (t.fixed) [[-.36,-.36],[.36,-.36],[-.36,.36],[.36,.36]].forEach(([x,z]) => mesh(GEO.bolt, MAT.bolt, x, .14, z, g));
       if (t.broken){ t.sparks = []; for (let i=0;i<5;i++){ const s = new THREE.Mesh(GEO.spark, MAT.spark); rg.add(s); t.sparks.push(s); } }
@@ -435,7 +498,7 @@ function buildBoard3D(){
       }
     } else {
       t.stubs = [];
-      [1,2,4,8].forEach(b => { if (t.mask & b){ const st = new THREE.Group(); st.rotation.y = ARM_ANGLE[b]; g.add(st); t.stubs.push(mesh(GEO.stub, MAT.sheath, 0, 0, 0, st)); mesh(GEO.plug, MAT.plug, 0, .165, -.45, st); } });
+      [1,2,4,8].forEach(b => { if (t.mask & b){ const st = new THREE.Group(); st.rotation.y = ARM_ANGLE[b]; g.add(st); CS.stub.forEach(geo => { const m = mesh(geo, MAT.w[geo.userData.wi], 0, 0, 0, st); m.userData.wi = geo.userData.wi; t.stubs.push(m); }); mesh(GEO.plug, MAT.plug, 0, CS.endY, -.45, st); mesh(GEO.screws, MAT.screw, 0, CS.endY, -.45, st).castShadow = false; } });
       t.house = t.kind === 'house' ? buildHouse(t.style, HOUSE_COLORS[t.color]) : buildTrafo();
       t.house.position.y = .1; g.add(t.house);
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0}));
@@ -727,10 +790,10 @@ function power(animate){
   S.tiles.forEach(t => {
     const isOn = on.has(t);
     if (t.kind === 'cable'){
-      t.sheaths.forEach(m => m.material = t.broken ? MAT.sheathBroken : isOn ? MAT.sheathOn : MAT.sheath);
+      t.sheaths.forEach(m => m.material = t.broken ? MAT.sheathBroken : (isOn ? MAT.wOn : MAT.w)[m.userData.wi]);
       if (t.hub) t.hub.material = isOn ? MAT.hubOn : MAT.hub;
     } else {
-      t.stubs.forEach(m => m.material = isOn ? MAT.sheathOn : MAT.sheath);
+      t.stubs.forEach(m => m.material = (isOn ? MAT.wOn : MAT.w)[m.userData.wi]);
       t.house.userData.wins.forEach(w => w.material = isOn ? MAT.winOn : MAT.winOff);
       t.glowTarget = isOn ? (t.kind === 'trafo' ? .5 : .75) : 0;
       (t.house.userData.smoke || []).forEach(s => s.visible = isOn);
@@ -1399,7 +1462,9 @@ function loop(now){
   requestAnimationFrame(loop);
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now; clockT += dt;
   for (let i = tweens.length - 1; i >= 0; i--){ const w = tweens[i], k = Math.min(1, (now - w.t0) / w.dur); w.fn(k); if (k >= 1){ tweens.splice(i, 1); w.done && w.done(); } }
-  MAT.sheathOn.emissiveIntensity = .45 + Math.sin(clockT * 5) * .12;
+  { const e = .45 + Math.sin(clockT * 5) * .12; MAT.wOn.forEach(m => m.emissiveIntensity = e); }
+  if (SNOW && SNOW.visible){ const a = SNOW.geometry.attributes.position; for (let i = 0; i < a.count; i++){ let y = a.getY(i) - dt * .35; if (y < -.2) y = 3; a.setY(i, y); a.setX(i, a.getX(i) + Math.sin(clockT + i) * dt * .05); } a.needsUpdate = true; }
+  if (TH && TH.night){ flashT -= dt; if (flashT < -4 - Math.random() * 30) flashT = .18; LIGHTS.hemi.intensity = flashT > 0 ? 2.4 : TH.hemi; }
   if (S && S.tiles){
     S.tiles.forEach(t => {
       if (t.glow){ const o = t.glow.material.opacity, tgt = t.glowTarget || 0; t.glow.material.opacity = o + (tgt - o) * .12; }
