@@ -29,7 +29,8 @@ const THEMES = [
  {ad:'köy', bg:0xf3d9a8, base:0x9a7348, tile:0xd9c39a, deco:'pole', sag:true},
  {ad:'şehir', bg:0xb8c4d2, base:0x55595f, tile:0xb9bcc0, deco:'duct'},
  {ad:'fabrika', bg:0x8d96a3, base:0x3b3f46, tile:0x6f757e, deco:'tray'},
- {ad:'kış', bg:0xdfeaf5, base:0xf4f8fc, tile:0xcfe3f2, deco:'pole', sag:true, snow:true},
+ {ad:'kış', bg:0xc9d8e8, base:0xe3ebf3, tile:0xaec8df, deco:'pole', sag:true, snow:true},
+ {ad:'yakın', bg:0xbfe3f5, base:0x5fb556, tile:0xf1ebde, deco:'clip', close:true},
  {ad:'fırtına', bg:0x0d1424, base:0x1d2a3d, tile:0x2e3c52, deco:'clip', night:true},
 ];
 let scene, comp;
@@ -40,18 +41,19 @@ function segs(mask){ const s = []; const E = {1:[0,-.5], 2:[.5,0], 4:[0,.5], 8:[
   if (mask === 5) return [[E[1], E[4]]]; if (mask === 10) return [[E[8], E[2]]];
   return arms.map(b => [E[b], [0, 0]]); }
 function build(th){
+  if (th.close){ cam.position.set(1.2, 2.6, 1.9); cam.lookAt(.2, 0, -.4); } else { cam.position.set(0, 9.2, 6.6); cam.lookAt(0, 0, .35); }
   scene = new THREE.Scene(); scene.background = new THREE.Color(th.bg); scene.fog = new THREE.Fog(th.bg, 14, 30);
-  scene.add(new THREE.HemisphereLight(th.night ? 0x5470a0 : 0xffffff, th.night ? 0x0a0f1a : 0x8a7a60, th.night ? .5 : 1.4));
-  const sun = new THREE.DirectionalLight(th.night ? 0x8fa8ff : 0xfff2dc, th.night ? .6 : 2.2); sun.position.set(-4, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, {left:-5, right:5, top:5, bottom:-5}); scene.add(sun);
+  scene.add(new THREE.HemisphereLight(th.night ? 0x5470a0 : 0xffffff, th.night ? 0x0a0f1a : 0x8a7a60, th.night ? .5 : th.snow ? .7 : 1.4));
+  const sun = new THREE.DirectionalLight(th.night ? 0x8fa8ff : 0xfff2dc, th.night ? .6 : th.snow ? 1.3 : 2.2); sun.position.set(-4, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, {left:-5, right:5, top:5, bottom:-5}); scene.add(sun);
   const base = new THREE.Mesh(new RoundedBoxGeometry(5.6, .3, 5.6, 3, .08), std(th.base, {roughness:.95})); base.position.y = -.2; base.receiveShadow = true; scene.add(base);
   const tileM = std(th.tile, {roughness: th.snow ? .3 : .85, metalness: th.deco === 'tray' ? .3 : 0});
   const BR = std(0x7a4a24, {roughness:.5}), BL = std(0x2f6fd0, {roughness:.5}), YG = std(0x5fae3a, {roughness:.5}), CU = std(0xc77b3a, {metalness:1, roughness:.3});
-  const ON = c => std(c, {emissive:0xff8a00, emissiveIntensity:.9, roughness:.4});
+  const ON = c => std(c, {emissive:new THREE.Color(c).lerp(new THREE.Color(0xffa040), .35), emissiveIntensity:.55, roughness:.4});
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const r = g.createRadialGradient(32,32,0,32,32,32); r.addColorStop(0,'rgba(255,255,255,1)'); r.addColorStop(.3,'rgba(255,220,120,.8)'); r.addColorStop(1,'rgba(255,160,0,0)'); g.fillStyle = r; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
   const pulseM = new THREE.SpriteMaterial({map:glowTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending});
   GRID.forEach((row, r) => row.forEach((cell, c) => {
     const g = new THREE.Group(); g.position.set(c - 2, 0, r - 2); scene.add(g); const key = r + ',' + c;
-    const tile = new THREE.Mesh(new RoundedBoxGeometry(.9, .1, .9, 2, .025), typeof cell === 'string' && cell[0] === 'H' ? std(th.snow ? 0xffffff : th.night ? 0x24402c : 0x7fc46a, {roughness:.95}) : tileM); tile.receiveShadow = true; g.add(tile);
+    const tile = new THREE.Mesh(new RoundedBoxGeometry(.9, .1, .9, 2, .025), typeof cell === 'string' && cell[0] === 'H' ? std(th.snow ? 0xdfe8f0 : th.night ? 0x24402c : 0x7fc46a, {roughness:.95}) : tileM); tile.receiveShadow = true; g.add(tile);
     if (typeof cell === 'string'){
       if (cell === 'T'){ const t = new THREE.Mesh(new RoundedBoxGeometry(.5, .5, .4, 2, .03), std(0x9aa3ad, {metalness:.5, roughness:.4})); t.position.y = .3; t.castShadow = true; g.add(t);
         const s = new THREE.Mesh(new THREE.BoxGeometry(.16, .16, .01), std(0xffd23f, {emissive:0xffb800, emissiveIntensity:.5})); s.position.set(0, .34, .205); g.add(s); }
@@ -74,7 +76,7 @@ function build(th){
         const wm = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(wp), 120, .0115, 8), on && !broken ? ON(mat.color) : broken ? std(0x7a2a30, {emissive:0xff3b2b, emissiveIntensity:.35}) : mat); wm.castShadow = true; g.add(wm); });
       // bakır uçlar
       [0, 1].forEach(e => { if (e === 1 && s.length === 2 && s[1][0] === 0 && s[1][1] === 0) return; const p = centre.getPointAt(e ? .995 : .005); const cu = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .05, 10), CU); cu.position.copy(p); const t = centre.getTangentAt(e ? .995 : .005); cu.quaternion.setFromUnitVectors(V(0,1,0), t); g.add(cu); });
-      if (on && !broken) for (let i = 0; i < 3; i++){ const sp = new THREE.Sprite(pulseM); sp.scale.setScalar(.22); sp.position.copy(centre.getPointAt((i + .3) / 3.2)); g.add(sp); }
+      if (on && !broken) for (let i = 0; i < 2; i++){ const sp = new THREE.Sprite(pulseM); sp.scale.setScalar(.13); sp.position.copy(centre.getPointAt((i + .4) / 2.4)); g.add(sp); }
       // mekân süsleri
       if (th.deco === 'clip') [.3, .7].forEach(k => { const p = centre.getPointAt(k), t = centre.getTangentAt(k); const cl = new THREE.Mesh(new THREE.TorusGeometry(.04, .009, 6, 12, Math.PI), std(0xdedede, {metalness:.4, roughness:.3})); cl.position.copy(p).setY(Y - .02); cl.rotation.y = Math.atan2(t.x, t.z) + Math.PI / 2; g.add(cl); });
       if (th.deco === 'duct'){ const len = centre.getLength(); const d = new THREE.Mesh(new THREE.TubeGeometry(centre, 30, .055, 4), std(0x30343a, {roughness:.9, transparent:true, opacity:.55})); d.position.y = -.035; g.add(d); }
@@ -83,13 +85,13 @@ function build(th){
     if ([3,6,12,9,5,10].includes(mask) === false || true){ const hub = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .05, 12), std(0x2b2f36, {metalness:.3})); hub.position.y = th.sag ? .43 : .14; if ([7,11,13,14,15].includes(mask)) g.add(hub); }
     if (th.deco === 'pole') [1,2,4,8].forEach(b => { if (mask & b){ const E = {1:[0,-.45], 2:[.45,0], 4:[0,.45], 8:[-.45,0]}[b]; const po = new THREE.Mesh(new THREE.CylinderGeometry(.025, .03, .48, 8), std(0x6b4423)); po.position.set(E[0], .26, E[1]); po.castShadow = true; g.add(po);
         if (th.snow){ const sn = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 6), std(0xffffff)); sn.position.set(E[0], .51, E[1]); sn.scale.y = .6; g.add(sn); } } });
-    if (th.deco === 'duct' && (r + c) % 3 === 0){ const mh = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, .012, 20), std(0x2a2d31, {metalness:.6, roughness:.5})); mh.position.set(.28, .056, .28); g.add(mh); }
+    if (th.deco === 'duct' && (r + c) % 3 === 0){ const mh = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, .012, 20), std(0x7a7f86, {metalness:.6, roughness:.45})); mh.position.set(.28, .056, .28); g.add(mh); }
     if (th.deco === 'tray' && (r + c) % 2 === 0){ const st = new THREE.Mesh(new THREE.BoxGeometry(.86, .012, .05), std(0xffd000)); st.position.set(0, .056, .42); g.add(st); }
     if (broken) for (let i = 0; i < 5; i++){ const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, color:0xff5533, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending})); sp.scale.setScalar(.12 + i * .03); sp.position.set(.1 + i * .02, .2 + i * .03, -.05); g.add(sp); }
   }));
   if (th.snow) for (let i = 0; i < 160; i++){ const f = new THREE.Mesh(new THREE.SphereGeometry(.018, 4, 3), std(0xffffff, {emissive:0xffffff, emissiveIntensity:.3})); f.position.set(Math.sin(i * 12.9) * 3.4, .3 + (i * 37 % 100) / 40, Math.cos(i * 7.3) * 3.4); scene.add(f); }
   if (th.night){ const pts = [V(1.6, 4, -2.6), V(1.2, 3, -2.2), V(1.5, 2.2, -2), V(1, 1, -1.6)]; const bolt = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0), 20, .03, 6), new THREE.MeshBasicMaterial({color:0xcfe0ff})); scene.add(bolt); const fl = new THREE.PointLight(0x9fb8ff, 6, 8); fl.position.set(1.2, 2.5, -1.8); scene.add(fl); }
-  comp = new EffectComposer(R); comp.addPass(new RenderPass(scene, cam)); comp.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), th.night ? .9 : .45, .4, .85)); comp.addPass(new OutputPass());
+  comp = new EffectComposer(R); comp.addPass(new RenderPass(scene, cam)); comp.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), th.night ? .8 : .22, .35, .9)); comp.addPass(new OutputPass());
 }
 window.renderAt = t => { build(THEMES[Math.round(t)]); comp.render(); };
 window.READY = true;
