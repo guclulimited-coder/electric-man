@@ -1,15 +1,10 @@
-name: Alan adi kontrol
+name: Canli kontrol
 on: push
 jobs:
   k:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: sudo apt-get install -y whois >/dev/null 2>&1 || true
       - run: |
-          for d in $(cat liste.txt); do
-            ns=$(dig +short NS "$d" | head -1)
-            soa=$(dig +short SOA "$d" | head -1)
-            w=$(timeout 15 whois "$d" 2>/dev/null | grep -iE "no match|not found|no data found|no entries|status: *(free|available)|AVAILABLE|nothing found|No Object Found" | head -1)
-            echo "$d | NS=${ns:-yok} | SOA=${soa:+var} | whois=${w:-kayit-var-gibi}"
-          done
+          for u in https://tusneldax.com/api/bus-rush/config https://tusneldax.com/api/bus-rush/me https://tusneldax.com/bus-rush/play https://tusneldax.com/ https://bus-rush-staging-20261003.guclu-limited.workers.dev/api/bus-rush/config; do
+            echo "### $u"; curl -s -m 20 -o /tmp/b -w "HTTP %{http_code}\n" -H "Origin: https://tusneldax.com" "$u"; head -c 600 /tmp/b | sed 's/[A-Za-z0-9_-]\{40,\}/<uzun>/g'; echo; done
+          curl -s -m 20 https://tusneldax.com/ | grep -o -E 'AnındaUsta|TSNX ödül[^<]{0,40}' | sort | uniq -c
