@@ -1,10 +1,5 @@
-anindausta.com anindausta.com.tr anindausta.app
-pronow.com pronow.app pronow.co.uk getpronow.com pronow.ca
-sofortmeister.de sofortmeister.com
-mastrosubito.it mastrosubito.com
-artisanminute.fr artisanminute.com artisanminute.ca
-maestroya.es maestroya.com
-mastorastora.gr mastorastora.com
-miktzoan.co.il miktzoanakhshav.com
-mastersrazu.ru mastersrazu.com
-sugushokunin.jp sugushokunin.com
+anindausta.com.tr
+pronto-pro.com callpronow.com callpronow.co.uk prosnow.co.uk instapro.co.uk usta-now.com ustanow.com ustanow.co.uk
+meistersofort.de meistersofort.com sofort-meister.de
+artisaneclair.fr artisaneclair.com artisan-eclair.fr artisanexpress.fr
+maestroalinstante.es maestroalinstante.com prontomaestro.es prontomaestro.com
