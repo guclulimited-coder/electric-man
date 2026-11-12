@@ -1,0 +1,15 @@
+name: Alan adi kontrol
+on: push
+jobs:
+  k:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y whois >/dev/null 2>&1 || true
+      - run: |
+          for d in $(cat liste.txt); do
+            ns=$(dig +short NS "$d" | head -1)
+            soa=$(dig +short SOA "$d" | head -1)
+            w=$(timeout 15 whois "$d" 2>/dev/null | grep -iE "no match|not found|no data found|no entries|status: *(free|available)|AVAILABLE|nothing found|No Object Found" | head -1)
+            echo "$d | NS=${ns:-yok} | SOA=${soa:+var} | whois=${w:-kayit-var-gibi}"
+          done
