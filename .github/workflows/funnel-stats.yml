@@ -1,0 +1,27 @@
+name: Günlük ölçüm raporu
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: daily-measurement
+  cancel-in-progress: false
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Yalnız sayaçları oku
+        env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+        run: |
+          python3 -m pip -q install 'cryptography==44.0.0'
+          python3 scripts/daily_report.py em
+      - name: Rapor dalına kaydet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/publish_daily.py
