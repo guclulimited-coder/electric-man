@@ -221,5 +221,6 @@
   "gateOffline": "Sin conexión. Conéctate a internet e inténtalo de nuevo.",
   "gateRetry": "Reintentar",
   "google": "Continuar con Google",
-  "emailLogin": "Continuar con correo electrónico"
+  "emailLogin": "Continuar con correo electrónico",
+  "guideTap": "Toca el cable que señala la mano: Electric Man irá y lo girará. ¡Conecta el transformador con las casas para encenderlas!"
 }

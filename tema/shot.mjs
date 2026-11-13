@@ -1,0 +1,14 @@
+import { chromium } from './node_modules/playwright/index.mjs'; import fs from 'node:fs';
+fs.mkdirSync('tema/out', {recursive:true});
+const b = await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+const p = await b.newPage({viewport:{width:412, height:860}, deviceScaleFactor:2});
+p.on('pageerror', e => console.log('HATA', e.message));
+await p.goto('http://localhost:8000/index.html?lang=tr'); await p.waitForTimeout(20000);
+for (const id of ['charModal','modal']) await p.evaluate(i=>{const e=document.getElementById(i); if(e) e.hidden=true;}, id);
+await p.screenshot({path:'tema/out/l1-a.png'});
+console.log('GUIDE', JSON.stringify(await p.evaluate(()=>({h:document.getElementById('guide').hidden,t:document.getElementById('guide').style.transform,b:document.getElementById('bubble').textContent}))));
+const box = await p.evaluate(()=>{const s=document.getElementById('guide').style.transform.match(/-?\d+/g).map(Number);const w=document.getElementById('wrap').getBoundingClientRect();return {x:w.left+s[0]+14,y:w.top+s[1]-4};});
+await p.mouse.click(box.x, box.y); await p.waitForTimeout(6000);
+await p.screenshot({path:'tema/out/l1-b.png'});
+console.log('MOVES', await p.evaluate(()=>document.getElementById('moves').textContent));
+await b.close();

@@ -221,5 +221,6 @@
   "gateOffline": "İnternet bağlantısı yok. Bağlanıp tekrar dene.",
   "gateRetry": "Tekrar dene",
   "google": "Google ile devam et",
-  "emailLogin": "E-posta ile devam et"
+  "emailLogin": "E-posta ile devam et",
+  "guideTap": "Parmağın gösterdiği kabloya dokun: Electric Man gidip döndürür. Kablolar transformatörden evlere yol olunca evler yanar!"
 }
