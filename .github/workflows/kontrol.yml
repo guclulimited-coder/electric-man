@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          sleep 5
-          echo "EM_GUIDE $(curl -sL -m 20 https://electricman.tusneldax.com/index.html | grep -c 'id=\"guide\"')"
-          echo "EH_TURNS $(curl -sL -m 20 https://electricman.tusneldax.com/hunter/index.html | grep -c 'k === 0 ? 1')"
-          echo "EM_I18N $(curl -sL -m 20 https://electricman.tusneldax.com/i18n/tr.json | grep -c guideTap)"
+          echo "CFG $(curl -s -m 20 https://tusneldax.com/api/bus-rush/config | sed 's/[0-9]\{6,\}-[a-z0-9]*\.apps\.googleusercontent\.com/GOOGLE_OK/')"
+          echo "PLAY $(curl -sL -o /dev/null -w '%{http_code}' https://tusneldax.com/bus-rush/play) BRF $(curl -sL https://tusneldax.com/bus-rush/play | grep -c 'const BRF=')"
+          echo "FUNNEL $(curl -s -m 20 -X POST -H 'origin: https://tusneldax.com' -H 'content-type: application/json' -d '{"g":"br","v":"ci-test","p":"","c":"old","e":[{"s":"bogus"}]}' -w ' %{http_code}' https://tusneldax.com/api/bus-rush/funnel)"
+          echo "ADMIN $(curl -s -o /dev/null -w '%{http_code}' https://tusneldax.com/api/bus-rush/admin/funnel)"
