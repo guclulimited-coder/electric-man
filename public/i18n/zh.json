@@ -221,5 +221,6 @@
   "gateOffline": "没有网络连接。请连接网络后重试。",
   "gateRetry": "重试",
   "google": "使用 Google 账号继续",
-  "emailLogin": "使用电子邮件继续"
+  "emailLogin": "使用电子邮件继续",
+  "guideTap": "点击手指指向的电缆:电力侠会走过去转动它。把变压器连到房子,房子就会亮起来!"
 }

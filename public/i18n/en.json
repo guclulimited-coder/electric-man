@@ -221,5 +221,6 @@
   "gateOffline": "No connection. Connect to the internet and try again.",
   "gateRetry": "Try again",
   "google": "Continue with Google",
-  "emailLogin": "Continue with email"
+  "emailLogin": "Continue with email",
+  "guideTap": "Tap the cable the hand points to: Electric Man walks over and turns it. Connect the transformer to the houses to light them!"
 }

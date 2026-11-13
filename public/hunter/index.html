@@ -1442,7 +1442,8 @@ function playerPower(){
 /* Pacing (agreed 2026-10-22): every planet is at least an hour of play and no empty waiting. The boss needs the power Serhat
    gets from clearing the planet TURNS(k) times over (5 turns on Mars, 7 at most). A cleared camp comes back after 18 min, then 36,
    54 … so by the time he has cleared the rest the first camp is back; deeper planets have more creatures and longer waits. See tools/balance.mjs. */
-const TURNS = k => Math.min(7, 5 + .1 * k);
+/* 13 Nov 2026 (owner approved): the first planet is a short win — one clear opens the boss (about 5–10 minutes), later planets keep the hour pacing. */
+const TURNS = k => k === 0 ? 1 : Math.min(7, 5 + .1 * k);
 const islStore = () => store.get('isl', {}) || {};
 // how much power one full clear of this island gives Serhat right now (simulated on a copy of his stats)
 // the power Serhat has after clearing this island `turns` times from where he stands now (simulated on a copy of his stats)
@@ -1456,7 +1457,7 @@ function powerAfterClears(isl, turns){
 // fix the island's numbers to Serhat's power the first time he sets foot on it (kept in the save so a reload changes nothing)
 function scaleIsland(isl, persist = true){
   const all = islStore(), k = isl.k; let st = all[k];
-  if (!st){ const p = playerPower(); st = {p, dps: Math.max(1, playerDps() / 20), hp: Math.max(1, player.maxHp / 100), gate: Math.round(powerAfterClears(isl, TURNS(k)) * .97)}; if (persist){ all[k] = st; store.set('isl', all); } }
+  if (!st){ const p = playerPower(); st = {p, dps: Math.max(1, playerDps() / 20), hp: Math.max(1, player.maxHp / 100), gate: Math.round(powerAfterClears(isl, TURNS(k)) * (k === 0 ? .8 : .97))}; if (persist){ all[k] = st; store.set('isl', all); } }
   isl.entry = st.p; isl.gatePower = st.gate; isl.hpMul = (st.dps || playerDps() / 20) * (1 + .05 * k); isl.dmgMul = (st.hp || player.maxHp / 100) * (1 + .03 * k); isl.scaled = true;
   // the boss is sized for Serhat AT the gate: ~35 s of his damage to kill, each contact hit ~2.5 % of his health (ring shots ~1 %), its brood at most 3 and half as hard
   const grow = Math.max(1, st.gate / st.p); isl.bossHp = Math.round((st.dps || 1) * 20 * Math.pow(grow, .6) * 35); isl.bossHit = .025 * (st.hp || 1) * 100 * Math.pow(grow, .5); // dps grows ~grow^0.6 and health ~grow^0.5 on the way to the gate
