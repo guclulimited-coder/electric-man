@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          sleep 60
-          echo "EM_GUIDE $(curl -s -m 20 https://electricman.tusneldax.com/index.html | grep -c 'id=\"guide\"')"
-          echo "EH_TURNS $(curl -s -m 20 https://electricman.tusneldax.com/hunter/index.html | grep -c 'k === 0 ? 1')"
-          echo "EM_I18N $(curl -s -m 20 https://electricman.tusneldax.com/i18n/tr.json | grep -c guideTap)"
+          sleep 5
+          echo "EM_GUIDE $(curl -sL -m 20 https://electricman.tusneldax.com/index.html | grep -c 'id=\"guide\"')"
+          echo "EH_TURNS $(curl -sL -m 20 https://electricman.tusneldax.com/hunter/index.html | grep -c 'k === 0 ? 1')"
+          echo "EM_I18N $(curl -sL -m 20 https://electricman.tusneldax.com/i18n/tr.json | grep -c guideTap)"
