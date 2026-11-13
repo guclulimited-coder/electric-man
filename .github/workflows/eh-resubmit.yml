@@ -1,0 +1,23 @@
+name: Electric Hunter yeniden gonderim (sahip onayi 13 Kasim 00:54)
+on: push
+permissions: { contents: read }
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - run: pip install -q 'PyJWT[crypto]==2.10.1' requests==2.32.3
+      - env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          KEY="$RUNNER_TEMP/k.p8"
+          python3 - "$KEY" <<'PY'
+          import os, re, sys, textwrap
+          raw = os.environ['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw))
+          open(sys.argv[1], 'w').write('-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n')
+          PY
+          DO=$(cat do.txt 2>/dev/null || echo 0) python3 eh_resubmit.py "$KEY"; rm -f "$KEY"
