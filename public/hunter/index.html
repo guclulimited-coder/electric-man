@@ -299,6 +299,8 @@ import { OutputPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/
 import { loadCreatures } from './creatures.js';
 
 const $ = id => document.getElementById(id);
+/* Play puan penceresi: yalnız Android, yeni adaya ulaşınca 3/8/15. adalarda bir kez */
+function askReview(k){ try { if (!(Native.app && Native.platform === 'android') || ![3, 8, 15].includes(k)) return; const a = JSON.parse(localStorage.getItem('pa-reviewAsk') || '[]'); if (a.includes(k)) return; a.push(k); localStorage.setItem('pa-reviewAsk', JSON.stringify(a)); persistNative(); setTimeout(() => Native.call({action: 'review'}).catch(() => {}), 2600); } catch(e){} }
 /* native shell bridge: the Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise} */
 const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (window.EMNative && window.EMNative.platform) || 'web',
   call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
@@ -2850,7 +2852,7 @@ function updatePlayer(dt, t){
   setBar(meBar, player.hp / player.maxHp); meBar.quaternion.copy(camera.quaternion); meShBar.visible = !!shield; if (shield){ setBar(meShBar, shield.cur / shield.max); meShBar.quaternion.copy(camera.quaternion); }
   updateProp(dt);
   if (shield){ if (shield.wait > 0) shield.wait -= dt; else shield.cur = Math.min(shield.max, shield.cur + shield.max * .2 * dt); shieldMesh.material.opacity = Math.max(shield.cur > 0 ? .08 + .06 * Math.sin(t * 4) : 0, shieldMesh.material.opacity - dt * 1.5); shieldMesh.rotation.y += dt; }
-  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ if (k > curIsl) Funnel.done(k); curIsl = k; if (!islands[k].scaled) scaleIsland(islands[k]); saveGame(); applyTheme(themeOf(k)); banner(k >= STORY_N ? T('endlessIsl', {n: k + 1}) : T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); storyArrive(k); if (!islands[k + 1]) buildIsland(k + 1); islandVis(); renderWave(); Online.score(); }  if (++visTick % 20 === 0) islandVis(); player.root.position.copy(player.pos);
+  const k = Math.round(-player.pos.z / ISL_GAP); if (k !== curIsl && islands[k] && player.pos.distanceTo(islands[k].c) < ISL_R){ if (k > curIsl){ Funnel.done(k); askReview(k); } curIsl = k; if (!islands[k].scaled) scaleIsland(islands[k]); saveGame(); applyTheme(themeOf(k)); banner(k >= STORY_N ? T('endlessIsl', {n: k + 1}) : T('islandName', {n: k + 1, planet: themeOf(k).name}), themeOf(k).sub, 2400); storyArrive(k); if (!islands[k + 1]) buildIsland(k + 1); islandVis(); renderWave(); Online.score(); }  if (++visTick % 20 === 0) islandVis(); player.root.position.copy(player.pos);
   // face toward heading, with a twist during a swing
   let target = player.face; if (player.swing > 0){ player.swing -= dt; target += Math.sin((player.swing / .22) * Math.PI) * .9; }
   const cur = player.model ? player.model.rotation.y : 0; let d = target - cur; d = Math.atan2(Math.sin(d), Math.cos(d));
