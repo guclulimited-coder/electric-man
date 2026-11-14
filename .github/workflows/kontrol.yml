@@ -5,7 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "CFG $(curl -s -m 20 https://tusneldax.com/api/bus-rush/config | sed 's/[0-9]\{6,\}-[a-z0-9]*\.apps\.googleusercontent\.com/GOOGLE_OK/')"
-          echo "PLAY $(curl -sL -o /dev/null -w '%{http_code}' https://tusneldax.com/bus-rush/play) BRF $(curl -sL https://tusneldax.com/bus-rush/play | grep -c 'const BRF=')"
-          echo "FUNNEL $(curl -s -m 20 -X POST -H 'origin: https://tusneldax.com' -H 'content-type: application/json' -d '{"g":"br","v":"ci-test","p":"","c":"old","e":[{"s":"bogus"}]}' -w ' %{http_code}' https://tusneldax.com/api/bus-rush/funnel)"
-          echo "ADMIN $(curl -s -o /dev/null -w '%{http_code}' https://tusneldax.com/api/bus-rush/admin/funnel)"
+          for h in oyun.tusneldax.com usta.tusneldax.com mastercity.tusneldax.com; do
+            echo "$h ROOT $(curl -sL -m 20 -o /dev/null -w '%{http_code}' https://$h/) STORY $(curl -sL -m 20 https://$h/golge-story.mjs | grep -c 'MANSION')"
+          done
