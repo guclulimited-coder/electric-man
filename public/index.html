@@ -22,6 +22,13 @@
   --f-display:"Bungee", "Arial Black", system-ui, sans-serif;
   --f-body:"Rubik", system-ui, -apple-system, sans-serif;
 }
+
+@font-face{font-family:"NotoSansDevanagari";src:url("fonts/NotoSansDevanagari.ttf") format("truetype");font-weight:100 900;font-display:swap}
+html:lang(ne){--f-display:"NotoSansDevanagari",sans-serif;--f-body:"NotoSansDevanagari",sans-serif;--f-ui:"NotoSansDevanagari",sans-serif}
+html:lang(ne) h1,html:lang(ne) h2,html:lang(ne) button{line-height:1.5;letter-spacing:normal}
+@font-face{font-family:"NotoSansMyanmar";src:url("fonts/NotoSansMyanmar.ttf") format("truetype");font-weight:100 900;font-display:swap}
+html:lang(my){--f-display:"NotoSansMyanmar",sans-serif;--f-body:"NotoSansMyanmar",sans-serif;--f-ui:"NotoSansMyanmar",sans-serif}
+html:lang(my) h1,html:lang(my) h2,html:lang(my) button{line-height:1.5;letter-spacing:normal}
 [hidden]{display:none!important}
 html,body{height:100%}
 body{background:var(--sky-mid);color:var(--ink);font-family:var(--f-body);overscroll-behavior:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
@@ -275,7 +282,7 @@ const store = {
 };
 
 /* ================= languages: Turkish + 12 most spoken, chosen from the device locale ================= */
-const LANG_NAMES = {tr:'Türkçe', en:'English', zh:'中文', hi:'हिन्दी', es:'Español', ar:'العربية', fr:'Français', bn:'বাংলা', pt:'Português', ru:'Русский', id:'Bahasa Indonesia', de:'Deutsch', ja:'日本語'};
+const LANG_NAMES = {tr:'Türkçe', en:'English', zh:'中文', hi:'हिन्दी', es:'Español', ar:'العربية', fr:'Français', bn:'বাংলা', pt:'Português', ru:'Русский', id:'Bahasa Indonesia', de:'Deutsch', ja:'日本語', ur:'اردو', fa:'فارسی', ne:'नेपाली', tk:'Türkmen', uz:'Oʻzbek', my:'မြန်မာ'};
 function detectLang(){
   for (const l of (navigator.languages || [navigator.language || ''])){ const b = String(l).toLowerCase().split('-')[0]; if (LANG_NAMES[b]) return b; }
   return 'en';
@@ -289,7 +296,7 @@ const district = lv => (L.districts || [])[Math.min(14, Math.floor((lv - 1) / 20
 const fmtTime = ts => new Date(ts).toLocaleTimeString(LANG, {hour:'2-digit', minute:'2-digit'});
 const langName = code => { try { return new Intl.DisplayNames([LANG], {type:'language'}).of(code); } catch { return LANG_NAMES[code] || code; } };
 function applyStatic(){
-  document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = LANG; document.documentElement.dir = ['ar', 'ur', 'fa'].includes(LANG) ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-t]').forEach(e => e.textContent = T(e.dataset.t));
   document.querySelectorAll('[data-ta]').forEach(e => e.setAttribute('aria-label', T(e.dataset.ta)));
   const md = document.querySelector('meta[name=description]'); if (md && L.metaDesc) md.content = L.metaDesc;
@@ -1382,7 +1389,7 @@ const Online = (() => {
   /* ---------- chat: friends only, polled every 1.5 s while open, auto-translated into the reader's language ---------- */
   function stopChat(){ if (chat){ clearTimeout(chat.timer); chat = null; } }
   function openChat(code, name, avatar){
-    const body = sheet(name, `<div class="chat-top"><button class="btn small ghost" id="chatBack">${LANG === 'ar' ? '→' : '←'} ${esc(T('back'))}</button>${av(avatar)}<span class="nm">${esc(name)}</span><button class="btn small ghost" id="chatBlock">${esc(T('block'))}</button><button class="btn small danger" id="chatReport">${esc(T('report'))}</button></div>
+    const body = sheet(name, `<div class="chat-top"><button class="btn small ghost" id="chatBack">${['ar', 'ur', 'fa'].includes(LANG) ? '→' : '←'} ${esc(T('back'))}</button>${av(avatar)}<span class="nm">${esc(name)}</span><button class="btn small ghost" id="chatBlock">${esc(T('block'))}</button><button class="btn small danger" id="chatReport">${esc(T('report'))}</button></div>
       <p class="note">${esc(T('chatSafety'))}</p>
       <div class="msgs" id="msgs" aria-live="polite"><p class="note">${esc(T('loadingTxt'))}</p></div>
       <div class="err" id="chatErr"></div>

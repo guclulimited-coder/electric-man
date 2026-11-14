@@ -26,6 +26,13 @@
   --f-ui:'Chakra Petch','Segoe UI',system-ui,sans-serif;
   color-scheme:dark;
 }
+
+@font-face{font-family:"NotoSansDevanagari";src:url("../fonts/NotoSansDevanagari.ttf") format("truetype");font-weight:100 900;font-display:swap}
+html:lang(ne){--f-display:"NotoSansDevanagari",sans-serif;--f-body:"NotoSansDevanagari",sans-serif;--f-ui:"NotoSansDevanagari",sans-serif}
+html:lang(ne) h1,html:lang(ne) h2,html:lang(ne) button{line-height:1.5;letter-spacing:normal}
+@font-face{font-family:"NotoSansMyanmar";src:url("../fonts/NotoSansMyanmar.ttf") format("truetype");font-weight:100 900;font-display:swap}
+html:lang(my){--f-display:"NotoSansMyanmar",sans-serif;--f-body:"NotoSansMyanmar",sans-serif;--f-ui:"NotoSansMyanmar",sans-serif}
+html:lang(my) h1,html:lang(my) h2,html:lang(my) button{line-height:1.5;letter-spacing:normal}
 [hidden]{display:none!important}
 #title .logo{display:block;margin:0 auto 10px;width:112px;height:112px;border-radius:26px;box-shadow:0 8px 30px rgba(95,240,255,.25)}
 html,body{height:100%}
@@ -336,7 +343,7 @@ const Funnel = (() => {
 })();
 try { if (Native.app && window.__EM_RESTORE && !localStorage.getItem('pa-save')) for (const [k, v] of Object.entries(window.__EM_RESTORE)) if (k.startsWith('pa-')) localStorage.setItem(k, v); } catch(e){}
 // ---------------------------------------------------------------- languages: Turkish + the 12 most spoken, same set as Electric Man
-const LANG_NAMES = {tr:'Türkçe', en:'English', zh:'中文', hi:'हिन्दी', es:'Español', ar:'العربية', fr:'Français', bn:'বাংলা', pt:'Português', ru:'Русский', id:'Bahasa Indonesia', de:'Deutsch', ja:'日本語'};
+const LANG_NAMES = {tr:'Türkçe', en:'English', zh:'中文', hi:'हिन्दी', es:'Español', ar:'العربية', fr:'Français', bn:'বাংলা', pt:'Português', ru:'Русский', id:'Bahasa Indonesia', de:'Deutsch', ja:'日本語', ur:'اردو', fa:'فارسی', ne:'नेपाली', tk:'Türkmen', uz:'Oʻzbek', my:'မြန်မာ'};
 const lsGet = k => { try { return JSON.parse(localStorage.getItem('pa-' + k)); } catch(e){ return null; } };
 { const q = new URLSearchParams(location.search).get('lang'); if (q && LANG_NAMES[q]) try { localStorage.setItem('pa-lang', JSON.stringify(q)); } catch(e){} }
 function detectLang(){ for (const l of (navigator.languages || [navigator.language || ''])){ const b = String(l).toLowerCase().split('-')[0]; if (LANG_NAMES[b]) return b; } return 'en'; }
@@ -351,7 +358,7 @@ const UP = s => String(s).toLocaleUpperCase(LANG);
 const pct = v => T('pct', {v});
 const lvTxt = n => T('lv', {n});
 function applyStatic(){
-  document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = LANG; document.documentElement.dir = ['ar', 'ur', 'fa'].includes(LANG) ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-t]').forEach(e => e.textContent = T(e.dataset.t));
   document.querySelectorAll('[data-th]').forEach(e => e.innerHTML = T(e.dataset.th));
   document.querySelectorAll('[data-ta]').forEach(e => e.setAttribute('aria-label', T(e.dataset.ta)));
@@ -2377,7 +2384,7 @@ const Online = (() => {
   }
   function stopChat(){ if (chat){ clearTimeout(chat.timer); chat = null; } }
   function openChat(code, name){
-    const b = body(`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="buy alt" type="button" id="chatBack">${LANG === 'ar' ? '→' : '←'} ${T('o_back')}</button><b style="flex:1">${esc(name)}</b><button class="buy alt" type="button" id="chatBlock">${T('o_block')}</button><button class="buy alt" type="button" id="chatReport">${T('o_report')}</button></div>
+    const b = body(`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="buy alt" type="button" id="chatBack">${['ar', 'ur', 'fa'].includes(LANG) ? '→' : '←'} ${T('o_back')}</button><b style="flex:1">${esc(name)}</b><button class="buy alt" type="button" id="chatBlock">${T('o_block')}</button><button class="buy alt" type="button" id="chatReport">${T('o_report')}</button></div>
       <div id="chatAsk"></div><p class="note">${T('o_chatSafety')}</p>
       <div class="msgs" id="msgs"><p class="note">${T('o_loadingTxt')}</p></div><div class="err" id="chatErr"></div>
       <div class="field"><input id="chatIn" maxlength="300" placeholder="${esc(T('o_chatPh'))}" style="text-transform:none;letter-spacing:0"><button class="buy" type="button" id="chatSend">${T('o_send')}</button></div>`);
