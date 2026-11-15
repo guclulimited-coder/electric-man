@@ -677,5 +677,7 @@
  "o_gateRetry": "再試行",
  "google": "Google で続行",
  "emailLogin": "メールで続行",
- "reviewLogin": "デモアカウントでログイン (App Review)"
+ "reviewLogin": "デモアカウントでログイン (App Review)",
+ "adRevive": "▶ 広告を見てこの場で復活",
+ "dailyGift": "デイリーギフト · {d}日目"
 }

@@ -222,5 +222,7 @@
   "gateRetry": "Coba lagi",
   "google": "Lanjutkan dengan Google",
   "emailLogin": "Lanjutkan dengan email",
-  "guideTap": "Ketuk kabel yang ditunjuk tangan: Electric Man akan datang dan memutarnya. Hubungkan trafo ke rumah agar lampunya menyala!"
+  "guideTap": "Ketuk kabel yang ditunjuk tangan: Electric Man akan datang dan memutarnya. Hubungkan trafo ke rumah agar lampunya menyala!",
+  "adMoves": "▶ Tonton iklan: +5 langkah",
+  "dailyGift": "Hadiah harian · hari ke-{d}"
 }

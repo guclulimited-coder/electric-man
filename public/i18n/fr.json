@@ -222,5 +222,7 @@
   "gateRetry": "Réessayer",
   "google": "Continuer avec Google",
   "emailLogin": "Continuer avec l'e-mail",
-  "guideTap": "Touche le câble que montre la main : Electric Man va le tourner. Relie le transformateur aux maisons pour les allumer !"
+  "guideTap": "Touche le câble que montre la main : Electric Man va le tourner. Relie le transformateur aux maisons pour les allumer !",
+  "adMoves": "▶ Regarde une pub : +5 coups",
+  "dailyGift": "Cadeau du jour · jour {d}"
 }

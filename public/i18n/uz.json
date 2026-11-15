@@ -1,7 +1,23 @@
 {
   "_name": "Oʻzbek",
   "metaDesc": "Electric Man: simlarni aylantiring va transformatordan har bir uyga elektr yetkazing. 300 bosqichli 3D jumboq o'yini. TusneldaX.",
-  "districts": ["Qishloq", "Sohil", "O'rmon", "Tog' uylari", "Shahar markazi", "Sanoat zonasi", "Port", "Kampus", "Bozor", "Bo'g'oz", "Orollar", "Vodiy", "Ko'l bo'yi", "Qal'a", "Osmono'par binolar"],
+  "districts": [
+    "Qishloq",
+    "Sohil",
+    "O'rmon",
+    "Tog' uylari",
+    "Shahar markazi",
+    "Sanoat zonasi",
+    "Port",
+    "Kampus",
+    "Bozor",
+    "Bo'g'oz",
+    "Orollar",
+    "Vodiy",
+    "Ko'l bo'yi",
+    "Qal'a",
+    "Osmono'par binolar"
+  ],
   "aLeague": "Liga, do'stlar va xabarlar",
   "aAccount": "Hisob va sozlamalar",
   "aMap": "Bosqichlar xaritasi",
@@ -31,14 +47,29 @@
   "i40": "Yangi: bulutlar! Bulut ostidagi sim faqat elektr yetganda ko'rinadi.",
   "iLast": "So'nggi bosqich! Barcha mahoratingizni ko'rsating.",
   "iDistrict": "{d}ga xush kelibsiz! Keling, uni yoritamiz.",
-  "iRand": ["Qani, chiroqlarni yoqamiz!", "Transformatordan boshlang va shoxlar bo'ylab boring.", "Uylardan orqaga qarab o'ylang: har bir uyning faqat bitta ulanishi bor.", "Chetdagi simlar eng oson, o'shandan boshlang.", "Yo'nalishni almashtirish ba'zan bitta yurishni tejaydi."],
+  "iRand": [
+    "Qani, chiroqlarni yoqamiz!",
+    "Transformatordan boshlang va shoxlar bo'ylab boring.",
+    "Uylardan orqaga qarab o'ylang: har bir uyning faqat bitta ulanishi bor.",
+    "Chetdagi simlar eng oson, o'shandan boshlang.",
+    "Yo'nalishni almashtirish ba'zan bitta yurishni tejaydi."
+  ],
   "greet": "Salom, men {name}! Keling, chiroqlarni yoqamiz.",
   "fixed": "Bu sim boltlangan, aylanmaydi. Unga qarab rejalashtiring.",
   "repaired": "Tuzatildi! Endi aylantira olasiz.",
-  "litSay": ["Yana bir uy yorishdi!", "Chiroqlar yondi!", "Ajoyib ulanish!", "Elektr keldi, zo'r!"],
+  "litSay": [
+    "Yana bir uy yorishdi!",
+    "Chiroqlar yondi!",
+    "Ajoyib ulanish!",
+    "Elektr keldi, zo'r!"
+  ],
   "lastMove": "So'nggi yurish! Diqqat bilan tanlang.",
   "movesLeft": "Faqat {n} ta yurish qoldi!",
-  "winSay": ["Butun mahalla porlayapti!", "Tamom! Hamma uylar yorishdi.", "Electric Man ishda!"],
+  "winSay": [
+    "Butun mahalla porlayapti!",
+    "Tamom! Hamma uylar yorishdi.",
+    "Electric Man ishda!"
+  ],
   "winTitle": "Mahalla yorishdi",
   "winAllTitle": "Butun shahar yorishdi!",
   "winText": "{m} ta yurishda {h} ta uyga elektr yetkazdingiz. Eng qisqa yechim {o} ta yurish edi. +{r} tanga.",
@@ -191,5 +222,7 @@
   "gateRetry": "Qayta urinish",
   "google": "Google bilan davom etish",
   "emailLogin": "Elektron pochta bilan davom etish",
-  "guideTap": "Qo'l ko'rsatgan simga bosing: Electric Man kelib uni aylantiradi. Uylarni yoritish uchun transformatorni ulang!"
+  "guideTap": "Qo'l ko'rsatgan simga bosing: Electric Man kelib uni aylantiradi. Uylarni yoritish uchun transformatorni ulang!",
+  "adMoves": "▶ Reklama ko'ring: +5 yurish",
+  "dailyGift": "Kunlik sovg'a · {d}-kun"
 }

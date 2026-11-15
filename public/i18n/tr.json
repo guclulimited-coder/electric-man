@@ -222,5 +222,7 @@
   "gateRetry": "Tekrar dene",
   "google": "Google ile devam et",
   "emailLogin": "E-posta ile devam et",
-  "guideTap": "Parmağın gösterdiği kabloya dokun: Electric Man gidip döndürür. Kablolar transformatörden evlere yol olunca evler yanar!"
+  "guideTap": "Parmağın gösterdiği kabloya dokun: Electric Man gidip döndürür. Kablolar transformatörden evlere yol olunca evler yanar!",
+  "adMoves": "▶ Reklam izle: +5 hamle",
+  "dailyGift": "Günlük hediye · {d}. gün"
 }

@@ -222,5 +222,7 @@
   "gateRetry": "Tentar de novo",
   "google": "Continuar com o Google",
   "emailLogin": "Continuar com e-mail",
-  "guideTap": "Toque no cabo que a mão aponta: o Electric Man vai até lá e o gira. Ligue o transformador às casas para acendê-las!"
+  "guideTap": "Toque no cabo que a mão aponta: o Electric Man vai até lá e o gira. Ligue o transformador às casas para acendê-las!",
+  "adMoves": "▶ Veja um anúncio: +5 jogadas",
+  "dailyGift": "Presente diário · dia {d}"
 }

@@ -677,5 +677,7 @@
  "o_gateRetry": "أعد المحاولة",
  "google": "المتابعة باستخدام Google",
  "emailLogin": "المتابعة باستخدام البريد الإلكتروني",
- "reviewLogin": "الدخول بحساب تجريبي (App Review)"
+ "reviewLogin": "الدخول بحساب تجريبي (App Review)",
+ "adRevive": "▶ شاهد إعلاناً: انهض هنا",
+ "dailyGift": "هدية يومية · اليوم {d}"
 }

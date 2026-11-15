@@ -280,7 +280,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
     <h2 id="overTitle" data-t="overTitle">Serhat düştü</h2>
     <p class="story" id="overStory" data-t="overStory">Portal seni adanın başına geri getirecek. Canın ve kalkanın dolu, aletlerin ve güçlerin seninle.</p>
     <div class="tally"><div><b id="tKills">0</b><span data-t="tMonsters">Canavar</span></div><div><b id="tEat">0</b><span data-t="tEaten">Yutulan</span></div><div><b id="tWave">0</b><span data-t="tIsland">Ada</span></div></div>
-    <div class="btns"><button class="go" id="againBtn" type="button" data-t="backPortal">Portaldan dön</button></div>
+    <div class="btns"><button class="go" id="reviveBtn" type="button" data-t="adRevive" hidden>▶ Reklam izle: burada diril</button><button class="go" id="againBtn" type="button" data-t="backPortal">Portaldan dön</button></div>
   </div>
 </div>
 
@@ -2102,6 +2102,8 @@ function warmUp(){
 }
 async function startGame(){
   Funnel.start(curIsl + 1);
+  // günlük hediye: art arda gelinen her gün artar (7. günde en yüksek), bir gün kaçarsa 1. güne döner
+  setTimeout(() => { try { const day = today(), y = new Date(Date.now() - 864e5).toISOString().slice(0, 10), g = store.get('daily', {day: '', streak: 0}); if (g.day === day) return; const streak = g.day === y ? Math.min(7, g.streak + 1) : 1, n = 50 + streak * 50; store.set('daily', {day, streak}); addCoins(n); sfx.pick(); toast(T('dailyGift', {d: streak}) + ' ' + T('plusCoins', {n})); } catch (e){} }, 4000);
   if (!CREA){ $('startBtn').disabled = true; await creaOrTimeout(); $('startBtn').disabled = false; }
   audio(); resetGame(); if (!warmed){ warmed = true; $('startBtn').disabled = true; const bt = $('startBtn').textContent; $('startBtn').textContent = T('loadingWorld'); await new Promise(r => setTimeout(r, 30)); warmUp(); $('startBtn').disabled = false; $('startBtn').textContent = bt; } running = true; paused = false; onTitle = false; meBar.visible = true;
   for (const id of ['title', 'over', 'paused']) $(id).hidden = true;
@@ -2128,7 +2130,22 @@ function gameOver(){
   $('overEyebrow').textContent = T('islandN', {n: curIsl + 1});
   $('tKills').textContent = player.kills; $('tEat').textContent = player.eaten; $('tWave').textContent = curIsl + 1;
   $('over').hidden = false; for (const id of ['hint', 'joy', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = true;
+  $('reviveBtn').hidden = !(Native.app && adsLeft() && reviveIsl !== curIsl);
 }
+// rewarded revive: once per island, keeps position and the boss fight, pushes nearby enemies back
+let reviveIsl = -1;
+async function reviveHere(){
+  if (adBusy) return; adBusy = true; $('reviveBtn').disabled = true;
+  let r = null; try { r = await Native.call({action: 'ad', kind: 'rewarded'}); } catch(e){ r = {error: e.message}; }
+  adBusy = false; $('reviveBtn').disabled = false;
+  if (!(r && r.earned)){ if (!r || !r.dismissed) toast(T('o_adFail')); return; }
+  adCountUp(); renderAdBtn(); reviveIsl = curIsl;
+  for (const e of enemies){ if (e.dead) continue; const dx = e.pos.x - player.pos.x, dz = e.pos.z - player.pos.z, d = Math.hypot(dx, dz) || 1; if (d < 10){ e.pos.x += dx / d * (10 - d); e.pos.z += dz / d * (10 - d); } }
+  player.hp = player.maxHp; player.inv = 3; player.calm = 0; if (shield) shield.cur = shield.max;
+  ring(player.pos, 6, 0x39e6ff, .8); burst(player.pos, 30, 0x39e6ff); sfx.pick();
+  running = true; $('over').hidden = true; for (const id of ['hudTop', 'slots', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = false;
+}
+$('reviveBtn').addEventListener('click', reviveHere);
 function togglePause(){
   if (!running) return; paused = !paused; $('paused').hidden = !paused;
   joy.id = null; joy.x = joy.y = 0; $('joy').hidden = true;

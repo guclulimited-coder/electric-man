@@ -677,5 +677,7 @@
  "o_gateRetry": "আবার চেষ্টা করো",
  "google": "Google দিয়ে চালিয়ে যান",
  "emailLogin": "ইমেইল দিয়ে চালিয়ে যান",
- "reviewLogin": "ডেমো অ্যাকাউন্টে লগইন (App Review)"
+ "reviewLogin": "ডেমো অ্যাকাউন্টে লগইন (App Review)",
+ "adRevive": "▶ বিজ্ঞাপন দেখো: এখানেই আবার ওঠো",
+ "dailyGift": "দৈনিক উপহার · দিন {d}"
 }

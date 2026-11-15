@@ -677,5 +677,7 @@
  "o_gateRetry": "Повторить",
  "google": "Продолжить с Google",
  "emailLogin": "Продолжить с эл. почтой",
- "reviewLogin": "Вход в демо-аккаунт (App Review)"
+ "reviewLogin": "Вход в демо-аккаунт (App Review)",
+ "adRevive": "▶ Смотреть рекламу: воскреснуть здесь",
+ "dailyGift": "Ежедневный подарок · день {d}"
 }

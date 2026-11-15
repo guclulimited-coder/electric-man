@@ -677,5 +677,7 @@
  "o_gateRetry": "Erneut versuchen",
  "google": "Weiter mit Google",
  "emailLogin": "Weiter mit E-Mail",
- "reviewLogin": "Mit Demo-Konto anmelden (App Review)"
+ "reviewLogin": "Mit Demo-Konto anmelden (App Review)",
+ "adRevive": "▶ Werbung ansehen: hier wiederbeleben",
+ "dailyGift": "Tagesgeschenk · Tag {d}"
 }

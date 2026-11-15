@@ -677,5 +677,7 @@
  "o_gateRetry": "ထပ်ကြိုးစားရန်",
  "google": "Google ဖြင့် ဆက်လုပ်ရန်",
  "emailLogin": "အီးမေးလ်ဖြင့် ဆက်လုပ်ရန်",
- "reviewLogin": "Demo အကောင့်ဖြင့် ဝင်ရန် (App Review)"
+ "reviewLogin": "Demo အကောင့်ဖြင့် ဝင်ရန် (App Review)",
+ "adRevive": "▶ ကြော်ငြာကြည့်: ဒီနေရာမှာ ပြန်ထ",
+ "dailyGift": "နေ့စဉ်လက်ဆောင် · နေ့ {d}"
 }

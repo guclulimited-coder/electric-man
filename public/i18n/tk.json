@@ -1,7 +1,23 @@
 {
   "_name": "Türkmen",
   "metaDesc": "Electric Man: simleri aýla we transformatordan her öýe tok ýetir. 300 derejeli 3D tapmaça oýny. TusneldaX.",
-  "districts": ["Oba", "Kenar", "Tokaý", "Dag öýleri", "Şäher merkezi", "Senagat zolagy", "Port", "Kampus", "Bazar", "Bogaz", "Adalar", "Jülge", "Köl kenary", "Gala", "Belent jaýlar"],
+  "districts": [
+    "Oba",
+    "Kenar",
+    "Tokaý",
+    "Dag öýleri",
+    "Şäher merkezi",
+    "Senagat zolagy",
+    "Port",
+    "Kampus",
+    "Bazar",
+    "Bogaz",
+    "Adalar",
+    "Jülge",
+    "Köl kenary",
+    "Gala",
+    "Belent jaýlar"
+  ],
   "aLeague": "Liga, dostlar we hatlar",
   "aAccount": "Hasap we sazlamalar",
   "aMap": "Dereje kartasy",
@@ -31,14 +47,29 @@
   "i40": "Täze: bulutlar! Bulut astyndaky sim diňe tok ýetende görünýär.",
   "iLast": "Soňky dereje! Ähli ussatlygyňy görkez.",
   "iDistrict": "{d} etrabyna hoş geldiň! Geliň, ony ýagtylandyralyň.",
-  "iRand": ["Hady, çyralary ýakalyň!", "Transformatordan başla we şahalar boýunça git.", "Öýlerden yza pikir et: her öýüň diňe bir birikmesi bar.", "Gyradaky simler iň aňsat, şol ýerden başla.", "Ugruny çalyşmak käwagt bir hereketi tygşytlaýar."],
+  "iRand": [
+    "Hady, çyralary ýakalyň!",
+    "Transformatordan başla we şahalar boýunça git.",
+    "Öýlerden yza pikir et: her öýüň diňe bir birikmesi bar.",
+    "Gyradaky simler iň aňsat, şol ýerden başla.",
+    "Ugruny çalyşmak käwagt bir hereketi tygşytlaýar."
+  ],
   "greet": "Salam, men {name}! Geliň, çyralary ýakalyň.",
   "fixed": "Bu sim boltly, aýlanmaýar. Oňa görä meýilleşdir.",
   "repaired": "Bejerildi! Indi aýlap bilersiň.",
-  "litSay": ["Ýene bir öý ýagtyldy!", "Çyralar ýandy!", "Ajaýyp birikme!", "Tok geldi, gowy!"],
+  "litSay": [
+    "Ýene bir öý ýagtyldy!",
+    "Çyralar ýandy!",
+    "Ajaýyp birikme!",
+    "Tok geldi, gowy!"
+  ],
   "lastMove": "Soňky hereket! Üns bilen saýla.",
   "movesLeft": "Diňe {n} hereket galdy!",
-  "winSay": ["Tutuş etrap ýalpyldaýar!", "Boldy! Ähli öýler ýagtyldy.", "Electric Man işde!"],
+  "winSay": [
+    "Tutuş etrap ýalpyldaýar!",
+    "Boldy! Ähli öýler ýagtyldy.",
+    "Electric Man işde!"
+  ],
   "winTitle": "Etrap ýagtyldy",
   "winAllTitle": "Tutuş şäher ýagtyldy!",
   "winText": "{m} hereketde {h} öýe tok ýetirdiň. Iň gysga çözgüt {o} hereketdi. +{r} teňňe.",
@@ -191,5 +222,7 @@
   "gateRetry": "Täzeden synan",
   "google": "Google bilen dowam et",
   "emailLogin": "E-poçta bilen dowam et",
-  "guideTap": "Eliň görkezýän simine bas: Electric Man gelip ony aýlaýar. Öýleri ýagtylandyrmak üçin transformatory birikdir!"
+  "guideTap": "Eliň görkezýän simine bas: Electric Man gelip ony aýlaýar. Öýleri ýagtylandyrmak üçin transformatory birikdir!",
+  "adMoves": "▶ Mahabat gör: +5 hereket",
+  "dailyGift": "Gündelik sowgat · {d}-nji gün"
 }

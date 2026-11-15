@@ -677,5 +677,7 @@
  "o_gateRetry": "Try again",
  "google": "Continue with Google",
  "emailLogin": "Continue with email",
- "reviewLogin": "Sign in with demo account (App Review)"
+ "reviewLogin": "Sign in with demo account (App Review)",
+ "adRevive": "▶ Watch an ad: revive here",
+ "dailyGift": "Daily gift · day {d}"
 }
