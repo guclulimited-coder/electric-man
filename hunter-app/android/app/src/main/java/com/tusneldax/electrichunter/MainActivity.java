@@ -169,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
                 case "api": api(m, proxy, rid); return;
                 case "login": startLogin(m.optString("lang", "en"), m.optString("method", ""), proxy, rid); return;
                 case "loginCheck": loginCheck(proxy, rid); return;
+                case "review": requestReview(proxy, rid); return;
                 case "ad": ads.show(m.optString("kind"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "products": billing.products(m.optJSONArray("ids"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "buy": billing.buy(this, m.optString("id"), (err, data) -> reply(proxy, rid, err, data)); return;
@@ -427,5 +428,18 @@ public class MainActivity extends AppCompatActivity {
         billing.close();
         io.shutdown();
         super.onDestroy();
+    }
+
+    /* ---------------- in-app review (Google Play; kota Play'de, gösterim garanti değil) ---------------- */
+    private void requestReview(JavaScriptReplyProxy proxy, int rid) {
+        try {
+            com.google.android.play.core.review.ReviewManager rm = com.google.android.play.core.review.ReviewManagerFactory.create(this);
+            rm.requestReviewFlow().addOnCompleteListener(t -> {
+                if (!t.isSuccessful()) { reply(proxy, rid, "REVIEW_UNAVAILABLE", null); return; }
+                rm.launchReviewFlow(this, t.getResult()).addOnCompleteListener(x -> {
+                    try { reply(proxy, rid, null, new JSONObject().put("ok", true)); } catch (Exception e) { reply(proxy, rid, "REVIEW_FAILED", null); }
+                });
+            });
+        } catch (Throwable e) { reply(proxy, rid, "REVIEW_FAILED", null); }
     }
 }

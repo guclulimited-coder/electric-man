@@ -59,4 +59,5 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:24.5.0")
     implementation("com.google.android.ump:user-messaging-platform:3.2.0")
     implementation("com.android.billingclient:billing:8.0.0")
+    implementation("com.google.android.play:review:2.0.2")
 }
