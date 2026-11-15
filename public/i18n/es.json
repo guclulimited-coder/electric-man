@@ -228,5 +228,8 @@
   "remindCh": "Recordatorios",
   "remindT": "Tu regalo diario está listo 🎁",
   "remindX": "El barrio está a oscuras. ¡Ven a encender las luces!",
-  "moreGames": "Nuestros otros juegos"
+  "moreGames": "Nuestros otros juegos",
+  "noAds": "Juega sin anuncios",
+  "noAdsSub": "Se quitan los anuncios entre niveles; los anuncios con premio siguen siendo opcionales",
+  "noAdsOk": "Anuncios desactivados. ¡Gracias!"
 }

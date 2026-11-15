@@ -303,7 +303,7 @@ function applyStatic(){
   const md = document.querySelector('meta[name=description]'); if (md && L.metaDesc) md.content = L.metaDesc;
 }
 applyStatic();
-const HINT_PRICE = 20, MOVES_PRICE = 25, UNDO_PRICE = 10, AD_REWARD = 20, ADS_PER_DAY = 15, COIN_PACKS = [{id:'em_coins_500', coins:500, tl:'₺99,99'}, {id:'em_coins_1200', coins:1200, tl:'₺149,99'}, {id:'em_coins_3000', coins:3000, tl:'₺249,99'}, {id:'em_coins_7000', coins:7000, tl:'₺499,99'}, {id:'em_coins_15000', coins:15000, tl:'₺999,99'}];
+const HINT_PRICE = 20, MOVES_PRICE = 25, UNDO_PRICE = 10, AD_REWARD = 20, ADS_PER_DAY = 15, NOADS_PRICE = 3000, COIN_PACKS = [{id:'em_coins_200', coins:200, tl:'₺34,99', app:true}, {id:'em_coins_500', coins:500, tl:'₺99,99'}, {id:'em_coins_1200', coins:1200, tl:'₺149,99'}, {id:'em_coins_3000', coins:3000, tl:'₺249,99'}, {id:'em_coins_7000', coins:7000, tl:'₺499,99'}, {id:'em_coins_15000', coins:15000, tl:'₺999,99'}];
 const packOf = id => COIN_PACKS.find(p => p.id === id);
 const BOLT = '<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6l-1.5 8.5L19 10h-6.2z"/></svg>';
 
@@ -1073,10 +1073,10 @@ const Profile = {
 const Remind = { set(ask){ if (!Native.app || Native.platform !== 'android') return; Native.call({action:'remind', hours:22, ask:!!ask, title:T('remindT'), text:T('remindX'), channel:T('remindCh')}).catch(() => {}); } };
 const Ads = {
   async show(kind){ if (!Native.app) return {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
-  launch(){ if (Native.app) setTimeout(() => this.show('appopen'), 400); },
+  launch(){ if (Native.app && !store.get('noAds', false)) setTimeout(() => this.show('appopen'), 400); },
   won(){ if (Native.app) store.set('adWins', store.get('adWins', 0) + 1); },
   afterWin(next){
-    if (Native.app && store.get('adWins', 0) >= 5){ store.set('adWins', 0); this.show('interstitial').finally(next); }
+    if (Native.app && !store.get('noAds', false) && store.get('adWins', 0) >= 5){ store.set('adWins', 0); this.show('interstitial').finally(next); }
     else next();
   },
   today(){ const d = new Date().toISOString().slice(0, 10), x = store.get('adDay', null); return x && x.d === d ? x : {d, n:0}; },
@@ -1109,14 +1109,15 @@ const Shop = {
   },
   async open(){
     await this.loadPrice();
-    const app = Native.app, left = Ads.left(), base = COIN_PACKS[0].coins / 99.99;
+    const app = Native.app, left = Ads.left(), base = packOf('em_coins_500').coins / 99.99;
     // a pack only shows once the store returned it (e.g. not before the paid-apps agreement / product is active)
-    const packs = COIN_PACKS.filter(p => !app || SHOT || this.prices[p.id]);
+    const packs = COIN_PACKS.filter(p => app ? (SHOT || this.prices[p.id]) : !p.app);
     const row = p => { const bonus = Math.round((p.coins / parseFloat(p.tl.replace('₺', '').replace(',', '.')) / base - 1) * 100);
       return `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coinsN', {n: p.coins.toLocaleString(LANG)})}${bonus > 0 ? `<small class="bonus">+%${bonus}</small>` : ''}</span><button class="btn small alt" data-buy="${p.id}" ${app || Online.webPay() ? '' : 'disabled'}>${this.prices[p.id] || p.tl}</button></div>`; };
     const body = Online.sheet(T('shopTitle'), `
       ${packs.map(row).join('')}
       <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('watchAd')}<small>${T('adReward', {n: AD_REWARD})} · ${T('adsLeft', {n: left})}</small></span><button class="btn small" id="watchAd" ${app && left ? '' : 'disabled'}>▶</button></div>
+      ${app && !store.get('noAds', false) ? `<div class="shop-item"><span class="coin">🚫</span><span class="big">${T('noAds')}<small>${T('noAdsSub')}</small></span><button class="btn small alt" id="noAdsBtn" ${coins >= NOADS_PRICE ? '' : 'disabled'}>${BOLT} ${NOADS_PRICE.toLocaleString(LANG)}</button></div>` : ''}
       ${app ? '' : `<p class="note">${T(Online.webPay() ? 'payNote' : 'inAppOnly')}</p>`}
       <div class="err" id="shopErr"></div>`);
     if (!app){ if (Online.webPay()) body.querySelectorAll('[data-buy]').forEach(btn => btn.onclick = ev => Online.buyWeb(ev.currentTarget.dataset.buy, ev.currentTarget)); return; }
@@ -1126,6 +1127,7 @@ const Shop = {
       catch (e){ if (e.message !== 'CANCELLED') $('shopErr').textContent = T('buyFail'); }
       b.disabled = false;
     });
+    const na = body.querySelector('#noAdsBtn'); if (na) na.onclick = () => { if (coins < NOADS_PRICE) return; coins -= NOADS_PRICE; store.set('noAds', true); renderCoins(); Online.saveSoon(); say(T('noAdsOk')); this.open(); };
     body.querySelector('#watchAd').onclick = async ev => { ev.currentTarget.disabled = true; await Ads.rewarded(); this.open(); };
   }
 };

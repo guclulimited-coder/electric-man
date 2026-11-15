@@ -228,5 +228,8 @@
   "remindCh": "Rappels",
   "remindT": "Ton cadeau du jour est prêt 🎁",
   "remindX": "Le quartier est dans le noir. Viens l'éclairer !",
-  "moreGames": "Nos autres jeux"
+  "moreGames": "Nos autres jeux",
+  "noAds": "Joue sans pub",
+  "noAdsSub": "Les pubs entre niveaux sont coupées ; les pubs récompensées restent facultatives",
+  "noAdsOk": "Pubs désactivées. Merci !"
 }

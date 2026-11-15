@@ -228,5 +228,8 @@
   "remindCh": "Erinnerungen",
   "remindT": "Dein Tagesgeschenk ist bereit 🎁",
   "remindX": "Das Viertel ist dunkel. Komm, mach das Licht an!",
-  "moreGames": "Unsere anderen Spiele"
+  "moreGames": "Unsere anderen Spiele",
+  "noAds": "Ohne Werbung spielen",
+  "noAdsSub": "Werbung zwischen Levels wird abgeschaltet; Belohnungswerbung bleibt freiwillig",
+  "noAdsOk": "Werbung ist aus. Danke!"
 }

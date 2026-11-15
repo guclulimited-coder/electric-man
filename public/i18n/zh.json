@@ -228,5 +228,8 @@
   "remindCh": "提醒",
   "remindT": "每日礼物已准备好 🎁",
   "remindX": "街区一片漆黑,快来点亮它!",
-  "moreGames": "我们的其他游戏"
+  "moreGames": "我们的其他游戏",
+  "noAds": "无广告游玩",
+  "noAdsSub": "关闭关卡间广告;奖励广告仍可自选",
+  "noAdsOk": "广告已关闭,谢谢!"
 }

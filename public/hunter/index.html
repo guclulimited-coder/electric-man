@@ -2511,7 +2511,7 @@ function renderSocial(){
     return `<div class="item"><div class="lvl" style="text-align:center">★</div><div><div class="nm">${o.name}</div><div class="ds">${T('oneTime', {n: o.reward})}</div></div>${btn}</div>`;
   }).join('');
 }
-const PACKS = [{id: 'eh_coins_500', coins: 500, try: 99.99}, {id: 'eh_coins_1200', coins: 1200, try: 149.99}, {id: 'eh_coins_3000', coins: 3000, try: 249.99}, {id: 'eh_coins_7000', coins: 7000, try: 499.99}, {id: 'eh_coins_15000', coins: 15000, try: 999.99}];
+const PACKS = [{id: 'eh_coins_300', coins: 300, try: 34.99, app: true}, {id: 'eh_coins_500', coins: 500, try: 99.99}, {id: 'eh_coins_1200', coins: 1200, try: 149.99}, {id: 'eh_coins_3000', coins: 3000, try: 249.99}, {id: 'eh_coins_7000', coins: 7000, try: 499.99}, {id: 'eh_coins_15000', coins: 15000, try: 999.99}];
 const money = v => { try { return new Intl.NumberFormat(LANG, {style: 'currency', currency: 'TRY'}).format(v); } catch(e){ return '₺' + v; } };
 function renderShop(){
   $('shopCoins').textContent = '◉ ' + fmtPow(coins);
@@ -2520,7 +2520,7 @@ function renderShop(){
   const ab = $('adShopBtn'); if (ab) ab.addEventListener('click', watchAd);
   $('shopSocial').innerHTML = renderSocial();
   $('shopUps').innerHTML = UPS.map(u => { const c = upCost(u); return `<div class="item"><div class="lvl" style="text-align:center">${lvTxt(ups[u.id] || 0)}</div><div><div class="nm">${u.name}</div><div class="ds">${u.ds}</div></div><button class="buy" type="button" data-up="${u.id}" ${coins < c ? 'disabled' : ''}>◉ ${fmtPow(c)}</button></div>`; }).join('');
-  $('shopPacks').innerHTML = PACKS.map((p, i) => { const bonus = i ? Math.round((p.coins / p.try / (500 / 99.99) - 1) * 100) : 0; return `<div class="item"><div class="lvl" style="text-align:center">◉</div><div><div class="nm">${T('packCoins', {n: p.coins.toLocaleString(LANG)})}</div><div class="ds">${bonus > 0 ? T('packBonus', {p: pct(bonus)}) : T('starter')}</div></div><button class="buy alt" type="button" data-pack="${i}">${Shop.prices[p.id] || money(p.try)}</button></div>`; }).join('');
+  $('shopPacks').innerHTML = PACKS.map((p, i) => (p.app && !(Native.app && Shop.prices[p.id])) ? '' : (() => { const bonus = p.coins > 500 ? Math.round((p.coins / p.try / (500 / 99.99) - 1) * 100) : 0; return `<div class="item"><div class="lvl" style="text-align:center">◉</div><div><div class="nm">${T('packCoins', {n: p.coins.toLocaleString(LANG)})}</div><div class="ds">${bonus > 0 ? T('packBonus', {p: pct(bonus)}) : T('starter')}</div></div><button class="buy alt" type="button" data-pack="${i}">${Shop.prices[p.id] || money(p.try)}</button></div>`; })()).join('');
   if (Native.app && !Object.keys(Shop.prices).length) Shop.load().then(() => { if (panelOpen === 'shop' && Object.keys(Shop.prices).length) renderShop(); });
 }
 $('shopUps').addEventListener('click', e => {

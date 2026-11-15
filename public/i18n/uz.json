@@ -228,5 +228,8 @@
   "remindCh": "Eslatmalar",
   "remindT": "Kunlik sovg'angiz tayyor 🎁",
   "remindX": "Mahalla qorong'ilikda. Kel, chiroqlarni yoqamiz!",
-  "moreGames": "Boshqa o'yinlarimiz"
+  "moreGames": "Boshqa o'yinlarimiz",
+  "noAds": "Reklamasiz o'ynang",
+  "noAdsSub": "Bosqichlar orasidagi reklama o'chadi; mukofotli reklama ixtiyoriy qoladi",
+  "noAdsOk": "Reklama o'chirildi. Rahmat!"
 }

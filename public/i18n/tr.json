@@ -228,5 +228,8 @@
   "remindCh": "Hatırlatmalar",
   "remindT": "Günlük hediyen hazır 🎁",
   "remindX": "Mahalle karanlıkta kaldı. Gel, ışıkları yakalım!",
-  "moreGames": "Diğer oyunlarımız"
+  "moreGames": "Diğer oyunlarımız",
+  "noAds": "Reklamsız oyna",
+  "noAdsSub": "Bölüm arası reklamlar kapanır; ödüllü reklamlar isteğe bağlı kalır",
+  "noAdsOk": "Reklamlar kapandı. Teşekkürler!"
 }
