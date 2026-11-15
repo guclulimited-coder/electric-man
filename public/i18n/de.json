@@ -224,5 +224,8 @@
   "emailLogin": "Weiter mit E-Mail",
   "guideTap": "Tippe auf das Kabel, auf das die Hand zeigt: Electric Man geht hin und dreht es. Verbinde den Trafo mit den Häusern, damit sie leuchten!",
   "adMoves": "▶ Werbung ansehen: +5 Züge",
-  "dailyGift": "Tagesgeschenk · Tag {d}"
+  "dailyGift": "Tagesgeschenk · Tag {d}",
+  "remindCh": "Erinnerungen",
+  "remindT": "Dein Tagesgeschenk ist bereit 🎁",
+  "remindX": "Das Viertel ist dunkel. Komm, mach das Licht an!"
 }

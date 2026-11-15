@@ -224,5 +224,8 @@
   "emailLogin": "Continue with email",
   "guideTap": "Tap the cable the hand points to: Electric Man walks over and turns it. Connect the transformer to the houses to light them!",
   "adMoves": "▶ Watch an ad: +5 moves",
-  "dailyGift": "Daily gift · day {d}"
+  "dailyGift": "Daily gift · day {d}",
+  "remindCh": "Reminders",
+  "remindT": "Your daily gift is ready 🎁",
+  "remindX": "The neighbourhood is in the dark. Come light it up!"
 }

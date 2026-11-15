@@ -679,5 +679,8 @@
  "emailLogin": "メールで続行",
  "reviewLogin": "デモアカウントでログイン (App Review)",
  "adRevive": "▶ 広告を見てこの場で復活",
- "dailyGift": "デイリーギフト · {d}日目"
+ "dailyGift": "デイリーギフト · {d}日目",
+ "remindCh": "リマインダー",
+ "remindT": "デイリーギフトの準備ができました 🎁",
+ "remindX": "セルハトが待っています:新しい島、新しいモンスター!"
 }

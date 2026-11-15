@@ -172,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
                 case "login": startLogin(m.optString("lang", "en"), m.optString("method", ""), proxy, rid); return;
                 case "loginCheck": loginCheck(proxy, rid); return;
                 case "review": requestReview(proxy, rid); return;
+                case "remind": remind(m, proxy, rid); return;
                 case "ad": ads.show(m.optString("kind"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "products": billing.products(m.optJSONArray("ids"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "buy": billing.buy(this, m.optString("id"), (err, data) -> reply(proxy, rid, err, data)); return;
@@ -443,5 +444,25 @@ public class MainActivity extends AppCompatActivity {
                 });
             });
         } catch (Throwable e) { reply(proxy, rid, "REVIEW_FAILED", null); }
+    }
+
+    /* ---------------- geri çağırma bildirimi: tek bir zamanlanmış hatırlatma, her çağrıda yenisiyle değişir ---------------- */
+    private void remind(JSONObject m, JavaScriptReplyProxy proxy, int rid) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 33 && m.optBoolean("ask", false)
+                && androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                && !getSharedPreferences("remind", MODE_PRIVATE).getBoolean("asked", false)) {
+                getSharedPreferences("remind", MODE_PRIVATE).edit().putBoolean("asked", true).apply();
+                androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 71);
+            }
+            Intent it = new Intent(this, ReminderReceiver.class)
+                .putExtra("title", m.optString("title")).putExtra("text", m.optString("text")).putExtra("channel", m.optString("channel"));
+            android.app.PendingIntent pi = android.app.PendingIntent.getBroadcast(this, 7, it, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+            android.app.AlarmManager am = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+            am.cancel(pi);
+            double h = m.optDouble("hours", 22);
+            if (h > 0) am.set(android.app.AlarmManager.RTC, System.currentTimeMillis() + (long) (h * 3600000), pi);
+            reply(proxy, rid, null, new JSONObject().put("ok", true));
+        } catch (Exception e) { reply(proxy, rid, "REMIND_FAILED", null); }
     }
 }

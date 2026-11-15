@@ -224,5 +224,8 @@
   "emailLogin": "Lanjutkan dengan email",
   "guideTap": "Ketuk kabel yang ditunjuk tangan: Electric Man akan datang dan memutarnya. Hubungkan trafo ke rumah agar lampunya menyala!",
   "adMoves": "▶ Tonton iklan: +5 langkah",
-  "dailyGift": "Hadiah harian · hari ke-{d}"
+  "dailyGift": "Hadiah harian · hari ke-{d}",
+  "remindCh": "Pengingat",
+  "remindT": "Hadiah harianmu sudah siap 🎁",
+  "remindX": "Kampung gelap gulita. Ayo nyalakan lampunya!"
 }

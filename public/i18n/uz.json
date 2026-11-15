@@ -224,5 +224,8 @@
   "emailLogin": "Elektron pochta bilan davom etish",
   "guideTap": "Qo'l ko'rsatgan simga bosing: Electric Man kelib uni aylantiradi. Uylarni yoritish uchun transformatorni ulang!",
   "adMoves": "▶ Reklama ko'ring: +5 yurish",
-  "dailyGift": "Kunlik sovg'a · {d}-kun"
+  "dailyGift": "Kunlik sovg'a · {d}-kun",
+  "remindCh": "Eslatmalar",
+  "remindT": "Kunlik sovg'angiz tayyor 🎁",
+  "remindX": "Mahalla qorong'ilikda. Kel, chiroqlarni yoqamiz!"
 }

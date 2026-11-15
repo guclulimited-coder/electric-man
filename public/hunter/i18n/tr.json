@@ -679,5 +679,8 @@
  "emailLogin": "E-posta ile devam et",
  "reviewLogin": "Demo hesap ile giriş (App Review)",
  "adRevive": "▶ Reklam izle: burada diril",
- "dailyGift": "Günlük hediye · {d}. gün"
+ "dailyGift": "Günlük hediye · {d}. gün",
+ "remindCh": "Hatırlatmalar",
+ "remindT": "Günlük hediyen hazır 🎁",
+ "remindX": "Serhat seni bekliyor: yeni ada, yeni canavarlar!"
 }

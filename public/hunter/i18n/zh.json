@@ -679,5 +679,8 @@
  "emailLogin": "使用电子邮件继续",
  "reviewLogin": "使用演示账号登录 (App Review)",
  "adRevive": "▶ 看广告:原地复活",
- "dailyGift": "每日礼物 · 第{d}天"
+ "dailyGift": "每日礼物 · 第{d}天",
+ "remindCh": "提醒",
+ "remindT": "每日礼物已准备好 🎁",
+ "remindX": "塞尔哈特在等你:新岛屿,新怪物!"
 }

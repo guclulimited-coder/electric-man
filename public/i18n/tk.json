@@ -224,5 +224,8 @@
   "emailLogin": "E-poçta bilen dowam et",
   "guideTap": "Eliň görkezýän simine bas: Electric Man gelip ony aýlaýar. Öýleri ýagtylandyrmak üçin transformatory birikdir!",
   "adMoves": "▶ Mahabat gör: +5 hereket",
-  "dailyGift": "Gündelik sowgat · {d}-nji gün"
+  "dailyGift": "Gündelik sowgat · {d}-nji gün",
+  "remindCh": "Ýatlatmalar",
+  "remindT": "Gündelik sowgadyň taýýar 🎁",
+  "remindX": "Etrap garaňkylykda. Gel, çyralary ýakalyň!"
 }

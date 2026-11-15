@@ -679,5 +679,8 @@
  "emailLogin": "Continuer avec l'e-mail",
  "reviewLogin": "Connexion avec un compte démo (App Review)",
  "adRevive": "▶ Regarde une pub : réapparais ici",
- "dailyGift": "Cadeau du jour · jour {d}"
+ "dailyGift": "Cadeau du jour · jour {d}",
+ "remindCh": "Rappels",
+ "remindT": "Ton cadeau du jour est prêt 🎁",
+ "remindX": "Serhat t'attend : nouvelle île, nouveaux monstres !"
 }

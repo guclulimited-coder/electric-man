@@ -224,5 +224,8 @@
   "emailLogin": "Continuar com e-mail",
   "guideTap": "Toque no cabo que a mão aponta: o Electric Man vai até lá e o gira. Ligue o transformador às casas para acendê-las!",
   "adMoves": "▶ Veja um anúncio: +5 jogadas",
-  "dailyGift": "Presente diário · dia {d}"
+  "dailyGift": "Presente diário · dia {d}",
+  "remindCh": "Lembretes",
+  "remindT": "Seu presente diário está pronto 🎁",
+  "remindX": "O bairro está no escuro. Venha acender as luzes!"
 }

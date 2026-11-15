@@ -679,5 +679,8 @@
  "emailLogin": "Continue with email",
  "reviewLogin": "Sign in with demo account (App Review)",
  "adRevive": "▶ Watch an ad: revive here",
- "dailyGift": "Daily gift · day {d}"
+ "dailyGift": "Daily gift · day {d}",
+ "remindCh": "Reminders",
+ "remindT": "Your daily gift is ready 🎁",
+ "remindX": "Serhat is waiting: a new island, new monsters!"
 }

@@ -679,5 +679,8 @@
  "emailLogin": "Lanjutkan dengan email",
  "reviewLogin": "Masuk dengan akun demo (App Review)",
  "adRevive": "▶ Tonton iklan: bangkit di sini",
- "dailyGift": "Hadiah harian · hari ke-{d}"
+ "dailyGift": "Hadiah harian · hari ke-{d}",
+ "remindCh": "Pengingat",
+ "remindT": "Hadiah harianmu sudah siap 🎁",
+ "remindX": "Serhat menunggumu: pulau baru, monster baru!"
 }

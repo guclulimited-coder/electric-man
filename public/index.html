@@ -941,6 +941,7 @@ function win(){
   const last = level >= MAX_LEVEL;
   if (!last){ maxLevel = Math.max(maxLevel, level + 1); store.set('max', maxLevel); }
   Online.cleared(level, S.actions.slice(), S.extra); Online.saveSoon(); Ads.won();
+  Remind.set(level >= 2);
   // Play puan penceresi: yalnız Android, 3 yıldızlı mutlu anda, 6/15/30/60. bölümlerde bir kez (en çok 3 kez)
   try { const asked = store.get('reviewAsk', []); if (Native.app && Native.platform === 'android' && stars === 3 && [6, 15, 30, 60].includes(level) && !asked.includes(level) && asked.length < 3){ asked.push(level); store.set('reviewAsk', asked); setTimeout(() => Native.call({action:'review'}).catch(() => {}), 1800); } } catch {}
   setTimeout(() => modal(last ? T('winAllTitle') : T('winTitle'), `<div class="stars">${[1,2,3].map(i => starSVG(i <= stars)).join('')}</div><p>${T('winText', {h:S.houses, m:S.moves, o:S.opt, r:reward})}${last ? ' ' + T('winAllText') : ''}</p>`,
@@ -1067,6 +1068,7 @@ const Profile = {
     this.bind($('card'), () => setTimeout(() => { $('modal').hidden = true; }, 250));
   }
 };
+const Remind = { set(ask){ if (!Native.app || Native.platform !== 'android') return; Native.call({action:'remind', hours:22, ask:!!ask, title:T('remindT'), text:T('remindX'), channel:T('remindCh')}).catch(() => {}); } };
 const Ads = {
   async show(kind){ if (!Native.app) return {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
   launch(){ if (Native.app) setTimeout(() => this.show('appopen'), 400); },
@@ -1517,7 +1519,7 @@ try {
   renderSound(); Profile.render();
   start(level); Funnel.ready();
   if (SHOT) setTimeout(shotScene, 2500);
-  else { Ads.launch(); Shop.restorePending(); }
+  else { Ads.launch(); Shop.restorePending(); Remind.set(false); }
   // günlük hediye: art arda gelinen her gün artar (7. günde en yüksek), bir gün kaçarsa 1. güne döner
   if (!SHOT) setTimeout(() => { try { const day = new Date().toISOString().slice(0, 10), y = new Date(Date.now() - 864e5).toISOString().slice(0, 10), g = store.get('daily', {day: '', streak: 0}); if (g.day === day) return; const streak = g.day === y ? Math.min(7, g.streak + 1) : 1, n = 20 + streak * 10; store.set('daily', {day, streak}); coins += n; renderCoins(); snd('lit'); say(T('dailyGift', {d: streak}) + ' ' + T('adReward', {n})); } catch (e){} }, 3500);
   requestAnimationFrame(loop);

@@ -224,5 +224,8 @@
   "emailLogin": "Continuer avec l'e-mail",
   "guideTap": "Touche le câble que montre la main : Electric Man va le tourner. Relie le transformateur aux maisons pour les allumer !",
   "adMoves": "▶ Regarde une pub : +5 coups",
-  "dailyGift": "Cadeau du jour · jour {d}"
+  "dailyGift": "Cadeau du jour · jour {d}",
+  "remindCh": "Rappels",
+  "remindT": "Ton cadeau du jour est prêt 🎁",
+  "remindX": "Le quartier est dans le noir. Viens l'éclairer !"
 }

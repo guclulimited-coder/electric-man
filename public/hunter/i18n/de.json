@@ -679,5 +679,8 @@
  "emailLogin": "Weiter mit E-Mail",
  "reviewLogin": "Mit Demo-Konto anmelden (App Review)",
  "adRevive": "▶ Werbung ansehen: hier wiederbeleben",
- "dailyGift": "Tagesgeschenk · Tag {d}"
+ "dailyGift": "Tagesgeschenk · Tag {d}",
+ "remindCh": "Erinnerungen",
+ "remindT": "Dein Tagesgeschenk ist bereit 🎁",
+ "remindX": "Serhat wartet: neue Insel, neue Monster!"
 }

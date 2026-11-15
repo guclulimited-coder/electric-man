@@ -224,5 +224,8 @@
   "emailLogin": "Continuar con correo electrónico",
   "guideTap": "Toca el cable que señala la mano: Electric Man irá y lo girará. ¡Conecta el transformador con las casas para encenderlas!",
   "adMoves": "▶ Mira un anuncio: +5 movimientos",
-  "dailyGift": "Regalo diario · día {d}"
+  "dailyGift": "Regalo diario · día {d}",
+  "remindCh": "Recordatorios",
+  "remindT": "Tu regalo diario está listo 🎁",
+  "remindX": "El barrio está a oscuras. ¡Ven a encender las luces!"
 }

@@ -679,5 +679,8 @@
  "emailLogin": "E-pochta bilan davom etish",
  "reviewLogin": "Demo hisob bilan kirish (App Review)",
  "adRevive": "▶ Reklama ko'ring: shu yerda tiriling",
- "dailyGift": "Kunlik sovg'a · {d}-kun"
+ "dailyGift": "Kunlik sovg'a · {d}-kun",
+ "remindCh": "Eslatmalar",
+ "remindT": "Kunlik sovg'angiz tayyor 🎁",
+ "remindX": "Serhat sizni kutyapti: yangi orol, yangi maxluqlar!"
 }
