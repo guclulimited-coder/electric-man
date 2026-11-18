@@ -2246,6 +2246,7 @@ const Online = (() => {
   async function init(){
     // Sahip 31 Ekim: girişsiz başlama — açılışta zorunlu giriş kapısı yok; hesap Hesap menüsünden isteğe bağlı.
     try { cfg = await call('/config'); } catch(e){ cfg = null; }
+    if (cfg && Native.platform === 'ios'){ cfg.googleClientId = null; cfg.appleClientId = null; } /* iOS: Apple incelemesi (2.1a) — Google/Apple girişi kalıcı yerel girişe geçene kadar gizli; e-posta ve misafir oyun kalır */
     if (!cfg){ if (gate) gateHide(); return; }
     let meErr = false;
     // uygulama sistem tarafından kapatılırken yarım kalan giriş varsa önce onu tamamla
@@ -2258,7 +2259,7 @@ const Online = (() => {
     const pay = new URLSearchParams(location.search).get('pay');
     if (pay){ history.replaceState(null, '', location.pathname); toast(T(pay === 'ok' ? 'payOk' : 'payFail')); }
     const login = new URLSearchParams(location.search).get('login');
-    if (login){ history.replaceState(null, '', location.pathname); toast(['tiktok','apple'].includes(login) && me ? T('o_welcome', {name: me.name}) : T('ttFail')); }
+    if (login){ history.replaceState(null, '', location.pathname); toast(['tiktok','apple'].includes(login) && me ? T('o_welcome', {name: me.name}) : T(login === 'tiktok' ? 'ttFail' : 'o_eINVALID_IDENTITY')); }
     if (!init.bound){ init.bound = true; setInterval(() => { if (running && me) score(); }, 60000); }
   }
   function renderBadge(b){ const n = (b.requests || 0) + (b.unread || 0), el = $('profDot'); el.hidden = !n; el.textContent = n > 99 ? '99+' : n; }

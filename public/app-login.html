@@ -145,7 +145,8 @@ async function showLogin(){
   };
 }
 try {
-  cfg = await call('/config'); const me = (await call('/me')).player;
+  cfg = await call('/config'); if (q.get('platform') === 'ios'){ cfg.googleClientId = null; cfg.appleClientId = null; } /* iOS: Apple incelemesi (2.1a) — Google/Apple girişi kalıcı yerel girişe geçene kadar gizli; e-posta ve misafir oyun kalır */
+  const me = (await call('/me')).player;
   if (q.get('login') === 'fail') err(T('ttFail'));
   if (me && ['tiktok','apple','google','email','review'].includes(q.get('login'))){ showSignedIn(me, true); await Promise.race([arm(), new Promise(r => setTimeout(r, 1500))]); location.replace(handoffURL()); }
   else if (me) showSignedIn(me);
