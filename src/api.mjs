@@ -465,7 +465,7 @@ export async function emAPI(req, env, deps = {}){
     }
     if (path === '/clear' && req.method === 'POST'){
       await quota(db, 'clear:' + me.id, 30, 60000);
-      const res = replay(body.level, body.actions, body.extra);
+      const res = replay(body.level, body.actions, body.extra, body.ev === 2 ? 2 : 1);
       if (!res.ok) fail('INVALID_RESULT');
       const w = week(), points = res.stars * 10;
       await run(db, `INSERT INTO em_clears(id,player,week,level,moves,stars,points,created) VALUES(?,?,?,?,?,?,?,?)

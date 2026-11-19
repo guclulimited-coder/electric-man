@@ -99,11 +99,13 @@ assert.deepEqual((await a.call('/progress')).body.save, save); ok('save round-tr
 assert.equal((await a.call('/progress', {save:{...save, max:999}, revision:1})).status, 400); ok('invalid save refused');
 
 // verified level clear → league
-function solve(level){ const g = generate(level), acts = []; for (const t of g.tiles){ if (t.kind !== 'cable' || t.fixed) continue; if (t.broken) acts.push([t.idx, 0]); let r = t.rot, k = 0; while (rotN(BASE[t.shape], r) !== t.sol && k < 4){ acts.push([t.idx, 1]); r = (r + 1) % 4; k++; } } return acts; }
-const clear = await a.call('/clear', {level:1, actions: solve(1)});
+function solve(level, v){ const g = generate(level, v), acts = []; for (const t of g.tiles){ if (t.kind !== 'cable' || t.fixed) continue; if (t.broken) acts.push([t.idx, 0]); let r = t.rot, k = 0; while (rotN(BASE[t.shape], r) !== t.sol && k < 4){ acts.push([t.idx, 1]); r = (r + 1) % 4; k++; } } return acts; }
+const clear = await a.call('/clear', {level:1, actions: solve(1), ev: 2});
+assert.equal((await a.call('/clear', {level:1, actions: solve(1, 1)})).status, 200); ok('old app (engine v1) clear still verified');
+assert.equal((await a.call('/clear', {level:1, actions: solve(1, 1), ev: 2})).status, 400); ok('engine version mismatch refused');
 assert.equal(clear.status, 200); assert.ok(clear.body.stars >= 1); ok('verified clear');
 assert.equal((await a.call('/clear', {level:12, actions:[]})).status, 400); ok('unsolved clear refused');
-await b.call('/clear', {level:1, actions: solve(1)}); await b.call('/clear', {level:2, actions: solve(2)});
+await b.call('/clear', {level:1, actions: solve(1), ev: 2}); await b.call('/clear', {level:2, actions: solve(2), ev: 2});
 const league = (await a.call('/league')).body;
 assert.equal(league.rows[0].code, meB.code); assert.equal(league.rows.length, 2); assert.ok(league.rows.find(r => r.me)); ok('weekly league');
 

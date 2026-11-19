@@ -229,7 +229,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js';
-import {MAX_LEVEL, HOUSE_COLORS, DIRS, OPP, rotN, BASE, diff, stepsCW, stepsBest, generate, starsFor} from './engine.js';
+import {ENGINE_VERSION, MAX_LEVEL, HOUSE_COLORS, DIRS, OPP, rotN, BASE, diff, stepsCW, stepsBest, generate, starsFor} from './engine.js';
 
 const $ = id => document.getElementById(id);
 /* native shell bridge (Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise}) */
@@ -775,6 +775,8 @@ let level = Math.min(store.get('level', 1), MAX_LEVEL), coins = store.get('coins
 let muted = store.get('muted', false), dirCW = store.get('cw', true);
 
 function start(lv){
+  lastTapAt = performance.now();
+  if (lv === 2 && typeof Profile !== 'undefined' && !Profile.gender && !SHOT && !Online.gated() && !store.get('charAsked', 0)){ store.set('charAsked', 1); setTimeout(() => { if (!Profile.gender) Profile.ask(); }, 400); }
   level = Math.max(1, Math.min(lv, MAX_LEVEL)); store.set('level', level); Funnel.start(level);
   const g = generate(level);
   S = {W:g.W, H:g.H, tiles:g.tiles, houses:g.houses, opt:g.opt, D:g.D, moves:0,
@@ -904,7 +906,9 @@ const Worker = (() => {
   function update(dt){ if (mixer) mixer.update(dt); }
   return {use, home, request, goTo, update, clear(){ queue.length = 0; gen++; busy = false; if (obj) play('Idle'); }};
 })();
+let lastTapAt = performance.now();
 function tap(t){
+  lastTapAt = performance.now();
   if (!S || S.over || !t || t.kind !== 'cable') return;
   Worker.request(t);
 }
@@ -1194,7 +1198,7 @@ const Online = (() => {
     saving = false;
   }
   function saveSoon(){ if (!me) return; clearTimeout(saveTimer); saveTimer = setTimeout(push, 1500); }
-  async function cleared(lv, actions, extra){ if (!me) return; try { await call('/clear', {level: lv, actions, extra}); } catch (e){} }
+  async function cleared(lv, actions, extra){ if (!me) return; try { await call('/clear', {level: lv, actions, extra, ev: ENGINE_VERSION}); } catch (e){} }
   function setMe(p){ me = p; $('accountDot').hidden = !me; if (me) pollBadges(); else { clearTimeout(badgeTimer); renderBadge({requests:0, unread:0}); } }
   // web purchases (iyzico): the server prices the pack, iyzico takes the card, the coins arrive through /pay/claim
   const webPay = () => !Native.app && !SHOT && !!(cfg && cfg.webPay);
@@ -1479,7 +1483,9 @@ $('sheet').addEventListener('click', e => { if (e.target.id === 'sheet' && !Onli
 /* ---------- first-level guide (13 Nov 2026, owner approved): a pointing hand shows which cable to tap on levels 1–2 until the player has won them once ---------- */
 const guideV = new THREE.Vector3();
 function guideTile(){
-  if (!S || S.over || level > 2 || (store.get('stars', {}) || {})[level]) return null;
+  // 19 Kasım 2026: 1–2. bölümde el hep görünür; 3–5. bölümde oyuncu 8 saniye dokunmazsa doğru kabloyu gösterir
+  if (!S || S.over || level > 5 || (store.get('stars', {}) || {})[level]) return null;
+  if (level > 2 && performance.now() - lastTapAt < 8000) return null;
   const wrong = S.tiles.filter(t => t.kind === 'cable' && !t.fixed && (t.mask !== t.sol || t.broken));
   return wrong.find(t => DIRS.some(([dr, dc]) => { const n = at(t.r + dr, t.c + dc); return n && S.on.has(n); })) || wrong[0] || null;
 }
@@ -1526,10 +1532,11 @@ try {
   if (SHOT) setTimeout(shotScene, 2500);
   else { Ads.launch(); Shop.restorePending(); Remind.set(false); }
   // günlük hediye: art arda gelinen her gün artar (7. günde en yüksek), bir gün kaçarsa 1. güne döner
-  if (!SHOT) setTimeout(() => { try { const day = new Date().toISOString().slice(0, 10), y = new Date(Date.now() - 864e5).toISOString().slice(0, 10), g = store.get('daily', {day: '', streak: 0}); if (g.day === day) return; const streak = g.day === y ? Math.min(7, g.streak + 1) : 1, n = 20 + streak * 10; store.set('daily', {day, streak}); coins += n; renderCoins(); snd('lit'); say(T('dailyGift', {d: streak}) + ' ' + T('adReward', {n})); } catch (e){} }, 3500);
+  if (!SHOT) setTimeout(() => { try { const day = new Date().toISOString().slice(0, 10), y = new Date(Date.now() - 864e5).toISOString().slice(0, 10), g = store.get('daily', {day: '', streak: 0}); if (g.day === day) return; const streak = g.day === y ? Math.min(7, g.streak + 1) : 1, n = 20 + streak * 10; store.set('daily', {day, streak}); coins += n; renderCoins(); snd('lit'); if (level > 2 || (store.get('stars', {}) || {})[level]) say(T('dailyGift', {d: streak}) + ' ' + T('adReward', {n})); } catch (e){} }, 3500);
   requestAnimationFrame(loop);
   // karakter seçimi giriş ekranının üstüne açılmaz: yalnız girişten sonra (ya da giriş gerekmiyorsa açılışta)
-  Online.init().catch(() => {}).finally(() => { if (!SHOT && !Profile.gender && !Online.gated()) setTimeout(() => Profile.ask(), 300); });
+  // 19 Kasım 2026: karakter seçimi yeni oyuncuya 1. bölümden önce açılmaz (ilk bölümü kesiyordu); 1. bölüm bitince sorulur
+  Online.init().catch(() => {}).finally(() => { if (!SHOT && !Profile.gender && !Online.gated() && maxLevel > 1) setTimeout(() => Profile.ask(), 300); });
 } catch (e){
   $('loading').hidden = false;
   $('loading').textContent = T('noGL'); Funnel.error();

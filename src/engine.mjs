@@ -15,12 +15,12 @@ export const BASE = {straight:5, corner:3, tee:7, cross:15};
 export const shapeOf = m => { const b = bits(m); return b === 4 ? 'cross' : b === 3 ? 'tee' : (m === 5 || m === 10) ? 'straight' : 'corner'; };
 
 /* difficulty curve for 300 levels */
-export function diff(L){
+export function diff(L, v = ENGINE_VERSION){
   const size = L <= 1 ? [4,4] : L <= 3 ? [4,5] : L <= 8 ? [5,6] : L <= 20 ? [6,7] : L <= 60 ? [6,8] : L <= 150 ? [7,8] : [7,9];
   return {
     W: size[0], H: size[1],
     dfs: Math.min(.45 + L * .004, .85),
-    keep: L <= 2 ? .45 : L <= 4 ? .2 : 0,
+    keep: v < 2 ? (L <= 2 ? .45 : L <= 4 ? .2 : 0) : L <= 1 ? .8 : L <= 2 ? .65 : L <= 3 ? .45 : L <= 4 ? .35 : L <= 5 ? .15 : 0, // 19 Kasım 2026: ilk bölümler çok daha kolay (yeni oyuncuların %7'si 1. bölümü bitiriyordu)
     slack: L <= 2 ? Infinity : Math.max(2, 10 - Math.floor(L / 25)),
     fixed: L >= 6 ? Math.min(.08 + (L - 6) * .0015, .22) : 0,
     broken: L >= 9 ? Math.min(.06 + (L - 9) * .0015, .2) : 0,
@@ -30,8 +30,8 @@ export function diff(L){
 export function stepsCW(t){ for (let k=0;k<4;k++) if (rotN(BASE[t.shape], t.rot + k) === t.sol) return k; return 0; }
 export function stepsBest(t){ const k = stepsCW(t); return t.shape === 'straight' ? Math.min(k, 1) : Math.min(k, (4 - k) % 4); }
 
-export function generate(L){
-  const R = rng(L * 104729 + 7), D = diff(L), W = D.W, H = D.H;
+export function generate(L, v = ENGINE_VERSION){
+  const R = rng(L * 104729 + 7), D = diff(L, v), W = D.W, H = D.H;
   for (let attempt = 0; ; attempt++){
     const sr = 1 + Math.floor(R() * (H - 2)), sc = 1 + Math.floor(R() * (W - 2));
     const mask = Array.from({length:H}, () => Array(W).fill(0));
@@ -73,13 +73,13 @@ export function generate(L){
     if (D.fog) tiles.forEach(t => { if (t.kind === 'cable' && R() < D.fog) t.fog = true; });
     let opt = 0;
     tiles.forEach(t => { if (t.kind === 'cable') opt += stepsBest(t) + (t.broken ? 1 : 0); });
-    if ((houses >= 2 && opt >= Math.min(4, W*H/4)) || attempt > 30) return {W, H, tiles, houses, opt, D};
+    if ((houses >= 2 && (v >= 2 && L <= 2 ? opt >= 2 && opt <= (L <= 1 ? 3 : 5) : opt >= Math.min(4, W*H/4))) || attempt > 30) return {W, H, tiles, houses, opt, D};
   }
 }
 
 
 export const MAX_LEVEL = 300;
-export const ENGINE_VERSION = 1;
+export const ENGINE_VERSION = 2; // 2: kolay ilk bölümler (19 Kasım 2026); eski uygulamalar 1 ile doğrulanır
 
 /* tiles reached from the transformer; broken cables do not conduct */
 export function powered(tiles, W, H){
@@ -101,10 +101,10 @@ export function starsFor(moves, opt){ const extra = moves - opt; return extra <=
 
 /* Server-side proof: replay a finished level. Actions:
    [idx, 1|-1] rotate · [idx, 0] repair a broken cable · [idx, 9] hint (sets the tile to its solution). */
-export function replay(level, actions, extraMoves = 0){
+export function replay(level, actions, extraMoves = 0, v = 1){
   if (!Number.isSafeInteger(level) || level < 1 || level > MAX_LEVEL) return {ok:false, error:'LEVEL'};
   if (!Array.isArray(actions) || actions.length > 600) return {ok:false, error:'ACTIONS'};
-  const g = generate(level), tiles = g.tiles;
+  const g = generate(level, v === 2 ? 2 : 1), tiles = g.tiles;
   const limit = g.D.slack === Infinity ? Infinity : g.opt + g.D.slack + Math.max(0, Math.min(50, extraMoves | 0));
   let moves = 0, hints = 0;
   for (const a of actions){

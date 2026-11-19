@@ -1470,9 +1470,9 @@ function powerAfterClears(isl, turns){
 function scaleIsland(isl, persist = true){
   const all = islStore(), k = isl.k; let st = all[k];
   if (!st){ const p = playerPower(); st = {p, dps: Math.max(1, playerDps() / 20), hp: Math.max(1, player.maxHp / 100), gate: Math.round(powerAfterClears(isl, TURNS(k)) * (k === 0 ? .8 : .97))}; if (persist){ all[k] = st; store.set('isl', all); } }
-  isl.entry = st.p; isl.gatePower = st.gate; isl.hpMul = (st.dps || playerDps() / 20) * (1 + .05 * k); isl.dmgMul = (st.hp || player.maxHp / 100) * (1 + .03 * k); isl.scaled = true;
+  isl.entry = st.p; isl.gatePower = st.gate; isl.hpMul = (st.dps || playerDps() / 20) * (1 + .05 * k); isl.dmgMul = (st.hp || player.maxHp / 100) * (1 + .03 * k) * (k === 0 ? .6 : 1); isl.scaled = true; // ilk ada daha yumuşak (19 Kasım 2026)
   // the boss is sized for Serhat AT the gate: ~35 s of his damage to kill, each contact hit ~2.5 % of his health (ring shots ~1 %), its brood at most 3 and half as hard
-  const grow = Math.max(1, st.gate / st.p); isl.bossHp = Math.round((st.dps || 1) * 20 * Math.pow(grow, .6) * 35); isl.bossHit = .025 * (st.hp || 1) * 100 * Math.pow(grow, .5); // dps grows ~grow^0.6 and health ~grow^0.5 on the way to the gate
+  const grow = Math.max(1, st.gate / st.p); isl.bossHp = Math.round((st.dps || 1) * 20 * Math.pow(grow, .6) * 35); isl.bossHit = .025 * (st.hp || 1) * 100 * Math.pow(grow, .5) * (k === 0 ? .6 : 1); // dps grows ~grow^0.6 and health ~grow^0.5 on the way to the gate
   for (const c of isl.camps) for (const e of c.members) if (!e.dead) applyScale(e);
 }
 function applyScale(e){
@@ -2130,6 +2130,8 @@ function respawnHere(){
 }
 let intro = 0;
 function gameOver(){
+  // 19 Kasım 2026: ilk adada oyunu bitirme yok — yeni oyuncuların çoğu orada ölüp çıkıyordu; Serhat bedavaya yerinde dirilir
+  if (curIsl === 0){ Funnel.fail(1); reviveFx(); toast(T('freeRevive')); return; }
   Funnel.fail(curIsl + 1); running = false; sfx.boom();
   $('overEyebrow').textContent = T('islandN', {n: curIsl + 1});
   $('tKills').textContent = player.kills; $('tEat').textContent = player.eaten; $('tWave').textContent = curIsl + 1;
@@ -2143,7 +2145,9 @@ async function reviveHere(){
   let r = null; try { r = await Native.call({action: 'ad', kind: 'rewarded'}); } catch(e){ r = {error: e.message}; }
   adBusy = false; $('reviveBtn').disabled = false;
   if (!(r && r.earned)){ if (!r || !r.dismissed) toast(T('o_adFail')); return; }
-  adCountUp(); renderAdBtn(); reviveIsl = curIsl;
+  adCountUp(); renderAdBtn(); reviveIsl = curIsl; reviveFx();
+}
+function reviveFx(){
   for (const e of enemies){ if (e.dead) continue; const dx = e.pos.x - player.pos.x, dz = e.pos.z - player.pos.z, d = Math.hypot(dx, dz) || 1; if (d < 10){ e.pos.x += dx / d * (10 - d); e.pos.z += dz / d * (10 - d); } }
   player.hp = player.maxHp; player.inv = 3; player.calm = 0; if (shield) shield.cur = shield.max;
   ring(player.pos, 6, 0x39e6ff, .8); burst(player.pos, 30, 0x39e6ff); sfx.pick();
@@ -3232,11 +3236,14 @@ function attach(model){
   setProp('pense'); wearGear(); play('Idle', 0);
   const b = $('startBtn'); b.disabled = false; const sv = store.get('save', null); b.textContent = sv && sv.isl ? T('continueIsl', {n: sv.isl + 1}) : T('enterPortal'); $('loadTxt').hidden = true;
   if (store.get('resetNote', 0)){ store.set('resetNote', 0); setTimeout(() => showStory('Electric Hunter', T('ch1'), T('resetNote')), 600); }
+  // 19 Kasım 2026: ilk açılışta oyuncunun yarısı "Portala gir"e basmadan çıkıyordu; ilk kez gelen oyuncu doğrudan oyuna girer
+  const sv0 = store.get('save', null);
+  if (!(sv0 && (sv0.isl || sv0.eaten)) && !store.get('autoStart', 0)) setTimeout(() => { if (Online.gated() || $('title').hidden || b.disabled || b.hidden) return; store.set('autoStart', 1); b.click(); }, 700);
 }
 player.regen = .6; buildIsland(0); scaleIsland(islands[0], false); applyTheme(themeOf(0)); player.pos.copy(spawnPoint(0)); portal.position.set(player.pos.x, 1.8, player.pos.z - 2.5);
 renderSlots(); renderStats();
 // store screenshots: ?shot=1 exposes a small handle so the capture script can stage scenes
-if (new URLSearchParams(location.search).has('shot')) window.__eh = {Kid, Cine, storyArrive, get curIslN(){ return curIsl; }, renderer, Perf, GFX, scene, camera, get composer(){ return composer; }, get bloom(){ return bloom; }, draw, player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, Evo, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
+if (new URLSearchParams(location.search).has('shot')) window.__eh = {hurtPlayer, Kid, Cine, storyArrive, get curIslN(){ return curIsl; }, renderer, Perf, GFX, scene, camera, get composer(){ return composer; }, get bloom(){ return bloom; }, draw, player, enemies, islands, corpses, startGame, get Throw(){ return Throw; }, Evo, openPanel, closePanel, playIntro, drawMap, renderProfile, setTab: t => { profTab = t; }, gear: () => gear, setGear: g => { gear = g; syncFlails(); renderSlots(); renderStats(); }, kit: () => kit, giveGear, curIsl: () => curIsl, aggroCamp, renderWave, refreshPowers, get intro(){ return introSt; }, set introT(v){ if (introSt) introSt.t = v; }, clock, store, mapOpen: () => { mapOpen = true; $('bigmap').hidden = false; drawMap($('bigC'), true); }};
 window.__dbg = () => ({alive: enemies.filter(e => !e.dead).length, chasing: enemies.filter(e => !e.dead && e.state === 'chase').length, corpses: corpses.length, isl: curIsl, pos: player.pos.toArray().map(v => +v.toFixed(1)), hp: Math.round(player.hp), kills: player.kills, eaten: player.eaten, hook: hook.state, gear: gear.map(g => g.id + g.lv).join(','), active});
 loop(); Funnel.ready();
 Online.init(); Shop.pending(); renderAdBtn();
