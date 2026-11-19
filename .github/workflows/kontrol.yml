@@ -5,6 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for u in https://tusneldax.com/ https://tusneldax.com/bus-rush/play https://tusneldax.com/api/bus-rush/config https://oyun.tusneldax.com/ https://electricman.tusneldax.com/ https://electricman.tusneldax.com/hunter/ https://electricman.tusneldax.com/config https://anindausta.com.tr/ ; do
-            echo "URL $u $(curl -sL -o /dev/null -m 25 -w '%{http_code} %{time_total}s' $u)"
-          done
+          for i in $(seq 1 20); do n=$(curl -sL -m 20 "https://electricman.tusneldax.com/engine.js?x=$i" | grep -c 'ENGINE_VERSION = 2'); [ "$n" = 1 ] && break; sleep 15; done
+          echo "EM_V2 $(curl -sL -m 20 'https://electricman.tusneldax.com/engine.js?x=1' | grep -c 'ENGINE_VERSION = 2')"
+          echo "EM_EV $(curl -sL -m 20 'https://electricman.tusneldax.com/index.html?x=1' | grep -c 'ev: ENGINE_VERSION')"
+          echo "EH_AUTO $(curl -sL -m 20 'https://electricman.tusneldax.com/hunter/index.html?x=1' | grep -c autoStart)"
+          echo "EH_I18N $(curl -sL -m 20 'https://electricman.tusneldax.com/hunter/i18n/tr.json?x=1' | grep -c freeRevive)"
+          echo "CFG $(curl -s -o /dev/null -w '%{http_code}' https://electricman.tusneldax.com/config)"
