@@ -5,6 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          sleep 60
-          for u in i18n/my.json i18n/ur.json hunter/i18n/tk.json hunter/i18n/uz.json; do echo "URL $u $(curl -sL -m 20 -o /dev/null -w '%{http_code}' https://electricman.tusneldax.com/$u)"; done
-          echo "REVIEW $(curl -sL -m 20 https://electricman.tusneldax.com/hunter/index.html | grep -c askReview)"
+          for u in https://tusneldax.com/ https://tusneldax.com/bus-rush/play https://tusneldax.com/api/bus-rush/config https://oyun.tusneldax.com/ https://electricman.tusneldax.com/ https://electricman.tusneldax.com/hunter/ https://electricman.tusneldax.com/config https://anindausta.com.tr/ ; do
+            echo "URL $u $(curl -sL -o /dev/null -m 25 -w '%{http_code} %{time_total}s' $u)"
+          done
