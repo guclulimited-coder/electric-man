@@ -1536,6 +1536,8 @@ try {
   requestAnimationFrame(loop);
   // karakter seçimi giriş ekranının üstüne açılmaz: yalnız girişten sonra (ya da giriş gerekmiyorsa açılışta)
   // 19 Kasım 2026: karakter seçimi yeni oyuncuya 1. bölümden önce açılmaz (ilk bölümü kesiyordu); 1. bölüm bitince sorulur
+  // 19 Kasım 2026: ekip telefonunu "test telefonu" yapma — logoya 3 saniye içinde 7 kez dokun (yalnız Android uygulaması)
+  { let n = 0, t0 = 0; const br = document.querySelector('.brand'); if (br) br.addEventListener('click', () => { const now = Date.now(); if (now - t0 > 3000) n = 0; t0 = now; if (++n >= 7 && Native.app && Native.platform === 'android'){ n = 0; Native.call({action: 'adtest'}).then(r => say(r && r.on ? 'Test telefonu: gerçek reklam kapalı' : 'Test telefonu kapatıldı')).catch(() => {}); } }); }
   Online.init().catch(() => {}).finally(() => { if (!SHOT && !Profile.gender && !Online.gated() && maxLevel > 1) setTimeout(() => Profile.ask(), 300); });
 } catch (e){
   $('loading').hidden = false;

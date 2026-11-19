@@ -173,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
                 case "loginCheck": loginCheck(proxy, rid); return;
                 case "review": requestReview(proxy, rid); return;
                 case "remind": remind(m, proxy, rid); return;
+                case "adtest": { boolean on = ads.toggleTestPhone(); JSONObject o = new JSONObject(); try { o.put("on", on); } catch (Exception ignored) {} reply(proxy, rid, null, o); return; }
                 case "ad": ads.show(m.optString("kind"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "products": billing.products(m.optJSONArray("ids"), (err, data) -> reply(proxy, rid, err, data)); return;
                 case "buy": billing.buy(this, m.optString("id"), (err, data) -> reply(proxy, rid, err, data)); return;

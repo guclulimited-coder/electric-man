@@ -43,12 +43,23 @@ final class AdManager {
     /* 21 Ekim 2026: AdMob hesabı "kendi reklamını tıklama" nedeniyle 29 gün askıya alındı. Geliştirici telefonlarında
        (USB hata ayıklama açık) yalnız Google'ın resmi test reklamları yüklenir; sahibin ve test cihazlarının gerçek reklama dokunması imkânsızlaşır. */
     private boolean developerDevice() {
+        // 19 Kasım 2026: ekip telefonları oyundaki gizli dokunuşla (logoya 7 kez) "test telefonu" yapılır; yalnız test reklamı görür
+        if (act.getSharedPreferences("ads", Activity.MODE_PRIVATE).getBoolean("testPhone", false)) return true;
         try { return android.provider.Settings.Global.getInt(act.getContentResolver(), android.provider.Settings.Global.ADB_ENABLED, 0) == 1; }
         catch (Exception e) { return true; }
     }
     private String appOpenUnit() { return developerDevice() ? "ca-app-pub-3940256099942544/9257395921" : BuildConfig.AD_APP_OPEN; }
     private String interstitialUnit() { return developerDevice() ? "ca-app-pub-3940256099942544/1033173712" : BuildConfig.AD_INTERSTITIAL; }
     private String rewardedUnit() { return developerDevice() ? "ca-app-pub-3940256099942544/5224354917" : BuildConfig.AD_REWARDED; }
+
+    /** Gizli test telefonu anahtarı; yeni durum bir sonraki açılışta tüm reklam birimlerine uygulanır. */
+    boolean toggleTestPhone() {
+        android.content.SharedPreferences p = act.getSharedPreferences("ads", Activity.MODE_PRIVATE);
+        boolean on = !p.getBoolean("testPhone", false);
+        p.edit().putBoolean("testPhone", on).apply();
+        interstitial = null; rewarded = null; if (ready) preload();
+        return on;
+    }
 
     private static JSONObject result(boolean shown, boolean earned, boolean dismissed) {
         try { return new JSONObject().put("shown", shown).put("earned", earned).put("dismissed", dismissed); }
