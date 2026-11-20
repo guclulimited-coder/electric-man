@@ -224,6 +224,7 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
 </div>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
+<script src="webads.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
@@ -955,7 +956,7 @@ function win(){
 function lose(again){
   if (!again) Funnel.fail(level); S.over = true; setMood(mixer ? 'sit' : 'worried'); snd('fail'); say(T('loseSay'));
   modal(T('loseTitle'), `<p>${T('loseText', {n:S.houses - S.lit.size, p:MOVES_PRICE})}</p>`, [
-    ...(Native.app && Ads.left() ? [{t:T('adMoves'), f: async () => { $('modal').hidden = true; const r = await Ads.show('rewarded'); if (r && r.earned){ const t = Ads.today(); t.n++; store.set('adDay', t); S.limit += 5; S.extra += 5; S.over = false; setMood(''); renderStats(); snd('lit'); } else { if (!r || !r.dismissed) say(T('adFail')); lose(true); } }}] : []),
+    ...((Native.app || webAds()) && Ads.left() ? [{t:T('adMoves'), f: async () => { $('modal').hidden = true; const r = await Ads.show('rewarded'); if (r && r.earned){ const t = Ads.today(); t.n++; store.set('adDay', t); S.limit += 5; S.extra += 5; S.over = false; setMood(''); renderStats(); snd('lit'); } else { if (!r || !r.dismissed) say(T('adFail')); lose(true); } }}] : []),
     {t:T('buyMoves', {p:MOVES_PRICE}), alt:true, dis: coins < MOVES_PRICE, f:() => { coins -= MOVES_PRICE; renderCoins(); S.limit += 5; S.extra += 5; S.over = false; $('modal').hidden = true; setMood(''); renderStats(); }},
     ...(coins < MOVES_PRICE ? [{t:T('shopTitle'), f:() => Shop.open()}] : []),
     {t:T('restartLvl'), f:() => start(level)},
@@ -1075,12 +1076,15 @@ const Profile = {
   }
 };
 const Remind = { set(ask){ if (!Native.app || Native.platform !== 'android') return; Native.call({action:'remind', hours:22, ask:!!ask, title:T('remindT'), text:T('remindX'), channel:T('remindCh')}).catch(() => {}); } };
+// 20 Kasım 2026: internet sürümünde AdSense oyun reklamları (webads.js; webads.json açınca)
+if (window.WebAds) WebAds.init({base: '', app: Native.app});
+const webAds = () => !Native.app && !!(window.WebAds && WebAds.on);
 const Ads = {
-  async show(kind){ if (!Native.app) return {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
+  async show(kind){ if (!Native.app) return window.WebAds ? WebAds.show(kind) : {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
   launch(){ if (Native.app && !store.get('noAds', false)) setTimeout(() => this.show('appopen'), 400); },
-  won(){ if (Native.app) store.set('adWins', store.get('adWins', 0) + 1); },
+  won(){ if (Native.app || webAds()) store.set('adWins', store.get('adWins', 0) + 1); },
   afterWin(next){
-    if (Native.app && !store.get('noAds', false) && store.get('adWins', 0) >= 5){ store.set('adWins', 0); this.show('interstitial').finally(next); }
+    if ((Native.app || webAds()) && !store.get('noAds', false) && store.get('adWins', 0) >= 5){ store.set('adWins', 0); this.show('interstitial').finally(next); }
     else next();
   },
   today(){ const d = new Date().toISOString().slice(0, 10), x = store.get('adDay', null); return x && x.d === d ? x : {d, n:0}; },
@@ -1120,7 +1124,7 @@ const Shop = {
       return `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coinsN', {n: p.coins.toLocaleString(LANG)})}${bonus > 0 ? `<small class="bonus">+%${bonus}</small>` : ''}</span><button class="btn small alt" data-buy="${p.id}" ${app || Online.webPay() ? '' : 'disabled'}>${this.prices[p.id] || p.tl}</button></div>`; };
     const body = Online.sheet(T('shopTitle'), `
       ${packs.map(row).join('')}
-      <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('watchAd')}<small>${T('adReward', {n: AD_REWARD})} · ${T('adsLeft', {n: left})}</small></span><button class="btn small" id="watchAd" ${app && left ? '' : 'disabled'}>▶</button></div>
+      <div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('watchAd')}<small>${T('adReward', {n: AD_REWARD})} · ${T('adsLeft', {n: left})}</small></span><button class="btn small" id="watchAd" ${(app || webAds()) && left ? '' : 'disabled'}>▶</button></div>
       ${app && !store.get('noAds', false) ? `<div class="shop-item"><span class="coin">🚫</span><span class="big">${T('noAds')}<small>${T('noAdsSub')}</small></span><button class="btn small alt" id="noAdsBtn" ${coins >= NOADS_PRICE ? '' : 'disabled'}>${BOLT} ${NOADS_PRICE.toLocaleString(LANG)}</button></div>` : ''}
       ${app ? '' : `<p class="note">${T(Online.webPay() ? 'payNote' : 'inAppOnly')}</p>`}
       <div class="err" id="shopErr"></div>`);

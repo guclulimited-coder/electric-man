@@ -295,6 +295,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
 <script>window.__ehErr="";addEventListener("error",e=>{window.__ehErr=(e.message||"")+" "+(e.filename||"").split("/").pop()+":"+(e.lineno||"")},true);addEventListener("unhandledrejection",e=>{window.__ehErr=String(e.reason&&e.reason.message||e.reason)});setTimeout(()=>{const b=document.getElementById("startBtn"),l=document.getElementById("loadTxt");if(b&&b.disabled&&l){l.hidden=false;l.textContent="Oyun açılamadı: "+(window.__ehErr||"bilinmeyen hata")+" — uygulamayı kapatıp yeniden aç."}},40000)</script>
+<script src="../webads.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
@@ -312,8 +313,11 @@ const $ = id => document.getElementById(id);
 function remindLater(ask){ if (!(Native.app && Native.platform === 'android')) return; Native.call({action: 'remind', hours: 22, ask: !!ask, title: T('remindT'), text: T('remindX'), channel: T('remindCh')}).catch(() => {}); }
 function askReview(k){ try { if (!(Native.app && Native.platform === 'android') || ![3, 8, 15].includes(k)) return; const a = JSON.parse(localStorage.getItem('pa-reviewAsk') || '[]'); if (a.includes(k)) return; a.push(k); localStorage.setItem('pa-reviewAsk', JSON.stringify(a)); persistNative(); setTimeout(() => Native.call({action: 'review'}).catch(() => {}), 2600); } catch(e){} }
 /* native shell bridge: the Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise} */
+// 20 Kasım 2026: internet sürümünde AdSense oyun reklamları (../webads.js; webads.json açınca)
+const webAds = () => !Native.app && !!(window.WebAds && WebAds.on);
 const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (window.EMNative && window.EMNative.platform) || 'web',
   call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
+if (window.WebAds) WebAds.init({base: '../', app: Native.app});
 /* 6 Kasım 2026: açılış hunisi — indirenler nerede kayboluyor? Yalnız günlük sayaç: aşama, bölüm kovası, platform, sürüm.
    Kimlik/hesap gönderilmez; aynı gün aynı aşama cihazda bir kez sayılır (src/funnel.mjs). */
 const Funnel = (() => {
@@ -2136,13 +2140,13 @@ function gameOver(){
   $('overEyebrow').textContent = T('islandN', {n: curIsl + 1});
   $('tKills').textContent = player.kills; $('tEat').textContent = player.eaten; $('tWave').textContent = curIsl + 1;
   $('over').hidden = false; for (const id of ['hint', 'joy', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = true;
-  $('reviveBtn').hidden = !(Native.app && adsLeft() && reviveIsl !== curIsl);
+  $('reviveBtn').hidden = !((Native.app || webAds()) && adsLeft() && reviveIsl !== curIsl);
 }
 // rewarded revive: once per island, keeps position and the boss fight, pushes nearby enemies back
 let reviveIsl = -1;
 async function reviveHere(){
   if (adBusy) return; adBusy = true; $('reviveBtn').disabled = true;
-  let r = null; try { r = await Native.call({action: 'ad', kind: 'rewarded'}); } catch(e){ r = {error: e.message}; }
+  let r = null; try { r = Native.app ? await Native.call({action: 'ad', kind: 'rewarded'}) : await WebAds.show('rewarded'); } catch(e){ r = {error: e.message}; }
   adBusy = false; $('reviveBtn').disabled = false;
   if (!(r && r.earned)){ if (!r || !r.dismissed) toast(T('o_adFail')); return; }
   adCountUp(); renderAdBtn(); reviveIsl = curIsl; reviveFx();
@@ -2485,14 +2489,14 @@ const AD_REWARD = 100, AD_DAILY = 30;
 const today = () => new Date().toISOString().slice(0, 10);
 function adsLeft(){ const d = store.get('ads', {day: '', n: 0}); return d.day === today() ? Math.max(0, AD_DAILY - d.n) : AD_DAILY; }
 function adCountUp(){ const d = store.get('ads', {day: '', n: 0}); const n = d.day === today() ? d.n + 1 : 1; store.set('ads', {day: today(), n}); }
-function renderAdBtn(){ const left = adsLeft(); $('adBtnTxt').textContent = left ? T('plusCoins', {n: AD_REWARD}) : T('tomorrow'); $('adBtn').disabled = !left; $('adBtn').hidden = !Native.app; }
+function renderAdBtn(){ const left = adsLeft(); $('adBtnTxt').textContent = left ? T('plusCoins', {n: AD_REWARD}) : T('tomorrow'); $('adBtn').disabled = !left; $('adBtn').hidden = !(Native.app || webAds()); }
 let adBusy = false;
 /* rewarded ads come from AdMob in the store apps; the web version has none */
 async function watchAd(){
   if (!adsLeft() || adBusy) return;
-  if (!Native.app){ toast(T('adApp')); return; }
+  if (!Native.app && !webAds()){ toast(T('adApp')); return; }
   adBusy = true; const wasPaused = paused; if (running && !paused) togglePause();
-  let r = null; try { r = await Native.call({action: 'ad', kind: 'rewarded'}); } catch(e){ r = {error: e.message}; }
+  let r = null; try { r = Native.app ? await Native.call({action: 'ad', kind: 'rewarded'}) : await WebAds.show('rewarded'); } catch(e){ r = {error: e.message}; }
   if (r && r.earned){ adCountUp(); addCoins(AD_REWARD); sfx.pick(); toast(T('adToast', {n: AD_REWARD, left: adsLeft()})); }
   else if (!r || !r.dismissed) toast(T('o_adFail'));
   if (running && paused && !wasPaused) togglePause();
@@ -2521,7 +2525,7 @@ const money = v => { try { return new Intl.NumberFormat(LANG, {style: 'currency'
 function renderShop(){
   $('shopCoins').textContent = '◉ ' + fmtPow(coins);
   const left = adsLeft();
-  $('shopAd').innerHTML = `<div class="item"><div class="lvl" style="text-align:center">▶</div><div><div class="nm">${T('watchAd', {n: AD_REWARD})}</div><div class="ds">${T('watched', {a: AD_DAILY - left, b: AD_DAILY})}${left ? '' : T('renewTomorrow')}${Native.app ? '' : ' · ' + T('adApp')}</div></div><button class="buy" type="button" id="adShopBtn" ${left && Native.app ? '' : 'disabled'}>${T('watch')}</button></div>`;
+  $('shopAd').innerHTML = `<div class="item"><div class="lvl" style="text-align:center">▶</div><div><div class="nm">${T('watchAd', {n: AD_REWARD})}</div><div class="ds">${T('watched', {a: AD_DAILY - left, b: AD_DAILY})}${left ? '' : T('renewTomorrow')}${Native.app || webAds() ? '' : ' · ' + T('adApp')}</div></div><button class="buy" type="button" id="adShopBtn" ${left && (Native.app || webAds()) ? '' : 'disabled'}>${T('watch')}</button></div>`;
   const ab = $('adShopBtn'); if (ab) ab.addEventListener('click', watchAd);
   $('shopSocial').innerHTML = renderSocial();
   $('shopUps').innerHTML = UPS.map(u => { const c = upCost(u); return `<div class="item"><div class="lvl" style="text-align:center">${lvTxt(ups[u.id] || 0)}</div><div><div class="nm">${u.name}</div><div class="ds">${u.ds}</div></div><button class="buy" type="button" data-up="${u.id}" ${coins < c ? 'disabled' : ''}>◉ ${fmtPow(c)}</button></div>`; }).join('');
