@@ -31,6 +31,7 @@ android {
             buildConfigField("String", "AD_APP_OPEN", "\"ca-app-pub-3940256099942544/9257395921\"")
             buildConfigField("String", "AD_INTERSTITIAL", "\"ca-app-pub-3940256099942544/1033173712\"")
             buildConfigField("String", "AD_REWARDED", "\"ca-app-pub-3940256099942544/5224354917\"")
+            buildConfigField("String", "UNITY_GAME_ID", "\"" + env("EM_UNITY_GAME_ID_ANDROID") + "\"")
         }
         getByName("release") {
             // Play önerisi: R8 ile küçültme/optimizasyon açık (uygulama sınıfları proguard-rules.pro ile korunur)
@@ -42,6 +43,7 @@ android {
             buildConfigField("String", "AD_APP_OPEN", "\"" + env("EM_AD_APP_OPEN_ANDROID") + "\"")
             buildConfigField("String", "AD_INTERSTITIAL", "\"" + env("EM_AD_INTERSTITIAL_ANDROID") + "\"")
             buildConfigField("String", "AD_REWARDED", "\"" + env("EM_AD_REWARDED_ANDROID") + "\"")
+            buildConfigField("String", "UNITY_GAME_ID", "\"" + env("EM_UNITY_GAME_ID_ANDROID") + "\"")
         }
     }
     buildFeatures { buildConfig = true }
@@ -57,6 +59,7 @@ dependencies {
     implementation("androidx.browser:browser:1.8.0")
     implementation("androidx.core:core:1.16.0")
     implementation("com.google.android.gms:play-services-ads:24.5.0")
+    implementation("com.unity3d.ads:unity-ads:4.12.2") // 20 Kasım 2026: Google reklamı yoksa yedek ağ
     implementation("com.google.android.ump:user-messaging-platform:3.2.0")
     implementation("com.android.billingclient:billing:8.0.0")
     implementation("com.google.android.play:review:2.0.2")

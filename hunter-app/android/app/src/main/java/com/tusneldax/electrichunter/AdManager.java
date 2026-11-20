@@ -20,6 +20,13 @@ import com.google.android.ump.ConsentInformation;
 import com.google.android.ump.ConsentRequestParameters;
 import com.google.android.ump.UserMessagingPlatform;
 
+import com.unity3d.ads.IUnityAdsInitializationListener;
+import com.unity3d.ads.IUnityAdsLoadListener;
+import com.unity3d.ads.IUnityAdsShowListener;
+import com.unity3d.ads.UnityAds;
+import com.unity3d.ads.UnityAdsShowOptions;
+import com.unity3d.ads.metadata.MetaData;
+
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -80,6 +87,8 @@ final class AdManager {
 
     private void start(ConsentInformation ci) {
         if (!ci.canRequestAds()) { ready = true; flush(); return; }
+        try { MetaData gdpr = new MetaData(act); gdpr.set("gdpr.consent", true); gdpr.commit(); } catch (Exception ignored) {}
+        unityInit();
         new Thread(() -> MobileAds.initialize(act, status -> main.post(() -> { ready = true; preload(); flush(); }))).start();
     }
 
@@ -142,8 +151,7 @@ final class AdManager {
     }
 
     private void showInterstitial(Cb cb) {
-        if (BuildConfig.AD_INTERSTITIAL.isEmpty()) { cb.done(null, result(false, false, false)); return; }
-        if (interstitial == null) { loadInterstitial(null); cb.done(null, result(false, false, false)); return; }
+        if (interstitial == null) { if (!BuildConfig.AD_INTERSTITIAL.isEmpty()) loadInterstitial(null); unityShow("Interstitial_Android", false, cb); return; }
         InterstitialAd ad = interstitial; interstitial = null; showing = true;
         ad.setFullScreenContentCallback(new FullScreenContentCallback() {
             @Override public void onAdDismissedFullScreenContent() { showing = false; cb.done(null, result(true, false, true)); loadInterstitial(null); }
@@ -153,9 +161,9 @@ final class AdManager {
     }
 
     private void showRewarded(Cb cb) {
-        if (BuildConfig.AD_REWARDED.isEmpty()) { cb.done("AD_UNAVAILABLE", null); return; }
+        if (BuildConfig.AD_REWARDED.isEmpty()) { unityShow("Rewarded_Android", true, cb); return; }
         Runnable present = () -> {
-            if (rewarded == null) { cb.done("AD_UNAVAILABLE", null); return; }
+            if (rewarded == null) { unityShow("Rewarded_Android", true, cb); return; }
             RewardedAd ad = rewarded; rewarded = null; showing = true;
             final boolean[] earned = {false};
             ad.setFullScreenContentCallback(new FullScreenContentCallback() {
@@ -165,5 +173,42 @@ final class AdManager {
             ad.show(act, reward -> earned[0] = true);
         };
         if (rewarded != null) present.run(); else loadRewarded(present);
+    }
+
+    /* 20 Kasım 2026: Google reklamı gelmezse (ör. AdMob askısı) Unity Ads yedek olarak gösterilir.
+       Oyun kimliği ads.env'deki EM_UNITY_GAME_ID_ANDROID'den gelir; boşsa Unity hiç çalışmaz. Test telefonlarında Unity deneme modunda açılır. */
+    private boolean unityReady;
+    private final java.util.Set<String> unityLoaded = new java.util.HashSet<>();
+
+    private void unityInit() {
+        if (BuildConfig.UNITY_GAME_ID.isEmpty() || UnityAds.isInitialized()) return;
+        UnityAds.initialize(act.getApplicationContext(), BuildConfig.UNITY_GAME_ID, developerDevice() || BuildConfig.DEBUG, new IUnityAdsInitializationListener() {
+            @Override public void onInitializationComplete() { main.post(() -> { unityReady = true; unityLoad("Interstitial_Android"); unityLoad("Rewarded_Android"); }); }
+            @Override public void onInitializationFailed(UnityAds.UnityAdsInitializationError e, String m) { unityReady = false; }
+        });
+    }
+
+    private void unityLoad(String placement) {
+        if (!unityReady) return;
+        UnityAds.load(placement, new IUnityAdsLoadListener() {
+            @Override public void onUnityAdsAdLoaded(String id) { main.post(() -> unityLoaded.add(id)); }
+            @Override public void onUnityAdsFailedToLoad(String id, UnityAds.UnityAdsLoadError e, String m) { main.post(() -> unityLoaded.remove(id)); }
+        });
+    }
+
+    private void unityShow(String placement, boolean reward, Cb cb) {
+        if (!unityReady || !unityLoaded.contains(placement)) {
+            unityLoad(placement);
+            if (reward) cb.done("AD_UNAVAILABLE", null); else cb.done(null, result(false, false, false));
+            return;
+        }
+        unityLoaded.remove(placement); showing = true;
+        final boolean[] settled = {false};
+        UnityAds.show(act, placement, new UnityAdsShowOptions(), new IUnityAdsShowListener() {
+            @Override public void onUnityAdsShowFailure(String id, UnityAds.UnityAdsShowError e, String m) { main.post(() -> { if (settled[0]) return; settled[0] = true; showing = false; if (reward) cb.done("AD_PRESENT_FAILED", null); else cb.done(null, result(false, false, false)); unityLoad(id); }); }
+            @Override public void onUnityAdsShowStart(String id) {}
+            @Override public void onUnityAdsShowClick(String id) {}
+            @Override public void onUnityAdsShowComplete(String id, UnityAds.UnityAdsShowCompletionState st) { main.post(() -> { if (settled[0]) return; settled[0] = true; showing = false; cb.done(null, result(true, reward && st == UnityAds.UnityAdsShowCompletionState.COMPLETED, true)); unityLoad(id); }); }
+        });
     }
 }
