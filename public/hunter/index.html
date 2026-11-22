@@ -298,6 +298,8 @@ html.portal body{-webkit-user-select:none;user-select:none}
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
 <script>window.__ehErr="";addEventListener("error",e=>{window.__ehErr=(e.message||"")+" "+(e.filename||"").split("/").pop()+":"+(e.lineno||"")},true);addEventListener("unhandledrejection",e=>{window.__ehErr=String(e.reason&&e.reason.message||e.reason)});setTimeout(()=>{const b=document.getElementById("startBtn"),l=document.getElementById("loadTxt");if(b&&b.disabled&&l){l.hidden=false;l.textContent="Oyun açılamadı: "+(window.__ehErr||"bilinmeyen hata")+" — uygulamayı kapatıp yeniden aç."}},40000)</script>
 <script src="../webads.js"></script>
+<script>/* 22 Kasım 2026: Telegram oyun penceresi — adres ?tg=1 ile açılınca Telegram + Adsgram reklam modu (Adsgram blok kimliği hesap açılınca yazılacak) */
+if (/[?&]tg=1\b/.test(location.search)){ window.TSNX_PORTAL = 'telegram'; window.TSNX_ADSGRAM_BLOCK = ''; document.write('<script src="https://telegram.org/js/telegram-web-app.js"><\/script>' + (window.TSNX_ADSGRAM_BLOCK ? '<script src="https://sad.adsgram.ai/js/sad.min.js"><\/script>' : '')); }</script>
 <script src="../portal.js"></script>
 <script type="module">
 import * as THREE from 'three';
