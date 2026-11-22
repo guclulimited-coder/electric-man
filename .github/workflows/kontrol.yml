@@ -5,6 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for p in electric-man electric-hunter usta-sehri golge-operasyonu yardim oyunlar; do echo "SAYFA $p $(curl -s -o /tmp/p.html -w '%{http_code}' https://tusneldax.com/$p) pilot=$(grep -c 'pilot' /tmp/p.html) boy=$(wc -c </tmp/p.html)"; done
-          curl -s https://tusneldax.com/ -o /tmp/h.html; echo "ANA aninda=$(grep -ci anindausta /tmp/h.html) oduL=$(grep -ci 'ödül pilot' /tmp/h.html) oyunlar=$(grep -c 'electric-man' /tmp/h.html)"
-          curl -s https://tusneldax.com/ads.txt
+          for u in https://tusneldax.com/ https://tusneldax.com/bus-rush/play https://tusneldax.com/api/bus-rush/config https://oyun.tusneldax.com/ https://electricman.tusneldax.com/ https://electricman.tusneldax.com/hunter/ https://electricman.tusneldax.com/config https://anindausta.com.tr/ ; do
+            echo "URL $u $(curl -sL -o /dev/null -m 25 -w '%{http_code} %{time_total}s' $u)"
+          done
