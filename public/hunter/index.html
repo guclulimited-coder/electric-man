@@ -191,6 +191,8 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 .hook span{position:relative;z-index:1}
 .getapp{display:inline-flex;align-items:center;gap:8px;background:#000;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:12px;padding:8px 14px 8px 10px;font:600 15px/1.05 system-ui,sans-serif}.getapp small{display:block;font-size:9px;letter-spacing:.06em;opacity:.85}.getapp[hidden]{display:none}
 .moregames{margin:14px 0 4px;text-align:center}.moregames h4{margin:0 0 8px;font-size:13px;opacity:.75;font-weight:600}.moregames .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.moregames .mg{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.08);color:inherit;text-decoration:none;font-size:13px;font-weight:600}.moregames .mg b{font-size:18px}
+html.portal #getApp,html.portal #moreGames{display:none!important}
+html.portal body{-webkit-user-select:none;user-select:none}
 </style>
 
 <div id="stage"></div>
@@ -296,6 +298,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8v
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
 <script>window.__ehErr="";addEventListener("error",e=>{window.__ehErr=(e.message||"")+" "+(e.filename||"").split("/").pop()+":"+(e.lineno||"")},true);addEventListener("unhandledrejection",e=>{window.__ehErr=String(e.reason&&e.reason.message||e.reason)});setTimeout(()=>{const b=document.getElementById("startBtn"),l=document.getElementById("loadTxt");if(b&&b.disabled&&l){l.hidden=false;l.textContent="Oyun açılamadı: "+(window.__ehErr||"bilinmeyen hata")+" — uygulamayı kapatıp yeniden aç."}},40000)</script>
 <script src="../webads.js"></script>
+<script src="../portal.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
@@ -314,10 +317,13 @@ function remindLater(ask){ if (!(Native.app && Native.platform === 'android')) r
 function askReview(k){ try { if (!(Native.app && Native.platform === 'android') || ![3, 8, 15].includes(k)) return; const a = JSON.parse(localStorage.getItem('pa-reviewAsk') || '[]'); if (a.includes(k)) return; a.push(k); localStorage.setItem('pa-reviewAsk', JSON.stringify(a)); persistNative(); setTimeout(() => Native.call({action: 'review'}).catch(() => {}), 2600); } catch(e){} }
 /* native shell bridge: the Android/iOS apps inject window.EMNative = {platform, call(obj) -> Promise} */
 // 20 Kasım 2026: internet sürümünde AdSense oyun reklamları (../webads.js; webads.json açınca)
-const webAds = () => !Native.app && !!(window.WebAds && WebAds.on);
+// 22 Kasım 2026: tarayıcı oyun sitesi paketi (CrazyGames) — yalnız sitenin reklam sistemi
+const PORTAL = !!(window.Portal && Portal.on);
+const webAds = () => !Native.app && (PORTAL ? Portal.ready : !!(window.WebAds && WebAds.on));
 const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (window.EMNative && window.EMNative.platform) || 'web',
   call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
-if (window.WebAds) WebAds.init({base: '../', app: Native.app});
+if (PORTAL){ Portal.init(); document.documentElement.classList.add('portal'); }
+else if (window.WebAds) WebAds.init({base: '../', app: Native.app});
 /* 6 Kasım 2026: açılış hunisi — indirenler nerede kayboluyor? Yalnız günlük sayaç: aşama, bölüm kovası, platform, sürüm.
    Kimlik/hesap gönderilmez; aynı gün aynı aşama cihazda bir kez sayılır (src/funnel.mjs). */
 const Funnel = (() => {
@@ -2108,6 +2114,7 @@ function warmUp(){
   for (const b of bolts.splice(nb)) b.l.visible = false;
 }
 async function startGame(){
+  if (PORTAL) Portal.play(true);
   Funnel.start(curIsl + 1);
   remindLater(false);
   // günlük hediye: art arda gelinen her gün artar (7. günde en yüksek), bir gün kaçarsa 1. güne döner
@@ -2136,6 +2143,7 @@ let intro = 0;
 function gameOver(){
   // 19 Kasım 2026: ilk adada oyunu bitirme yok — yeni oyuncuların çoğu orada ölüp çıkıyordu; Serhat bedavaya yerinde dirilir
   if (curIsl === 0){ Funnel.fail(1); reviveFx(); toast(T('freeRevive')); return; }
+  if (PORTAL) Portal.play(false);
   Funnel.fail(curIsl + 1); running = false; sfx.boom();
   $('overEyebrow').textContent = T('islandN', {n: curIsl + 1});
   $('tKills').textContent = player.kills; $('tEat').textContent = player.eaten; $('tWave').textContent = curIsl + 1;
@@ -2146,7 +2154,7 @@ function gameOver(){
 let reviveIsl = -1;
 async function reviveHere(){
   if (adBusy) return; adBusy = true; $('reviveBtn').disabled = true;
-  let r = null; try { r = Native.app ? await Native.call({action: 'ad', kind: 'rewarded'}) : await WebAds.show('rewarded'); } catch(e){ r = {error: e.message}; }
+  let r = null; try { r = Native.app ? await Native.call({action: 'ad', kind: 'rewarded'}) : PORTAL ? await Portal.show('rewarded') : await WebAds.show('rewarded'); } catch(e){ r = {error: e.message}; }
   adBusy = false; $('reviveBtn').disabled = false;
   if (!(r && r.earned)){ if (!r || !r.dismissed) toast(T('o_adFail')); return; }
   adCountUp(); renderAdBtn(); reviveIsl = curIsl; reviveFx();
@@ -2159,7 +2167,7 @@ function reviveFx(){
 }
 $('reviveBtn').addEventListener('click', reviveHere);
 function togglePause(){
-  if (!running) return; paused = !paused; $('paused').hidden = !paused; $('moreGames').hidden = Native.platform === 'ios';
+  if (!running) return; paused = !paused; $('paused').hidden = !paused; if (PORTAL) Portal.play(!paused); $('moreGames').hidden = Native.platform === 'ios' || PORTAL;
   joy.id = null; joy.x = joy.y = 0; $('joy').hidden = true;
 }
 $('pauseBtn').addEventListener('click', togglePause);
@@ -2496,7 +2504,7 @@ async function watchAd(){
   if (!adsLeft() || adBusy) return;
   if (!Native.app && !webAds()){ toast(T('adApp')); return; }
   adBusy = true; const wasPaused = paused; if (running && !paused) togglePause();
-  let r = null; try { r = Native.app ? await Native.call({action: 'ad', kind: 'rewarded'}) : await WebAds.show('rewarded'); } catch(e){ r = {error: e.message}; }
+  let r = null; try { r = Native.app ? await Native.call({action: 'ad', kind: 'rewarded'}) : PORTAL ? await Portal.show('rewarded') : await WebAds.show('rewarded'); } catch(e){ r = {error: e.message}; }
   if (r && r.earned){ adCountUp(); addCoins(AD_REWARD); sfx.pick(); toast(T('adToast', {n: AD_REWARD, left: adsLeft()})); }
   else if (!r || !r.dismissed) toast(T('o_adFail'));
   if (running && paused && !wasPaused) togglePause();
@@ -3259,7 +3267,7 @@ Promise.race([loadSerhat(), new Promise((_, rej) => setTimeout(() => rej(new Err
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0f22bce0294547dbb49f14ec3e283ddb"}'></script>
 <script>
 /* web only: "get it on Google Play" button (hidden inside the Android/iOS apps) */
-(function(){ var a=document.getElementById('getApp'); if(!a) return; if(window.EMNative&&window.EMNative.call) return; if(/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+(function(){ var a=document.getElementById('getApp'); if(!a) return; if(window.EMNative&&window.EMNative.call) return; if(window.TSNX_PORTAL) return; if(/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
   var tr=(document.documentElement.lang||navigator.language||'tr').slice(0,2)==='tr';
   a.querySelector('small').textContent=tr?'UYGULAMAYI İNDİR':'GET IT ON'; a.hidden=false; })();
 </script>

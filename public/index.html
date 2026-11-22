@@ -185,6 +185,8 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
 [data-lg-code]{flex-shrink:0;max-width:120px;overflow-wrap:anywhere}.lrow [data-lg-code]{grid-column:2/-1;justify-self:end}
 .getapp{position:absolute;top:4px;right:12px;z-index:5;display:inline-flex;align-items:center;gap:7px;background:#111;color:#fff;text-decoration:none;border-radius:10px;padding:5px 11px 5px 8px;box-shadow:0 2px 8px rgba(0,0,0,.25);font:600 13px/1.05 system-ui,sans-serif}.getapp small{display:block;font-size:8.5px;letter-spacing:.06em;opacity:.85}.getapp[hidden]{display:none}
 .moregames{margin:14px 0 4px;text-align:center}.moregames h4{margin:0 0 8px;font-size:13px;opacity:.75;font-weight:600}.moregames .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.moregames .mg{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.08);color:inherit;text-decoration:none;font-size:13px;font-weight:600}.moregames .mg b{font-size:18px}
+html.portal #leagueBtn,html.portal #msgBtn,html.portal #accountBtn,html.portal #getApp{display:none!important}
+html.portal body{-webkit-user-select:none;user-select:none}
 </style>
 
 <div id="app">
@@ -225,6 +227,7 @@ select.lang{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;bor
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
 <script src="webads.js"></script>
+<script src="portal.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
@@ -777,6 +780,7 @@ let muted = store.get('muted', false), dirCW = store.get('cw', true);
 
 function start(lv){
   lastTapAt = performance.now();
+  if (window.Portal && Portal.on) Portal.play(true);
   if (lv === 2 && typeof Profile !== 'undefined' && !Profile.gender && !SHOT && !Online.gated() && !store.get('charAsked', 0)){ store.set('charAsked', 1); setTimeout(() => { if (!Profile.gender) Profile.ask(); }, 400); }
   level = Math.max(1, Math.min(lv, MAX_LEVEL)); store.set('level', level); Funnel.start(level);
   const g = generate(level);
@@ -938,6 +942,7 @@ function after(){
 }
 const starSVG = (on, s=38) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.6L12 17.1 6.1 20.4l1.3-6.6L2.5 9.3l6.6-.8z" fill="${on ? '#ffc928' : '#dfe6f0'}" stroke="${on ? '#d99a00' : '#c4cfde'}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
 function win(){
+  if (window.Portal && Portal.on) Portal.play(false);
   Funnel.done(level); S.over = true; setMood('win'); snd('win'); say(T('winSay'));
   S.tiles.forEach((t, i) => { if (t.kind === 'house') setTimeout(() => bounce(t.house), i * 25); });
   const stars = starsFor(S.moves, S.opt);
@@ -954,6 +959,7 @@ function win(){
     last ? [{t:T('mapBtn'), alt:true, f:openMap}] : [{t:T('next'), alt:true, f:() => Ads.afterWin(() => start(level + 1))}, {t:T('retryFewer'), f:() => start(level)}]), 900);
 }
 function lose(again){
+  if (window.Portal && Portal.on) Portal.play(false);
   if (!again) Funnel.fail(level); S.over = true; setMood(mixer ? 'sit' : 'worried'); snd('fail'); say(T('loseSay'));
   modal(T('loseTitle'), `<p>${T('loseText', {n:S.houses - S.lit.size, p:MOVES_PRICE})}</p>`, [
     ...((Native.app || webAds()) && Ads.left() ? [{t:T('adMoves'), f: async () => { $('modal').hidden = true; const r = await Ads.show('rewarded'); if (r && r.earned){ const t = Ads.today(); t.n++; store.set('adDay', t); S.limit += 5; S.extra += 5; S.over = false; setMood(''); renderStats(); snd('lit'); } else { if (!r || !r.dismissed) say(T('adFail')); lose(true); } }}] : []),
@@ -1046,7 +1052,7 @@ function openMap(){
     }
     sec.appendChild(g); list.appendChild(sec);
   }
-  if (Native.platform !== 'ios'){ const mg = document.createElement('section'); mg.className = 'moregames'; mg.innerHTML = `<h4>${T('moreGames')}</h4><div class="row"><a class="mg" href="https://play.google.com/store/apps/details?id=com.tusneldax.electrichunter&referrer=utm_source%3Delectricman%26utm_medium%3Dcross" target="_blank" rel="noopener"><b>👽</b>Electric Hunter</a><a class="mg" href="https://play.google.com/store/apps/details?id=com.tusneldax.busrush&referrer=utm_source%3Delectricman%26utm_medium%3Dcross" target="_blank" rel="noopener"><b>🚌</b>Bus Rush</a><a class="mg" href="https://play.google.com/store/apps/details?id=com.tusnelda.ustasehri&referrer=utm_source%3Delectricman%26utm_medium%3Dcross" target="_blank" rel="noopener"><b>🏙️</b>MASTERCITY</a></div>`; list.appendChild(mg); }
+  if (Native.platform !== 'ios' && !(window.Portal && Portal.on)){ const mg = document.createElement('section'); mg.className = 'moregames'; mg.innerHTML = `<h4>${T('moreGames')}</h4><div class="row"><a class="mg" href="https://play.google.com/store/apps/details?id=com.tusneldax.electrichunter&referrer=utm_source%3Delectricman%26utm_medium%3Dcross" target="_blank" rel="noopener"><b>👽</b>Electric Hunter</a><a class="mg" href="https://play.google.com/store/apps/details?id=com.tusneldax.busrush&referrer=utm_source%3Delectricman%26utm_medium%3Dcross" target="_blank" rel="noopener"><b>🚌</b>Bus Rush</a><a class="mg" href="https://play.google.com/store/apps/details?id=com.tusnelda.ustasehri&referrer=utm_source%3Delectricman%26utm_medium%3Dcross" target="_blank" rel="noopener"><b>🏙️</b>MASTERCITY</a></div>`; list.appendChild(mg); }
   $('map').hidden = false;
   const cur = list.querySelector('.node.cur'); if (cur) cur.scrollIntoView({block:'center'});
 }
@@ -1077,10 +1083,13 @@ const Profile = {
 };
 const Remind = { set(ask){ if (!Native.app || Native.platform !== 'android') return; Native.call({action:'remind', hours:22, ask:!!ask, title:T('remindT'), text:T('remindX'), channel:T('remindCh')}).catch(() => {}); } };
 // 20 Kasım 2026: internet sürümünde AdSense oyun reklamları (webads.js; webads.json açınca)
-if (window.WebAds) WebAds.init({base: '', app: Native.app});
-const webAds = () => !Native.app && !!(window.WebAds && WebAds.on);
+// 22 Kasım 2026: tarayıcı oyun sitesi paketi (CrazyGames) — kendi reklamlarımız kapalı, yalnız sitenin reklam sistemi
+const PORTAL = !!(window.Portal && Portal.on);
+if (PORTAL){ Portal.init().then(() => { if (typeof S !== 'undefined' && S && !S.over) Portal.play(true); }); document.documentElement.classList.add('portal'); }
+else if (window.WebAds) WebAds.init({base: '', app: Native.app});
+const webAds = () => !Native.app && (PORTAL ? Portal.ready : !!(window.WebAds && WebAds.on));
 const Ads = {
-  async show(kind){ if (!Native.app) return window.WebAds ? WebAds.show(kind) : {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
+  async show(kind){ if (PORTAL) return Portal.show(kind); if (!Native.app) return window.WebAds ? WebAds.show(kind) : {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
   launch(){ if (Native.app && !store.get('noAds', false)) setTimeout(() => this.show('appopen'), 400); },
   won(){ if (Native.app || webAds()) store.set('adWins', store.get('adWins', 0) + 1); },
   afterWin(next){
@@ -1119,7 +1128,7 @@ const Shop = {
     await this.loadPrice();
     const app = Native.app, left = Ads.left(), base = packOf('em_coins_500').coins / 99.99;
     // a pack only shows once the store returned it (e.g. not before the paid-apps agreement / product is active)
-    const packs = COIN_PACKS.filter(p => app ? (SHOT || this.prices[p.id]) : !p.app);
+    const packs = PORTAL ? [] : COIN_PACKS.filter(p => app ? (SHOT || this.prices[p.id]) : !p.app);
     const row = p => { const bonus = Math.round((p.coins / parseFloat(p.tl.replace('₺', '').replace(',', '.')) / base - 1) * 100);
       return `<div class="shop-item"><span class="coin">${BOLT}</span><span class="big">${T('coinsN', {n: p.coins.toLocaleString(LANG)})}${bonus > 0 ? `<small class="bonus">+%${bonus}</small>` : ''}</span><button class="btn small alt" data-buy="${p.id}" ${app || Online.webPay() ? '' : 'disabled'}>${this.prices[p.id] || p.tl}</button></div>`; };
     const body = Online.sheet(T('shopTitle'), `
@@ -1566,7 +1575,7 @@ window.__em = { generate, diff, stepsCW, setDir(cw){ dirCW = cw; }, get S(){ ret
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0f22bce0294547dbb49f14ec3e283ddb"}'></script>
 <script>
 /* web only: "get it on Google Play" button (hidden inside the Android/iOS apps) */
-(function(){ var a=document.getElementById('getApp'); if(!a) return; if(window.EMNative&&window.EMNative.call) return; if(/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+(function(){ var a=document.getElementById('getApp'); if(!a) return; if(window.EMNative&&window.EMNative.call) return; if(window.TSNX_PORTAL) return; if(/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
   var tr=(document.documentElement.lang||navigator.language||'tr').slice(0,2)==='tr';
   a.querySelector('small').textContent=tr?'UYGULAMAYI İNDİR':'GET IT ON'; a.hidden=false; })();
 </script>
