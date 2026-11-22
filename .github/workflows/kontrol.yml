@@ -5,6 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for u in https://tusneldax.com/ https://tusneldax.com/bus-rush/play https://tusneldax.com/api/bus-rush/config https://oyun.tusneldax.com/ https://electricman.tusneldax.com/ https://electricman.tusneldax.com/hunter/ https://electricman.tusneldax.com/config https://anindausta.com.tr/ ; do
-            echo "URL $u $(curl -sL -o /dev/null -m 25 -w '%{http_code} %{time_total}s' $u)"
-          done
+          R=https://bsc-dataseed.bnbchain.org
+          call(){ curl -s -X POST $R -H 'content-type: application/json' -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_call\",\"params\":[{\"to\":\"$1\",\"data\":\"$2\"},\"latest\"]}" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("result"))'; }
+          echo "RES $(call 0x3e7B480b5203A310240a3b0C32D0E0c234E9F78F 0x0902f1ac)"
+          echo "T0 $(call 0x3e7B480b5203A310240a3b0C32D0E0c234E9F78F 0x0dfe1681)"
+          echo "SUP $(call 0x66a9BaCd6D560383dA967c274999c06550cda07e 0x18160ddd)"
+          echo "DEC $(call 0x66a9BaCd6D560383dA967c274999c06550cda07e 0x313ce567)"
+          echo "BNB $(curl -s 'https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT')"
+          curl -s "https://api.dexscreener.com/latest/dex/tokens/0x66a9BaCd6D560383dA967c274999c06550cda07e" | python3 -c 'import sys,json;d=json.load(sys.stdin);[print("DEX",p.get("dexId"),p.get("priceUsd"),p.get("liquidity"),p.get("volume",{}).get("h24"),p.get("txns",{}).get("h24"),p.get("fdv")) for p in (d.get("pairs") or [])]'
