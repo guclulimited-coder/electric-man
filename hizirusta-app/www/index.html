@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HızırUsta – Elektrikçi Asistanı</title>
+<meta name="description" content="Elektrikçiler için hesaplar, teklif, puantaj ve belge tarama.">
+<meta name="theme-color" content="#14213d">
+<style>
+@page{margin:12mm}
+:root{--bg:#f4f5f7;--kart:#fff;--yazi:#16181d;--soluk:#5d6470;--cizgi:#e1e4ea;--ana:#14213d;--vurgu:#fca311;--iyi:#1f8a4c;--kotu:#c0392b;--alan:#f8f9fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1218;--kart:#181c24;--yazi:#eef0f4;--soluk:#9aa2b1;--cizgi:#2a303c;--ana:#e9edf5;--alan:#11151c}}
+:root[data-theme="dark"]{--bg:#0f1218;--kart:#181c24;--yazi:#eef0f4;--soluk:#9aa2b1;--cizgi:#2a303c;--ana:#e9edf5;--alan:#11151c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--yazi);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;background:#14213d;color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header .logo{width:30px;height:30px;flex:none}
+header h1{font-size:18px;margin:0;flex:1}
+header .rozet{font-size:12px;background:rgba(255,255,255,.14);padding:4px 9px;border-radius:99px}
+main{max-width:720px;margin:0 auto;padding:14px 16px calc(90px + env(safe-area-inset-bottom))}
+nav.alt{position:fixed;bottom:0;left:0;right:0;z-index:5;background:var(--kart);border-top:1px solid var(--cizgi);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav.alt button{flex:1;border:0;background:none;color:var(--soluk);padding:9px 0 8px;font:600 12px system-ui;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.alt button svg{width:22px;height:22px}
+nav.alt button.on{color:var(--vurgu)}
+.kart{background:var(--kart);border:1px solid var(--cizgi);border-radius:14px;padding:16px;margin-bottom:12px}
+h2{font-size:17px;margin:0 0 4px}
+.alt-baslik{color:var(--soluk);font-size:13px;margin:0 0 12px}
+.izgara{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.secim{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;border:1px solid var(--cizgi);background:var(--kart);color:var(--yazi);border-radius:14px;padding:14px;font:inherit;cursor:pointer}
+.secim b{font-size:15px}.secim span{font-size:12px;color:var(--soluk)}
+.secim .ik{width:34px;height:34px;border-radius:10px;background:rgba(252,163,17,.16);color:#b8740a;display:grid;place-items:center;font-weight:800}
+label{display:block;font-size:13px;color:var(--soluk);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--yazi);background:var(--alan);border:1px solid var(--cizgi);border-radius:10px;padding:10px 11px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--vurgu);outline-offset:-1px}
+.satir{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dugme{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:11px;padding:11px 16px;font:700 15px system-ui;background:var(--vurgu);color:#14213d;cursor:pointer}
+.dugme.ikincil{background:transparent;color:var(--yazi);border:1px solid var(--cizgi)}
+.dugme.tam{width:100%}
+.geri{border:0;background:none;color:var(--soluk);font:600 14px system-ui;padding:0 0 10px;cursor:pointer}
+.sonuc{margin-top:14px;border-radius:12px;background:var(--alan);border:1px solid var(--cizgi);padding:12px 14px}
+.sonuc .buyuk{font-size:26px;font-weight:800}
+.sonuc dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0 0;font-size:14px}
+.sonuc dt{color:var(--soluk)}.sonuc dd{margin:0;font-weight:600;text-align:right}
+.iyi{color:var(--iyi)}.kotu{color:var(--kotu)}
+.not{font-size:12px;color:var(--soluk);margin-top:10px}
+.kilit{text-align:center;padding:26px 18px}
+.kilit .ik{font-size:34px}
+.kalem{display:grid;grid-template-columns:1fr 1fr 1fr 34px;gap:6px;align-items:end;margin-bottom:8px}
+.kalem input,.kalem select{padding:9px 8px}
+.kalem input[data-k="ad"]{grid-column:1/-1}
+.kalem button{height:42px;border:1px solid var(--cizgi);background:var(--kart);color:var(--kotu);border-radius:10px;font-size:18px}
+.toplam{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:14px;margin-top:10px}
+.toplam .son{font-size:18px;font-weight:800;border-top:1px solid var(--cizgi);padding-top:6px}
+.liste .is{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--cizgi);cursor:pointer}
+.liste .is:last-child{border:0}
+.durum{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--alan);border:1px solid var(--cizgi);white-space:nowrap}
+.bos{color:var(--soluk);text-align:center;padding:20px 0}
+.yanyana{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#14213d;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;opacity:0;transition:.2s;pointer-events:none}
+.toast.on{opacity:1}
+#belge{display:none}
+.tablo-kap{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table.pt{border-collapse:separate;border-spacing:0;font-size:13px}
+table.pt th,table.pt td{border-bottom:1px solid var(--cizgi);padding:0;text-align:center;min-width:34px;height:38px}
+table.pt th{font-weight:600;color:var(--soluk);font-size:11px;line-height:1.2}
+table.pt th.hs{color:var(--kotu)}
+table.pt .ad{position:sticky;left:0;background:var(--kart);text-align:left;min-width:96px;max-width:120px;padding:0 8px 0 0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:1}
+table.pt td.h{cursor:pointer;font-weight:700}
+table.pt td.h sup{color:var(--vurgu);font-size:9px}
+.d-T{color:var(--iyi)}.d-Y{color:#b8740a}.d-X{color:var(--kotu)}.d-I,.d-R{color:var(--soluk)}
+.perde{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sayfa-alt{background:var(--kart);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.secenekler{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.secenekler button{border:1px solid var(--cizgi);background:var(--alan);color:var(--yazi);border-radius:10px;padding:12px 4px;font:700 14px system-ui}
+.secenekler button.on{border-color:var(--vurgu);background:rgba(252,163,17,.18)}
+.ozet{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:14px;padding:10px 0;border-bottom:1px solid var(--cizgi)}
+.ozet:last-child{border:0}
+.kirp{position:relative;touch-action:none;user-select:none;margin:0 auto}
+.kirp canvas{width:100%;display:block;border-radius:8px}
+.kirp svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.tutamak{fill:var(--vurgu);stroke:#fff;stroke-width:2}
+.sayfalar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.sayfalar figure{margin:0;position:relative}
+.sayfalar img{width:100%;aspect-ratio:1/1.41;object-fit:cover;border-radius:6px;border:1px solid var(--cizgi);background:#fff}
+.sayfalar figcaption{position:absolute;top:4px;left:4px;background:#14213d;color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sayfalar button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff}
+@media print{
+  body{background:#fff}header,nav.alt,main,.toast{display:none!important}
+  #belge{display:block;color:#000;font:12pt/1.45 system-ui,sans-serif;padding:0}
+  #belge table{width:100%;border-collapse:collapse;margin:14px 0}
+  #belge th,#belge td{border-bottom:1px solid #ccc;padding:6px 4px;text-align:left}
+  #belge td.s,#belge th.s{text-align:right}
+  #belge .bas{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #fca311;padding-bottom:10px}
+  #belge img{max-height:70px;max-width:180px}
+  #belge table.pt th,#belge table.pt td{border:1px solid #bbb;padding:2px;font-size:8pt;text-align:center;min-width:0;height:auto}
+  #belge table.pt .ad{text-align:left;position:static}
+}
+</style>
+</head>
+<body>
+<header><svg class="logo" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#fca311"/><rect x="250" y="230" width="132" height="564" rx="34" fill="#14213d"/><rect x="642" y="230" width="132" height="564" rx="34" fill="#14213d"/><path fill="#fff" d="M372 420 L612 420 L528 498 L652 498 L652 604 L412 604 L496 526 L372 526 Z"/></svg><h1>HızırUsta</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
+<main id="ekran"></main>
+<nav class="alt" id="altMenu">
+  <button data-s="hesap" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/></svg>Hesaplar</button>
+  <button data-s="teklif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Teklif</button>
+  <button data-s="puantaj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Puantaj</button>
+  <button data-s="tarama"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg>Tarama</button>
+  <button data-s="ayar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Firmam</button>
+</nav>
+<div id="belge"></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import * as H from './hesap.mjs';
+import * as T from './tarama.mjs';
+import * as H2 from './dxf.mjs';
+import * as R from './radar.mjs';
+const $ = s => document.querySelector(s), ekran = $('#ekran');
+const sayi = (x, n = 2) => Number(x).toLocaleString('tr-TR', {maximumFractionDigits: n});
+const tl = x => Number(x).toLocaleString('tr-TR', {style: 'currency', currency: 'TRY'});
+const kacis = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const depo = {
+  al(k, v){ try { const x = localStorage.getItem('ec-' + k); return x === null ? v : JSON.parse(x); } catch(e){ return v; } },
+  koy(k, v){ try { localStorage.setItem('ec-' + k, JSON.stringify(v)); } catch(e){} }
+};
+function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._z); t._z = setTimeout(() => t.classList.remove('on'), 2200); }
+
+/* Usta Paketi: teklif ve iş kaydı ücretli; ilk kullanımda 3 gün ücretsiz deneme (reklamlı).
+   Telefon uygulamasında abonelik mağaza üzerinden alınır (window.EMNative, 2. aşama). */
+const Paket = {
+  DENEME_GUN: 3,
+  get aktif(){ return depo.al('abone', false) || this.kalanGun > 0; },
+  get kalanGun(){ const b = depo.al('denemeBas', 0); if (!b) return 0; return Math.max(0, this.DENEME_GUN - Math.floor((Date.now() - b) / 864e5)); },
+  get denemeBasladi(){ return !!depo.al('denemeBas', 0); },
+  denemeBaslat(){ if (!this.denemeBasladi) depo.koy('denemeBas', Date.now()); rozet(); },
+  async satinAl(){
+    if (window.EMNative && window.EMNative.call){
+      try { const r = await window.EMNative.call({action: 'subscribe', id: 'usta_paketi_aylik'}); if (r && r.ok){ depo.koy('abone', true); rozet(); return true; } } catch(e){}
+      toast('Satın alma tamamlanmadı'); return false;
+    }
+    toast('Abonelik telefon uygulamasından alınır'); return false;
+  }
+};
+/* Reklam: abone olmayanlara her işlemden sonra geçiş reklamı (telefon uygulamasında AdMob).
+   Google'ın reklam kurallarına takılmamak için iki reklam arasında en az 60 saniye beklenir; abonelere hiç reklam çıkmaz. */
+const Reklam = {
+  ARALIK: 60000, son: 0,
+  async islem(){
+    if (depo.al('abone', false) || !(window.EMNative && window.EMNative.call)) return;
+    const t = Date.now(); if (t - this.son < this.ARALIK) return; this.son = t;
+    try { await window.EMNative.call({action: 'ad', kind: 'interstitial'}); } catch(e){}
+  }
+};
+// Belge / PDF: telefonda Android yazdırma ekranı ("PDF olarak kaydet" seçeneğiyle), tarayıcıda print()
+function yazdir(ad){ if (window.EMNative && window.EMNative.call) window.EMNative.call({action: 'print', name: ad}).catch(() => toast('Belge açılamadı')); else print(); }
+// Telefonun geri tuşu: açık pencereyi kapat, değilse Hesaplar'a dön; Hesaplar'daysa uygulamadan çık
+window.__geri = () => { const p = document.querySelector('.perde'); if (p){ p.remove(); return true; } if (aktifSekme !== 'hesap' || !document.querySelector('#projeAc')){ git('hesap'); return true; } return false; };
+// Açılışta abonelik durumunu mağazadan oku (iptal edilip süresi bitmişse reklamlar geri gelir)
+if (window.EMNative && window.EMNative.call) window.EMNative.call({action: 'subStatus', id: 'usta_paketi_aylik'}).then(r => { if (r && typeof r.active === 'boolean'){ depo.koy('abone', r.active); rozet(); } }).catch(() => {});
+function rozet(){ const r = $('#paketRozet'); r.textContent = depo.al('abone', false) ? 'Usta Paketi' : Paket.kalanGun > 0 ? `Deneme: ${Paket.kalanGun} gün` : 'Ücretsiz'; }
+
+/* ---------- Hesaplar ---------- */
+const HESAPLAR = [
+  {id: 'kesit', ad: 'Kablo kesiti ve sigorta', acik: 'Güce ve mesafeye göre kablo ve sigorta', ik: 'mm²'},
+  {id: 'dusum', ad: 'Gerilim düşümü', acik: 'Hattın sonundaki kayıp', ik: '%'},
+  {id: 'akim', ad: 'Akım hesabı', acik: 'Güçten akıma, monofaze ve trifaze', ik: 'A'},
+  {id: 'komp', ad: 'Kompanzasyon', acik: 'Gereken kondansatör gücü', ik: 'kVAr'},
+  {id: 'toprak', ad: 'Topraklama', acik: 'Çubuk direnci ve kaçak akım rölesi', ik: 'Ω'},
+  {id: 'ohm', ad: 'Ohm kanunu', acik: 'Gerilim, akım, direnç, güç', ik: 'V'}
+];
+const fazSec = (id = 'faz') => `<label>Besleme</label><select id="${id}"><option value="mono">Monofaze (230 V)</option><option value="tri">Trifaze (400 V)</option></select>`;
+const cosAlan = `<label>Güç katsayısı (cos φ)</label><input id="cos" type="number" step="0.01" min="0.5" max="1" value="1" inputmode="decimal">`;
+const v = id => parseFloat(String($('#' + id).value).replace(',', '.'));
+
+function hesapListesi(){
+  ekran.innerHTML = `<div class="kart"><h2>Hesaplar</h2><p class="alt-baslik">Yönetmeliğe uygun hızlı hesaplar. Hepsi ücretsiz.</p>
+  <button class="secim" id="projeAc" style="width:100%;margin-bottom:10px;flex-direction:row;align-items:center"><span class="ik">📐</span><span style="display:flex;flex-direction:column"><b style="color:var(--yazi);font-size:15px">Projeden ölçü al</b><span>Proje dosyasını aç, kablo metresini ölç, hesaba aktar</span></span></button>
+  <button class="secim" id="radarAc" style="width:100%;margin-bottom:10px;flex-direction:row;align-items:center"><span class="ik">📡</span><span style="display:flex;flex-direction:column"><b style="color:var(--yazi);font-size:15px">Metal ve akım bulucu</b><span>Duvardaki demiri ve akım çeken kabloyu sezer (ölçü aleti değildir)</span></span></button>
+  <div class="izgara">${HESAPLAR.map(h => `<button class="secim" data-h="${h.id}"><span class="ik">${h.ik}</span><b>${h.ad}</b><span>${h.acik}</span></button>`).join('')}</div></div>
+  <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif, aylık puantaj ve ödeme hesabı. İlk 3 gün ücretsiz.</p>
+  <div class="yanyana"><button class="dugme" data-git="teklif">Teklif hazırla</button><button class="dugme ikincil" data-git="puantaj">Puantaj</button><button class="dugme ikincil" data-git="tarama">Belge tara</button></div></div>`;
+  ekran.querySelectorAll('[data-h]').forEach(b => b.onclick = () => hesapAc(b.dataset.h));
+  $('#projeAc').onclick = projeEkrani; $('#radarAc').onclick = radarEkrani;
+  ekran.querySelectorAll('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
+}
+
+const FORMLAR = {
+  kesit: () => `${fazSec()}<div class="satir"><div><label>Güç (W)</label><input id="P" type="number" inputmode="decimal" value="3500"></div><div><label>Hat uzunluğu (m)</label><input id="L" type="number" inputmode="decimal" value="25"></div></div>
+    ${cosAlan}<label>Devre türü</label><select id="tur"><option value="kuvvet">Priz ve kuvvet (düşüm sınırı %3)</option><option value="aydinlatma">Aydınlatma (düşüm sınırı %1,5)</option></select>
+    <label>Döşeme şekli</label><select id="yontem"><option value="B2">Boru veya kanal içinde</option><option value="C">Duvara kelepçeli, açıkta</option></select>
+    <div class="satir"><div><label>Ortam sıcaklığı (°C)</label><input id="sic" type="number" value="30"></div><div><label>Yan yana devre sayısı</label><input id="devre" type="number" min="1" value="1"></div></div>`,
+  dusum: () => `${fazSec()}<div class="satir"><div><label>Güç (W)</label><input id="P" type="number" inputmode="decimal" value="3000"></div><div><label>Hat uzunluğu (m)</label><input id="L" type="number" inputmode="decimal" value="30"></div></div>
+    <div class="satir"><div><label>Kesit (mm²)</label><select id="S">${H.KESITLER.map(s => `<option ${s === 2.5 ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div><label>İletken</label><select id="mal"><option value="Cu">Bakır</option><option value="Al">Alüminyum</option></select></div></div>`,
+  akim: () => `${fazSec()}<label>Güç (W)</label><input id="P" type="number" inputmode="decimal" value="5000">${cosAlan}`,
+  komp: () => `<label>Kurulu aktif güç (kW)</label><input id="P" type="number" inputmode="decimal" value="50"><div class="satir"><div><label>Mevcut cos φ</label><input id="c1" type="number" step="0.01" value="0.80"></div><div><label>Hedef cos φ</label><input id="c2" type="number" step="0.01" value="0.98"></div></div>`,
+  toprak: () => `<label>Toprak cinsi</label><select id="rho">${Object.entries(H.TOPRAK).map(([k, x]) => `<option value="${x}" ${x === 100 ? 'selected' : ''}>${k} (${x} Ω·m)</option>`).join('')}</select>
+    <div class="satir"><div><label>Çubuk boyu (m)</label><input id="L" type="number" step="0.5" value="1.5"></div><div><label>Çubuk sayısı</label><input id="adet" type="number" min="1" value="1"></div></div>
+    <label>Kaçak akım rölesi</label><select id="ma"><option value="30">30 mA</option><option value="100">100 mA</option><option value="300">300 mA</option></select>`,
+  ohm: () => `<p class="alt-baslik">Bildiğin iki değeri yaz, diğerleri hesaplansın.</p><div class="satir"><div><label>Gerilim (V)</label><input id="U" type="number" inputmode="decimal"></div><div><label>Akım (A)</label><input id="I" type="number" inputmode="decimal"></div></div>
+    <div class="satir"><div><label>Direnç (Ω)</label><input id="R" type="number" inputmode="decimal"></div><div><label>Güç (W)</label><input id="Pw" type="number" inputmode="decimal"></div></div>`
+};
+const dl = rows => `<dl>${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
+const HESAPLA = {
+  kesit(){ const x = H.kesitSec({P: v('P'), L: v('L'), faz: $('#faz').value, cos: v('cos') || 1, devreTuru: $('#tur').value, yontem: $('#yontem').value, sicaklik: v('sic') || 30, devre: v('devre') || 1});
+    if (!x.ok) return `<div class="kotu"><b>Bu güç için tablodaki kesitler yetmiyor.</b></div>${dl([['Çekilen akım', sayi(x.Ib) + ' A']])}<div class="not">Hattı bölün, trifazeye geçin veya proje mühendisine danışın.</div>`;
+    return `<div class="alt-baslik">Önerilen kablo</div><div class="buyuk">${sayi(x.S, 1)} mm² · ${x.In} A sigorta</div>${dl([['Çekilen akım', sayi(x.Ib) + ' A'], ['Kablo taşıma akımı', sayi(x.Iz, 1) + ' A'], ['Düzeltme katsayısı', sayi(x.kat)], ['Gerilim düşümü', `<span class="iyi">%${sayi(x.dusum)}</span> (sınır %${sayi(x.sinir, 1)})`]])}
+      <div class="not">Koşul: çekilen akım ≤ sigorta ≤ kablo taşıma akımı. Bakır, PVC yalıtımlı kablo; TS HD 60364-5-52 tablolarına göre.</div>`; },
+  dusum(){ const x = H.gerilimDusumu({P: v('P'), L: v('L'), S: v('S'), faz: $('#faz').value, malzeme: $('#mal').value});
+    const ok = x.yuzde <= 3; return `<div class="alt-baslik">Gerilim düşümü</div><div class="buyuk ${ok ? 'iyi' : 'kotu'}">%${sayi(x.yuzde)}</div>${dl([['Kayıp gerilim', sayi(x.volt) + ' V'], ['Aydınlatma sınırı', '%1,5 ' + (x.yuzde <= 1.5 ? '✓' : '✗')], ['Priz ve kuvvet sınırı', '%3 ' + (ok ? '✓' : '✗')]])}`; },
+  akim(){ const x = H.akim({P: v('P'), faz: $('#faz').value, cos: v('cos') || 1}); const In = H.SIGORTALAR.find(s => s >= x.I);
+    return `<div class="alt-baslik">Çekilen akım</div><div class="buyuk">${sayi(x.I)} A</div>${dl([['Gerilim', x.U + ' V'], ['En yakın sigorta', In ? In + ' A' : '—']])}`; },
+  komp(){ const x = H.kompanzasyon({P: v('P'), cos1: v('c1'), cos2: v('c2')});
+    return `<div class="alt-baslik">Gereken kondansatör gücü</div><div class="buyuk">${sayi(x.Q)} kVAr</div>${dl([['Şu anki reaktif oran', '%' + sayi(x.reaktifOran, 1)], ['tan φ (mevcut → hedef)', sayi(x.tan1, 3) + ' → ' + sayi(x.tan2, 3)]])}
+      <div class="not">Ceza almamak için endüktif reaktif tüketim aktifin %20'sini, kapasitif %15'ini geçmemeli. Kademeleri yüke göre bölün.</div>`; },
+  toprak(){ const x = H.topraklama({rho: v('rho'), L: v('L'), adet: v('adet') || 1}); const sinir = H.kacakAkimSiniri(v('ma')); const ok = x.R <= sinir;
+    return `<div class="alt-baslik">Topraklama direnci (yaklaşık)</div><div class="buyuk">${sayi(x.R, 1)} Ω</div>${dl([['Tek çubuk', sayi(x.R1, 1) + ' Ω'], [`${v('ma')} mA röle için en fazla`, sayi(sinir, 0) + ' Ω'], ['Durum', ok ? '<span class="iyi">Uygun</span>' : '<span class="kotu">Yetersiz</span>']])}
+      <div class="not">Hesap tahminidir; teslimden önce ölçü aletiyle ölçün. Kaçak akım rölesi koşulu: direnç × röle akımı ≤ 50 V.</div>`; },
+  ohm(){ const g = id => { const s = $('#' + id).value; return s === '' ? undefined : parseFloat(s.replace(',', '.')); };
+    const x = H.ohm({U: g('U'), I: g('I'), R: g('R'), P: g('Pw')}); if (!x) return `<div class="not">İki değer girin.</div>`;
+    return dl([['Gerilim', sayi(x.U) + ' V'], ['Akım', sayi(x.I, 3) + ' A'], ['Direnç', sayi(x.R, 3) + ' Ω'], ['Güç', sayi(x.P) + ' W']]); }
+};
+function hesapAc(id, on){
+  const h = HESAPLAR.find(x => x.id === id);
+  ekran.innerHTML = `<button class="geri">‹ Hesaplar</button><div class="kart"><h2>${h.ad}</h2><p class="alt-baslik">${h.acik}</p><form id="f">${FORMLAR[id]()}</form><div class="sonuc" id="sonuc"></div></div>`;
+  ekran.querySelector('.geri').onclick = () => { hesapListesi(); Reklam.islem(); };
+  const calis = () => { try { $('#sonuc').innerHTML = HESAPLA[id](); } catch(e){ $('#sonuc').innerHTML = '<div class="not">Değerleri kontrol edin.</div>'; } };
+  if (on) for (const [k, x] of Object.entries(on)){ const el = $('#' + k); if (el) el.value = x; }
+  $('#f').addEventListener('input', calis); $('#f').addEventListener('submit', e => e.preventDefault()); calis();
+  scrollTo(0, 0);
+}
+
+/* ---------- Teklif ---------- */
+const MALZEME = [['NYM 3x2,5 kablo', 'm'], ['NYM 3x1,5 kablo', 'm'], ['NYM 5x6 kablo', 'm'], ['Spiral boru 16 mm', 'm'], ['Sıva altı buat', 'adet'], ['Anahtar', 'adet'], ['Priz (topraklı)', 'adet'],
+  ['Otomat sigorta 16 A', 'adet'], ['Otomat sigorta 25 A', 'adet'], ['Kaçak akım rölesi 30 mA', 'adet'], ['Sigorta kutusu (12 modül)', 'adet'], ['Topraklama çubuğu', 'adet'], ['LED armatür', 'adet'], ['İşçilik', 'gün'], ['Proje ve test', 'iş']];
+const yeniTeklif = () => ({id: Date.now().toString(36), no: depo.al('sonNo', 0) + 1, tarih: new Date().toISOString().slice(0, 10), musteri: '', tel: '', adres: '', kalemler: [{ad: '', miktar: 1, birim: 'adet', fiyat: ''}], iskonto: 0, kdv: 20, not: 'Teklif 15 gün geçerlidir. Malzeme fiyatları değişirse güncellenir.', durum: 'Teklif verildi'});
+let taslak = null;
+const BIRIMLER = ['adet', 'm', 'm²', 'kg', 'top', 'paket', 'takım', 'gün', 'saat', 'iş'];
+
+function kilitEkrani(neIcin){
+  const deneme = !Paket.denemeBasladi;
+  ekran.innerHTML = `<div class="kart kilit"><div class="ik">🔒</div><h2>Usta Paketi</h2><p class="alt-baslik">${neIcin} Usta Paketi'nde.<br>Logolu teklif, aylık puantaj, ödeme hesabı ve WhatsApp'tan gönderme.</p>
+  ${deneme ? `<button class="dugme tam" id="dene">3 gün ücretsiz dene</button>` : `<button class="dugme tam" id="al">Abone ol · aylık 249,99 ₺</button><div class="not">Deneme süreniz bitti.</div>`}</div>`;
+  const d = $('#dene'); if (d) d.onclick = () => { Paket.denemeBaslat(); toast('3 günlük deneme başladı'); git(aktifSekme); };
+  const a = $('#al'); if (a) a.onclick = async () => { if (await Paket.satinAl()) git(aktifSekme); };
+}
+
+function teklifEkrani(t){
+  if (!Paket.aktif) return kilitEkrani('Teklif hazırlama');
+  taslak = t || yeniTeklif();
+  const f = depo.al('firma', {});
+  ekran.innerHTML = `<button class="geri" id="listeyeDon">‹ Teklifler</button><div class="kart"><h2>Teklif No ${taslak.no}</h2><p class="alt-baslik">${f.ad ? kacis(f.ad) : '<a href="#" id="firmaGit">Firma bilgilerini girin</a> — teklifte görünür.'}</p>
+    <label>Müşteri adı</label><input id="musteri" value="${kacis(taslak.musteri)}" autocomplete="off">
+    <div class="satir"><div><label>Telefon</label><input id="tel" type="tel" value="${kacis(taslak.tel)}"></div><div><label>Tarih</label><input id="tarih" type="date" value="${taslak.tarih}"></div></div>
+    <label>Adres</label><input id="adres" value="${kacis(taslak.adres)}"></div>
+  <div class="kart"><h2>Malzeme ve işçilik</h2><p class="alt-baslik">Malzeme veya iş adı, miktarı, birimi ve birim fiyatı (KDV hariç)</p><div id="kalemler"></div>
+    <datalist id="malzemeler">${MALZEME.map(m => `<option value="${m[0]}">`).join('')}</datalist>
+    <button class="dugme ikincil tam" id="ekle">+ Kalem ekle</button>
+    <div class="satir"><div><label>İskonto (%)</label><input id="iskonto" type="number" min="0" max="100" value="${taslak.iskonto}"></div><div><label>KDV (%)</label><select id="kdv">${[20, 10, 1, 0].map(k => `<option ${k == taslak.kdv ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
+    <div class="toplam" id="toplam"></div>
+    <label>Not</label><textarea id="not" rows="2">${kacis(taslak.not)}</textarea>
+    <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button><button class="dugme ikincil" id="yazdir">Belge / PDF</button><button class="dugme ikincil" id="wp">WhatsApp</button><button class="dugme ikincil" id="yeni">Yeni teklif</button></div></div>`;
+  $('#listeyeDon').onclick = () => { kaydet(); teklifListesi(); };
+  const fg = $('#firmaGit'); if (fg) fg.onclick = e => { e.preventDefault(); git('ayar'); };
+  kalemCiz();
+  ['musteri', 'tel', 'adres', 'tarih', 'not'].forEach(k => $('#' + k).oninput = e => { taslak[k] = e.target.value; });
+  $('#iskonto').oninput = e => { taslak.iskonto = +e.target.value || 0; toplamCiz(); };
+  $('#kdv').onchange = e => { taslak.kdv = +e.target.value; toplamCiz(); };
+  $('#ekle').onclick = () => { taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''}); kalemCiz(); ekran.querySelectorAll('.kalem input[data-k="ad"]').forEach((x, i, a) => i === a.length - 1 && x.focus()); };
+  $('#kaydet').onclick = () => { kaydet(); toast('Teklif kaydedildi'); Reklam.islem(); };
+  $('#yazdir').onclick = () => { kaydet(); belgeHazirla(); setTimeout(() => yazdir('Teklif-' + taslak.no), 50); };
+  $('#wp').onclick = () => { kaydet(); whatsapp(); };
+  $('#yeni').onclick = () => { kaydet(); teklifEkrani(yeniTeklif()); };
+}
+function kalemCiz(){
+  $('#kalemler').innerHTML = taslak.kalemler.map((k, i) => `<div class="kalem" data-i="${i}"><input data-k="ad" list="malzemeler" placeholder="Malzeme veya iş" value="${kacis(k.ad)}"><input data-k="miktar" type="number" inputmode="decimal" value="${kacis(k.miktar)}"><select data-k="birim">${BIRIMLER.map(b => `<option ${b === k.birim ? 'selected' : ''}>${b}</option>`).join('')}</select><input data-k="fiyat" type="number" inputmode="decimal" placeholder="₺" value="${kacis(k.fiyat)}"><button aria-label="Sil">×</button></div>`).join('');
+  $('#kalemler').querySelectorAll('.kalem').forEach(r => {
+    const i = +r.dataset.i;
+    r.querySelectorAll('input,select').forEach(inp => inp.oninput = () => { const k = taslak.kalemler[i]; k[inp.dataset.k] = inp.value; if (inp.dataset.k === 'ad'){ const m = MALZEME.find(m => m[0] === inp.value); if (m){ k.birim = m[1]; r.querySelector('select').value = m[1]; } } toplamCiz(); });
+    r.querySelector('button').onclick = () => { taslak.kalemler.splice(i, 1); if (!taslak.kalemler.length) taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''}); kalemCiz(); };
+  });
+  toplamCiz();
+}
+function toplamCiz(){
+  const t = H.teklifToplam(taslak.kalemler, taslak);
+  $('#toplam').innerHTML = `<span>Ara toplam</span><span>${tl(t.ara)}</span>${t.iskonto ? `<span>İskonto</span><span>−${tl(t.iskonto)}</span>` : ''}<span>KDV %${taslak.kdv}</span><span>${tl(t.kdv)}</span><span class="son">Genel toplam</span><span class="son">${tl(t.toplam)}</span>`;
+}
+function kaydet(){
+  const isler = depo.al('isler', []); const i = isler.findIndex(x => x.id === taslak.id);
+  taslak.kalemler = taslak.kalemler.filter(k => k.ad || k.fiyat); if (!taslak.kalemler.length) taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''});
+  if (i < 0){ isler.unshift(taslak); depo.koy('sonNo', taslak.no); } else isler[i] = taslak;
+  depo.koy('isler', isler);
+}
+function belgeHazirla(){
+  const f = depo.al('firma', {}), t = H.teklifToplam(taslak.kalemler, taslak);
+  $('#belge').innerHTML = `<div class="bas"><div>${f.logo ? `<img src="${f.logo}" alt="">` : ''}<h2 style="margin:6px 0 0">${kacis(f.ad || 'Elektrik Tesisatı')}</h2><div>${kacis(f.tel || '')} ${kacis(f.adres || '')}</div>${f.vergi ? `<div>Vergi: ${kacis(f.vergi)}</div>` : ''}</div>
+    <div style="text-align:right"><h1 style="margin:0;font-size:22pt">FİYAT TEKLİFİ</h1><div>No: ${taslak.no}</div><div>Tarih: ${new Date(taslak.tarih).toLocaleDateString('tr-TR')}</div></div></div>
+    <p><b>Sayın ${kacis(taslak.musteri || '—')}</b><br>${kacis(taslak.adres)} ${kacis(taslak.tel)}</p>
+    <table><thead><tr><th>#</th><th>Açıklama</th><th class="s">Miktar</th><th class="s">Birim fiyat</th><th class="s">Tutar</th></tr></thead><tbody>
+    ${taslak.kalemler.filter(k => k.ad).map((k, i) => `<tr><td>${i + 1}</td><td>${kacis(k.ad)}</td><td class="s">${sayi(k.miktar)} ${kacis(k.birim)}</td><td class="s">${tl(k.fiyat || 0)}</td><td class="s">${tl((k.miktar || 0) * (k.fiyat || 0))}</td></tr>`).join('')}</tbody></table>
+    <table style="width:50%;margin-left:auto"><tr><td>Ara toplam</td><td class="s">${tl(t.ara)}</td></tr>${t.iskonto ? `<tr><td>İskonto %${taslak.iskonto}</td><td class="s">−${tl(t.iskonto)}</td></tr>` : ''}<tr><td>KDV %${taslak.kdv}</td><td class="s">${tl(t.kdv)}</td></tr><tr><th>Genel toplam</th><th class="s">${tl(t.toplam)}</th></tr></table>
+    <p>${kacis(taslak.not)}</p><p style="margin-top:40px">İmza / Kaşe</p>`;
+}
+function whatsapp(){
+  const f = depo.al('firma', {}), t = H.teklifToplam(taslak.kalemler, taslak);
+  const satir = taslak.kalemler.filter(k => k.ad).map(k => `• ${k.ad}: ${sayi(k.miktar)} ${k.birim} × ${tl(k.fiyat || 0)}`).join('\n');
+  const metin = `Sayın ${taslak.musteri || ''},\n${f.ad || ''} fiyat teklifimiz (No ${taslak.no}):\n\n${satir}\n\nKDV dahil toplam: ${tl(t.toplam)}\n${taslak.not}\n${f.tel ? '\nTel: ' + f.tel : ''}`;
+  const tel = (taslak.tel || '').replace(/\D/g, '').replace(/^0/, '90');
+  open(`https://wa.me/${tel.length >= 11 ? tel : ''}?text=${encodeURIComponent(metin)}`, '_blank');
+}
+
+/* ---------- Teklif listesi ---------- */
+const DURUMLAR = ['Teklif verildi', 'Onaylandı', 'İş bitti', 'Ödendi', 'İptal'];
+function teklifListesi(){
+  if (!Paket.aktif) return kilitEkrani('Teklif hazırlama');
+  const isler = depo.al('isler', []);
+  const acik = isler.filter(x => x.durum === 'Onaylandı' || x.durum === 'İş bitti').reduce((s, x) => s + H.teklifToplam(x.kalemler, x).toplam, 0);
+  ekran.innerHTML = `<div class="kart"><h2>Teklifler</h2><p class="alt-baslik">${isler.length} teklif · onaylanan işlerden tahsil edilecek ${tl(acik)}</p><button class="dugme tam" id="yeniT">+ Yeni teklif</button><label>Müşteri ara</label><input id="ara"><div class="liste" id="liste"></div></div>`;
+  $('#yeniT').onclick = () => teklifEkrani(yeniTeklif());
+  const ciz = q => { const l = isler.filter(x => !q || (x.musteri || '').toLocaleLowerCase('tr').includes(q));
+    $('#liste').innerHTML = l.length ? l.map(x => `<div class="is" data-id="${x.id}"><div><b>${kacis(x.musteri || 'Adsız müşteri')}</b><div class="not" style="margin:2px 0 0">No ${x.no} · ${new Date(x.tarih).toLocaleDateString('tr-TR')} · ${tl(H.teklifToplam(x.kalemler, x).toplam)}</div></div><select class="durum" data-d="${x.id}">${DURUMLAR.map(d => `<option ${d === x.durum ? 'selected' : ''}>${d}</option>`).join('')}</select></div>`).join('') : '<div class="bos">Henüz teklif yok.</div>';
+    $('#liste').querySelectorAll('.is').forEach(r => r.onclick = e => { if (e.target.tagName === 'SELECT') return; teklifEkrani(isler.find(x => x.id === r.dataset.id)); });
+    $('#liste').querySelectorAll('select').forEach(s => s.onchange = () => { isler.find(x => x.id === s.dataset.d).durum = s.value; depo.koy('isler', isler); toast('Durum güncellendi'); });
+  };
+  $('#ara').oninput = e => ciz(e.target.value.toLocaleLowerCase('tr')); ciz('');
+}
+
+/* ---------- Puantaj ---------- */
+const DURUM_ADI = {T: 'Tam gün', Y: 'Yarım gün', X: 'Gelmedi', I: 'İzinli (ücretli)', R: 'Raporlu / ücretsiz izin'};
+const DURUM_IS = {T: '✓', Y: '½', X: '✗', I: 'İ', R: 'R'};
+const GUN_HARF = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
+let pAy = new Date().toISOString().slice(0, 7);
+const pKey = () => 'puantaj-' + pAy, aKey = () => 'avans-' + pAy;
+function puantajEkrani(){
+  if (!Paket.aktif) return kilitEkrani('Puantaj');
+  const isciler = depo.al('isciler', []), kayit = depo.al(pKey(), {}), avans = depo.al(aKey(), {});
+  const N = H.ayGunSayisi(pAy), [yy, mm] = pAy.split('-').map(Number), bugun = new Date();
+  const hafta = g => new Date(yy, mm - 1, g).getDay();
+  const ozetler = isciler.map(i => ({i, o: H.puantaj({gunler: kayit[i.id] || {}, gunluk: i.gunluk, mesaiKat: i.mesaiKat || 1.5, avanslar: avans[i.id] || []})}));
+  const genel = ozetler.reduce((t, x) => t + x.o.odenecek, 0);
+  ekran.innerHTML = `<div class="kart"><h2>Puantaj</h2><p class="alt-baslik">Hücreye dokunarak günü işaretle. Fazla mesai saatini de oradan gir.</p>
+    <div class="satir"><div><label>Ay</label><input id="ay" type="month" value="${pAy}"></div><div><label>&nbsp;</label><button class="dugme ikincil tam" id="bugunTam">Bugün herkes tam</button></div></div></div>
+  <div class="kart">${isciler.length ? `<div class="tablo-kap"><table class="pt"><thead><tr><th class="ad">İşçi</th>${Array.from({length: N}, (_, k) => `<th class="${hafta(k + 1) === 0 ? 'hs' : ''}">${k + 1}<br>${GUN_HARF[hafta(k + 1)]}</th>`).join('')}</tr></thead><tbody>
+    ${isciler.map(i => `<tr><td class="ad" data-isci="${i.id}">${kacis(i.ad)}</td>${Array.from({length: N}, (_, k) => { const g = (kayit[i.id] || {})[k + 1]; return `<td class="h ${g ? 'd-' + g.d : ''}" data-i="${i.id}" data-g="${k + 1}">${g ? DURUM_IS[g.d] : ''}${g && g.m ? `<sup>+${g.m}</sup>` : ''}</td>`; }).join('')}</tr>`).join('')}
+    </tbody></table></div>` : '<div class="bos">Önce işçi ekle.</div>'}
+    <button class="dugme ikincil tam" id="isciEkle" style="margin-top:12px">+ İşçi ekle</button></div>
+  <div class="kart"><h2>Ay sonu hesabı</h2><p class="alt-baslik">Toplam ödenecek: <b>${tl(genel)}</b></p>
+    ${ozetler.map(({i, o}) => `<div class="ozet"><b>${kacis(i.ad)}</b><b>${tl(o.odenecek)}</b>
+      <span class="not" style="margin:0">${sayi(o.gun, 1)} gün × ${tl(i.gunluk)}${o.mesai ? ` · ${sayi(o.mesai, 1)} saat mesai ${tl(o.mesaiTutar)}` : ''}${o.avans ? ` · avans −${tl(o.avans)}` : ''}</span>
+      <button class="dugme ikincil" style="padding:6px 10px;font-size:13px" data-avans="${i.id}">Avans</button></div>`).join('') || '<div class="bos">Kayıt yok.</div>'}
+    <div class="yanyana"><button class="dugme ikincil" id="pPdf">Belge / PDF</button><button class="dugme ikincil" id="pWp">WhatsApp</button></div></div>`;
+  $('#ay').onchange = e => { if (e.target.value){ pAy = e.target.value; puantajEkrani(); } };
+  $('#bugunTam').onclick = () => {
+    if (bugun.toISOString().slice(0, 7) !== pAy) return toast('Bugün bu ayda değil');
+    const g = bugun.getDate(); for (const i of isciler){ kayit[i.id] = kayit[i.id] || {}; if (!kayit[i.id][g]) kayit[i.id][g] = {d: 'T', m: 0}; }
+    depo.koy(pKey(), kayit); puantajEkrani(); toast('Bugün işaretlendi');
+  };
+  $('#isciEkle').onclick = () => isciFormu();
+  ekran.querySelectorAll('td.ad[data-isci]').forEach(td => td.onclick = () => isciFormu(isciler.find(i => i.id === td.dataset.isci)));
+  ekran.querySelectorAll('td.h').forEach(td => td.onclick = () => gunSec(td.dataset.i, +td.dataset.g));
+  ekran.querySelectorAll('[data-avans]').forEach(b => b.onclick = () => avansFormu(isciler.find(i => i.id === b.dataset.avans)));
+  $('#pPdf').onclick = () => { puantajBelgesi(isciler, kayit, ozetler, N); setTimeout(() => yazdir('Puantaj-' + pAy), 50); };
+  $('#pWp').onclick = () => {
+    const f = depo.al('firma', {}), ayAdi = new Date(yy, mm - 1, 1).toLocaleDateString('tr-TR', {month: 'long', year: 'numeric'});
+    const metin = `${f.ad ? f.ad + ' — ' : ''}${ayAdi} puantajı\n\n` + ozetler.map(({i, o}) => `${i.ad}: ${sayi(o.gun, 1)} gün${o.mesai ? ', ' + sayi(o.mesai, 1) + ' saat mesai' : ''}${o.avans ? ', avans ' + tl(o.avans) : ''} → ${tl(o.odenecek)}`).join('\n') + `\n\nToplam: ${tl(genel)}`;
+    open('https://wa.me/?text=' + encodeURIComponent(metin), '_blank');
+  };
+}
+function perde(html, kur){
+  const p = document.createElement('div'); p.className = 'perde'; p.innerHTML = `<div class="sayfa-alt">${html}</div>`;
+  p.onclick = e => { if (e.target === p) p.remove(); }; document.body.appendChild(p); kur(p, () => p.remove()); return p;
+}
+function gunSec(isciId, g){
+  const kayit = depo.al(pKey(), {}), isci = depo.al('isciler', []).find(i => i.id === isciId), mevcut = (kayit[isciId] || {})[g] || {};
+  const [yy, mm] = pAy.split('-').map(Number), tarih = new Date(yy, mm - 1, g).toLocaleDateString('tr-TR', {day: 'numeric', month: 'long', weekday: 'long'});
+  perde(`<h2>${kacis(isci.ad)}</h2><p class="alt-baslik">${tarih}</p><div class="secenekler">${Object.entries(DURUM_ADI).map(([k, a]) => `<button data-d="${k}" class="${(mevcut.d || 'T') === k ? 'on' : ''}">${DURUM_IS[k]} ${a.split(' ')[0]}</button>`).join('')}<button data-d="">Sil</button></div>
+    <label>Fazla mesai (saat)</label><input id="mesai" type="number" min="0" step="0.5" inputmode="decimal" value="${mevcut.m || ''}">
+    <div class="yanyana"><button class="dugme tam" id="tamam">Kaydet</button></div>`, (p, kapat) => {
+    let d = mevcut.d || 'T';
+    p.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { d = b.dataset.d; p.querySelectorAll('[data-d]').forEach(x => x.classList.toggle('on', x === b)); if (d === '') kaydetGun(); });
+    const kaydetGun = () => { kayit[isciId] = kayit[isciId] || {}; const m = parseFloat(p.querySelector('#mesai').value) || 0;
+      if (d === '') delete kayit[isciId][g]; else kayit[isciId][g] = {d, m}; depo.koy(pKey(), kayit); kapat(); puantajEkrani(); Reklam.islem(); };
+    p.querySelector('#tamam').onclick = kaydetGun;
+  });
+}
+function isciFormu(isci){
+  const yeni = !isci; isci = isci || {id: Date.now().toString(36), ad: '', gunluk: '', mesaiKat: 1.5};
+  perde(`<h2>${yeni ? 'İşçi ekle' : 'İşçiyi düzenle'}</h2><label>Ad soyad</label><input id="iAd" value="${kacis(isci.ad)}">
+    <div class="satir"><div><label>Günlük ücret (₺)</label><input id="iUcret" type="number" inputmode="decimal" value="${kacis(isci.gunluk)}"></div><div><label>Mesai çarpanı</label><input id="iKat" type="number" step="0.1" value="${isci.mesaiKat || 1.5}"></div></div>
+    <div class="not">Saatlik ücret = günlük ücret ÷ 8. Fazla mesai saat ücreti bu çarpanla artar.</div>
+    <div class="yanyana"><button class="dugme" id="iKaydet">Kaydet</button>${yeni ? '' : '<button class="dugme ikincil" id="iSil" style="color:var(--kotu)">Listeden çıkar</button>'}</div>`, (p, kapat) => {
+    p.querySelector('#iKaydet').onclick = () => {
+      const ad = p.querySelector('#iAd').value.trim(); if (!ad) return toast('Ad yazın');
+      const l = depo.al('isciler', []); Object.assign(isci, {ad, gunluk: parseFloat(p.querySelector('#iUcret').value) || 0, mesaiKat: parseFloat(p.querySelector('#iKat').value) || 1.5});
+      const k = l.findIndex(x => x.id === isci.id); if (k < 0) l.push(isci); else l[k] = isci; depo.koy('isciler', l); kapat(); puantajEkrani();
+    };
+    const sil = p.querySelector('#iSil'); if (sil) sil.onclick = () => { depo.koy('isciler', depo.al('isciler', []).filter(x => x.id !== isci.id)); kapat(); puantajEkrani(); toast('Listeden çıkarıldı; eski aylardaki kayıtları silinmedi'); };
+  });
+}
+function avansFormu(isci){
+  const avans = depo.al(aKey(), {}), l = avans[isci.id] || [];
+  perde(`<h2>${kacis(isci.ad)} · avanslar</h2>${l.map((a, k) => `<div class="ozet"><span>${new Date(a.tarih).toLocaleDateString('tr-TR')}</span><span>${tl(a.tutar)} <button data-sil="${k}" style="border:0;background:none;color:var(--kotu);font-size:16px">×</button></span></div>`).join('') || '<div class="not">Bu ay avans yok.</div>'}
+    <div class="satir"><div><label>Tutar (₺)</label><input id="aT" type="number" inputmode="decimal"></div><div><label>Tarih</label><input id="aD" type="date" value="${new Date().toISOString().slice(0, 10)}"></div></div>
+    <div class="yanyana"><button class="dugme tam" id="aEkle">Avans ekle</button></div>`, (p, kapat) => {
+    p.querySelector('#aEkle').onclick = () => { const t = parseFloat(p.querySelector('#aT').value); if (!t) return toast('Tutar yazın'); l.push({tutar: t, tarih: p.querySelector('#aD').value}); avans[isci.id] = l; depo.koy(aKey(), avans); kapat(); puantajEkrani(); };
+    p.querySelectorAll('[data-sil]').forEach(b => b.onclick = () => { l.splice(+b.dataset.sil, 1); avans[isci.id] = l; depo.koy(aKey(), avans); kapat(); puantajEkrani(); });
+  });
+}
+function puantajBelgesi(isciler, kayit, ozetler, N){
+  const f = depo.al('firma', {}), [yy, mm] = pAy.split('-').map(Number), ayAdi = new Date(yy, mm - 1, 1).toLocaleDateString('tr-TR', {month: 'long', year: 'numeric'});
+  $('#belge').innerHTML = `<div class="bas"><div>${f.logo ? `<img src="${f.logo}" alt="">` : ''}<h2 style="margin:6px 0 0">${kacis(f.ad || '')}</h2></div><div style="text-align:right"><h1 style="margin:0;font-size:18pt">PUANTAJ</h1><div>${ayAdi}</div></div></div>
+    <table class="pt"><thead><tr><th class="ad">İşçi</th>${Array.from({length: N}, (_, k) => `<th>${k + 1}</th>`).join('')}<th>Gün</th><th>Mesai</th></tr></thead><tbody>
+    ${ozetler.map(({i, o}) => `<tr><td class="ad">${kacis(i.ad)}</td>${Array.from({length: N}, (_, k) => { const g = (kayit[i.id] || {})[k + 1]; return `<td>${g ? DURUM_IS[g.d] + (g.m ? '+' + g.m : '') : ''}</td>`; }).join('')}<td>${sayi(o.gun, 1)}</td><td>${sayi(o.mesai, 1)}</td></tr>`).join('')}</tbody></table>
+    <table><thead><tr><th>İşçi</th><th class="s">Günlük</th><th class="s">Gün tutarı</th><th class="s">Mesai</th><th class="s">Avans</th><th class="s">Ödenecek</th><th>İmza</th></tr></thead><tbody>
+    ${ozetler.map(({i, o}) => `<tr><td>${kacis(i.ad)}</td><td class="s">${tl(i.gunluk)}</td><td class="s">${tl(o.gunTutar)}</td><td class="s">${tl(o.mesaiTutar)}</td><td class="s">${tl(o.avans)}</td><td class="s"><b>${tl(o.odenecek)}</b></td><td style="width:90px"></td></tr>`).join('')}
+    <tr><th colspan="5">Toplam</th><th class="s">${tl(ozetler.reduce((t, x) => t + x.o.odenecek, 0))}</th><th></th></tr></tbody></table>
+    <p style="font-size:9pt">✓ tam gün · ½ yarım gün · ✗ gelmedi · İ izinli · R raporlu; +sayı fazla mesai saati</p>`;
+}
+
+/* ---------- Belge tarama ---------- */
+const tSayfalar = []; let tFiltre = depo.al('taramaFiltre', 'sb');
+function taramaEkrani(){
+  ekran.innerHTML = `<div class="kart"><h2>Belge tarama</h2><p class="alt-baslik">Fotoğraf çek veya galeriden seç; kenarlar otomatik bulunur, sayfa düzeltilir ve PDF olur.</p>
+    <div class="satir"><button class="dugme" id="cek">📷 Fotoğraf çek</button><button class="dugme ikincil" id="galeri">Galeriden seç</button></div>
+    <input type="file" id="dosyaCek" accept="image/*" capture="environment" hidden><input type="file" id="dosyaGal" accept="image/*" multiple hidden>
+    <label>Görünüm</label><select id="filtre"><option value="sb">Siyah-beyaz belge</option><option value="gri">Gri</option><option value="renk">Renkli</option></select></div>
+  <div class="kart"><h2>Sayfalar (${tSayfalar.length})</h2>${tSayfalar.length ? `<div class="sayfalar">${tSayfalar.map((s, i) => `<figure><img src="${s.url}" alt=""><figcaption>${i + 1}</figcaption><button data-sil="${i}" aria-label="Sil">×</button></figure>`).join('')}</div>
+    <label>Dosya adı</label><input id="pdfAd" value="tarama-${new Date().toISOString().slice(0, 10)}">
+    <div class="yanyana"><button class="dugme" id="pdfYap">PDF oluştur</button><button class="dugme ikincil" id="temizle">Hepsini sil</button></div>` : '<div class="bos">Henüz sayfa yok.</div>'}</div>`;
+  $('#filtre').value = tFiltre; $('#filtre').onchange = e => { tFiltre = e.target.value; depo.koy('taramaFiltre', tFiltre); };
+  $('#cek').onclick = () => $('#dosyaCek').click(); $('#galeri').onclick = () => $('#dosyaGal').click();
+  const al = async e => { const l = [...e.target.files]; e.target.value = ''; for (const d of l) await kirpmaEkrani(d); taramaEkrani(); };
+  $('#dosyaCek').onchange = al; $('#dosyaGal').onchange = al;
+  ekran.querySelectorAll('[data-sil]').forEach(b => b.onclick = () => { tSayfalar.splice(+b.dataset.sil, 1); taramaEkrani(); });
+  const t = $('#temizle'); if (t) t.onclick = () => { tSayfalar.length = 0; taramaEkrani(); };
+  const p = $('#pdfYap'); if (p) p.onclick = () => pdfIndir(($('#pdfAd').value.trim() || 'tarama').replace(/[\\/:*?"<>|]/g, '-'));
+}
+const resimYukle = d => new Promise((ok, no) => { const u = URL.createObjectURL(d), im = new Image(); im.onload = () => { ok(im); setTimeout(() => URL.revokeObjectURL(u), 1000); }; im.onerror = no; im.src = u; });
+function kirpmaEkrani(dosya){
+  return new Promise(async bitti => {
+    let im; try { im = await resimYukle(dosya); } catch(e){ toast('Fotoğraf açılamadı'); return bitti(); }
+    const k = Math.min(1, 2000 / Math.max(im.width, im.height)), W = Math.round(im.width * k), Hh = Math.round(im.height * k);
+    const c = document.createElement('canvas'); c.width = W; c.height = Hh; const cx = c.getContext('2d'); cx.drawImage(im, 0, 0, W, Hh);
+    // kenar bulma küçük kopyada
+    const kk = 320 / Math.max(W, Hh), w = Math.round(W * kk), h = Math.round(Hh * kk), kc = document.createElement('canvas'); kc.width = w; kc.height = h;
+    const kx = kc.getContext('2d'); kx.filter = 'blur(2px)'; kx.drawImage(c, 0, 0, w, h); const d = kx.getImageData(0, 0, w, h).data, gri = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) gri[i] = .299 * d[i * 4] + .587 * d[i * 4 + 1] + .114 * d[i * 4 + 2];
+    const bul = T.kenarBul(gri, w, h); let kose = bul.koseler.map(([x, y]) => [x / kk, y / kk]);
+    perde(`<h2>Kenarları ayarla</h2><p class="alt-baslik">${bul.bulundu ? 'Kâğıt bulundu. Gerekirse turuncu noktaları sürükle.' : 'Kâğıt bulunamadı; turuncu noktaları köşelere sürükle.'}</p>
+      <div class="kirp" id="kirp" style="max-width:${Math.round(Math.min(480, 62 * innerHeight / 100 * W / Hh))}px"><svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none"><polygon id="cerceve" fill="rgba(252,163,17,.15)" stroke="#fca311" stroke-width="${W / 200}"/>${[0, 1, 2, 3].map(i => `<circle class="tutamak" data-k="${i}" r="${W / 28}"/>`).join('')}</svg></div>
+      <div class="yanyana"><button class="dugme" id="tEkle">Düzelt ve ekle</button><button class="dugme ikincil" id="tTum">Tamamını al</button><button class="dugme ikincil" id="tVaz">Vazgeç</button></div>`, (p, kapat) => {
+      const kap = p.querySelector('#kirp'); kap.prepend(c);
+      const ciz = () => { p.querySelector('#cerceve').setAttribute('points', kose.map(q => q.join(',')).join(' ')); p.querySelectorAll('.tutamak').forEach((t, i) => { t.setAttribute('cx', kose[i][0]); t.setAttribute('cy', kose[i][1]); }); };
+      ciz(); let surukle = -1;
+      const nokta = e => { const r = kap.getBoundingClientRect(); return [Math.max(0, Math.min(W, (e.clientX - r.left) / r.width * W)), Math.max(0, Math.min(Hh, (e.clientY - r.top) / r.height * Hh))]; };
+      kap.addEventListener('pointerdown', e => { const q = nokta(e); let en = Infinity; kose.forEach((k, i) => { const d = Math.hypot(k[0] - q[0], k[1] - q[1]); if (d < en){ en = d; surukle = i; } }); if (en > W / 6) surukle = -1; else { kap.setPointerCapture(e.pointerId); kose[surukle] = q; ciz(); } });
+      kap.addEventListener('pointermove', e => { if (surukle < 0) return; kose[surukle] = nokta(e); ciz(); });
+      kap.addEventListener('pointerup', () => { surukle = -1; });
+      const ekle = q => {
+        q = T.sirala(q); const uz = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+        let gw = (uz(q[0], q[1]) + uz(q[3], q[2])) / 2, gh = (uz(q[0], q[3]) + uz(q[1], q[2])) / 2; const s = Math.min(1, 1600 / Math.max(gw, gh)); gw = Math.round(gw * s); gh = Math.round(gh * s);
+        const kaynak = cx.getImageData(0, 0, W, Hh).data, out = T.filtre(T.duzelt(kaynak, W, Hh, q, gw, gh), gw, gh, tFiltre);
+        const oc = document.createElement('canvas'); oc.width = gw; oc.height = gh; oc.getContext('2d').putImageData(new ImageData(out, gw, gh), 0, 0);
+        tSayfalar.push({url: oc.toDataURL('image/jpeg', .85), w: gw, h: gh}); kapat(); bitti(); Reklam.islem();
+      };
+      p.querySelector('#tEkle').onclick = () => { toast('Sayfa hazırlanıyor…'); setTimeout(() => ekle(kose), 30); };
+      p.querySelector('#tTum').onclick = () => { toast('Sayfa hazırlanıyor…'); setTimeout(() => ekle([[0, 0], [W, 0], [W, Hh], [0, Hh]]), 30); };
+      p.querySelector('#tVaz').onclick = () => { kapat(); bitti(); };
+      p.onclick = null;
+    });
+  });
+}
+async function pdfIndir(ad){
+  const bayt = u => { const b = atob(u.split(',')[1]), a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; };
+  const pdf = T.pdfYap(tSayfalar.map(s => ({jpeg: bayt(s.url), w: s.w, h: s.h})));
+  const dosya = new File([pdf], ad + '.pdf', {type: 'application/pdf'});
+  if (window.EMNative && window.EMNative.call){
+    try { let s = ''; for (let i = 0; i < pdf.length; i += 32768) s += String.fromCharCode(...pdf.subarray(i, i + 32768)); await window.EMNative.call({action: 'shareFile', name: dosya.name, mime: 'application/pdf', base64: btoa(s)}); return; } catch(e){}
+  }
+  try { if (navigator.canShare && navigator.canShare({files: [dosya]})){ await navigator.share({files: [dosya], title: dosya.name}); return; } } catch(e){ if (e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(dosya); a.download = dosya.name; document.body.appendChild(a); a.click(); a.remove(); toast('PDF indirildi');
+}
+
+/* ---------- Projeden ölçü (DXF) ---------- */
+let P = null; // {d: çizim, birim, kal: kalibrasyon katsayısı, gizli: Set, uclar, ad}
+const olcumler = [];
+function projeEkrani(){
+  ekran.innerHTML = `<button class="geri">‹ Hesaplar</button><div class="kart"><h2>Projeden ölçü</h2><p class="alt-baslik">Proje dosyasını aç, kablo güzergâhına dokunarak metreyi bul, kablo hesabına aktar.</p>
+    <button class="dugme tam" id="dxfSec">${P ? 'Başka proje aç' : 'Proje dosyası aç'}</button><input type="file" id="dxfDosya" accept=".dxf,.dwg,application/dxf,image/vnd.dxf" hidden>
+    <div class="not">Şimdilik DXF biçimi açılıyor. DWG dosyasını çizim programında "Farklı kaydet → DXF" ile kaydedin; DWG'yi doğrudan açma yakında geliyor.</div></div>
+    <div id="projeAlan"></div>`;
+  ekran.querySelector('.geri').onclick = hesapListesi;
+  $('#dxfSec').onclick = () => $('#dxfDosya').click();
+  $('#dxfDosya').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    toast('Proje okunuyor…');
+    try {
+      const bas = new Uint8Array(await f.slice(0, 6).arrayBuffer());
+      if (String.fromCharCode(...bas).startsWith('AC10')) throw new Error('DWG');
+      const d = H2.dxfOku(await f.text());
+      const gen = Math.max(d.sinir[2] - d.sinir[0], d.sinir[3] - d.sinir[1]);
+      const birim = d.birim && H2.METRE[d.birim] ? d.birim : gen > 2000 ? 4 : gen > 200 ? 5 : 6;
+      const uclar = []; for (const c of d.cizgiler){ if (c.merkez){ uclar.push(c.merkez); continue; } uclar.push(c.p[0], c.p[c.p.length - 1]); if (c.p.length < 40) for (const q of c.p) uclar.push(q); }
+      P = {d, birim, kal: 1, gizli: new Set(), uclar, ad: f.name, mod: 'olc', nokta: [], gorunum: null};
+      projeCiz();
+      $('#pTuval').scrollIntoView({block: 'center'});
+    } catch(err){
+      toast(err.message === 'DWG' ? 'Bu bir DWG dosyası. DXF olarak kaydedip açın.' : 'Dosya okunamadı. DXF biçiminde olduğundan emin olun.');
+    }
+  };
+  if (P) projeCiz();
+  scrollTo(0, 0);
+}
+const katmanRenk = k => { let h = 0; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h} 65% 45%)`; };
+function projeCiz(){
+  const birimAd = {4: 'mm', 5: 'cm', 6: 'm'};
+  $('#projeAlan').innerHTML = `<div class="kart" style="padding:12px">
+    <div class="satir" style="grid-template-columns:1fr auto"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${kacis(P.ad)}</b><select id="pBirim" style="width:auto">${Object.entries(birimAd).map(([k, a]) => `<option value="${k}" ${+k === P.birim ? 'selected' : ''}>Çizim birimi: ${a}</option>`).join('')}</select></div>
+    <div class="secenekler" style="grid-template-columns:repeat(3,1fr)"><button data-mod="olc" class="${P.mod === 'olc' ? 'on' : ''}">📏 Ölç</button><button data-mod="kaydir" class="${P.mod === 'kaydir' ? 'on' : ''}">✋ Kaydır</button><button data-mod="olcek" class="${P.mod === 'olcek' ? 'on' : ''}">⚖ Ölçek ayarla</button></div>
+    <div style="position:relative;margin-top:10px"><canvas id="pTuval" style="width:100%;height:58vh;border:1px solid var(--cizgi);border-radius:10px;background:#fff;touch-action:none;display:block"></canvas>
+      <div id="pOlcu" style="position:absolute;left:8px;top:8px;background:rgba(20,33,61,.9);color:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:15px"></div>
+      <div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px"><button class="dugme ikincil" id="pYak" style="padding:6px 12px;background:var(--kart)">＋</button><button class="dugme ikincil" id="pUzak" style="padding:6px 12px;background:var(--kart)">－</button><button class="dugme ikincil" id="pSigdir" style="padding:6px 10px;background:var(--kart);font-size:12px">Sığdır</button></div></div>
+    <div class="yanyana"><button class="dugme ikincil" id="pGeri">Son noktayı sil</button><button class="dugme ikincil" id="pSil">Temizle</button><button class="dugme" id="pKaydet">Ölçüyü kaydet</button></div>
+    <div class="not">Ölç modunda güzergâh boyunca köşelere dokun; uç noktalara otomatik yapışır. İki parmakla büyüt, sürükleyerek kaydır.</div></div>
+  <div class="kart"><h2>Ölçümler</h2><div id="pListe"></div></div>
+  <div class="kart"><h2>Katmanlar</h2><p class="alt-baslik">Gizlemek için dokun.</p><div class="yanyana" id="pKatman">${P.d.katmanlar.map(k => `<button class="durum" data-k="${kacis(k)}" style="cursor:pointer;${P.gizli.has(k) ? 'opacity:.4;text-decoration:line-through' : ''}"><span style="color:${katmanRenk(k)}">●</span> ${kacis(k)}</button>`).join('')}</div></div>`;
+  const tv = $('#pTuval'), cx = tv.getContext('2d'); let W, Hh;
+  const boyut = () => { const r = tv.getBoundingClientRect(), dp = devicePixelRatio || 1; W = r.width; Hh = r.height; tv.width = W * dp; tv.height = Hh * dp; cx.setTransform(dp, 0, 0, dp, 0, 0); };
+  boyut();
+  const sigdir = () => { const [x1, y1, x2, y2] = P.d.sinir, s = Math.min(W / ((x2 - x1) || 1), Hh / ((y2 - y1) || 1)) * .92; P.gorunum = {s, ox: W / 2 - (x1 + x2) / 2 * s, oy: Hh / 2 + (y1 + y2) / 2 * s}; };
+  if (!P.gorunum) sigdir();
+  const ekr = ([x, y]) => [x * P.gorunum.s + P.gorunum.ox, -y * P.gorunum.s + P.gorunum.oy];
+  const dun = (sx, sy) => [(sx - P.gorunum.ox) / P.gorunum.s, -(sy - P.gorunum.oy) / P.gorunum.s];
+  const metre = () => H2.METRE[P.birim] * P.kal;
+  let bekliyor = false;
+  const ciz = () => { if (bekliyor) return; bekliyor = true; requestAnimationFrame(() => { bekliyor = false;
+    cx.clearRect(0, 0, W, Hh); cx.lineWidth = 1; cx.lineJoin = 'round';
+    const renkler = {}; for (const c of P.d.cizgiler){ if (P.gizli.has(c.k)) continue; (renkler[c.k] = renkler[c.k] || []).push(c); }
+    for (const [k, l] of Object.entries(renkler)){ cx.strokeStyle = katmanRenk(k); cx.beginPath();
+      for (const c of l){ let [a, b] = ekr(c.p[0]); cx.moveTo(a, b); for (let i = 1; i < c.p.length; i++){ [a, b] = ekr(c.p[i]); cx.lineTo(a, b); } } cx.stroke(); }
+    cx.fillStyle = '#333';
+    for (const y of P.d.yazilar){ if (P.gizli.has(y.k)) continue; const px = y.h * P.gorunum.s; if (px < 5 || px > 200) continue; const [a, b] = ekr([y.x, y.y]);
+      cx.save(); cx.translate(a, b); cx.rotate(-y.a * Math.PI / 180); cx.font = `${px}px system-ui`; cx.fillText(y.t, 0, 0); cx.restore(); }
+    // ölçü çizgisi
+    if (P.nokta.length){ cx.strokeStyle = P.mod === 'olcek' ? '#1f8a4c' : '#e85d04'; cx.lineWidth = 3; cx.beginPath(); P.nokta.forEach((q, i) => { const [a, b] = ekr(q); i ? cx.lineTo(a, b) : cx.moveTo(a, b); }); cx.stroke();
+      cx.fillStyle = cx.strokeStyle; for (const q of P.nokta){ const [a, b] = ekr(q); cx.beginPath(); cx.arc(a, b, 5, 0, 7); cx.fill(); } }
+    const L = H2.uzunluk(P.nokta) * metre();
+    $('#pOlcu').textContent = P.mod === 'olcek' ? (P.nokta.length < 2 ? 'Ölçek: bilinen bir ölçünün iki ucuna dokun' : 'Ölçek için gerçek uzunluğu girin') : P.nokta.length > 1 ? `${sayi(L, 2)} m` : P.mod === 'olc' ? 'Güzergâhın başlangıcına dokun' : 'Kaydırma modu';
+  }); };
+  const liste = () => { const top = olcumler.reduce((t, o) => t + o.m, 0);
+    $('#pListe').innerHTML = olcumler.length ? olcumler.map((o, i) => `<div class="ozet"><span>${kacis(o.ad)}</span><b>${sayi(o.m, 2)} m</b><span></span><span><button class="dugme ikincil" style="padding:5px 10px;font-size:13px" data-aktar="${i}">Kablo hesabına aktar</button> <button data-osil="${i}" style="border:0;background:none;color:var(--kotu);font-size:18px">×</button></span></div>`).join('') + `<div class="ozet"><b>Toplam</b><b>${sayi(top, 2)} m</b></div>` : '<div class="bos">Kaydedilen ölçü yok.</div>';
+    $('#pListe').querySelectorAll('[data-aktar]').forEach(b => b.onclick = () => hesapAc('kesit', {L: Math.ceil(olcumler[+b.dataset.aktar].m)}));
+    $('#pListe').querySelectorAll('[data-osil]').forEach(b => b.onclick = () => { olcumler.splice(+b.dataset.osil, 1); liste(); });
+  };
+  liste(); ciz();
+  // dokunma: tek parmak sürükle / dokun, iki parmak yakınlaştır
+  const ptr = new Map(); let surukle = null, iki = null;
+  tv.addEventListener('pointerdown', e => { tv.setPointerCapture(e.pointerId); ptr.set(e.pointerId, [e.offsetX, e.offsetY]);
+    if (ptr.size === 1) surukle = {x: e.offsetX, y: e.offsetY, ox: P.gorunum.ox, oy: P.gorunum.oy, oynadi: false};
+    else if (ptr.size === 2){ const [a, b] = [...ptr.values()]; iki = {d: Math.hypot(a[0] - b[0], a[1] - b[1]), s: P.gorunum.s, m: dun((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)}; surukle = null; } });
+  tv.addEventListener('pointermove', e => { if (!ptr.has(e.pointerId)) return; ptr.set(e.pointerId, [e.offsetX, e.offsetY]);
+    if (iki && ptr.size === 2){ const [a, b] = [...ptr.values()], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; P.gorunum.s = iki.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / (iki.d || 1); P.gorunum.ox = mx - iki.m[0] * P.gorunum.s; P.gorunum.oy = my + iki.m[1] * P.gorunum.s; ciz(); return; }
+    if (surukle){ const dx = e.offsetX - surukle.x, dy = e.offsetY - surukle.y; if (Math.hypot(dx, dy) > 8) surukle.oynadi = true; if (surukle.oynadi){ P.gorunum.ox = surukle.ox + dx; P.gorunum.oy = surukle.oy + dy; ciz(); } } });
+  const birak = e => { ptr.delete(e.pointerId); if (ptr.size < 2) iki = null;
+    if (surukle && !surukle.oynadi && P.mod !== 'kaydir'){
+      let q = dun(e.offsetX, e.offsetY); const y = H2.yapis(P.uclar, q[0], q[1], 14 / P.gorunum.s); if (y) q = y;
+      if (P.mod === 'olcek' && P.nokta.length >= 2) P.nokta = [];
+      P.nokta.push(q); ciz();
+      if (P.mod === 'olcek' && P.nokta.length === 2) setTimeout(olcekSor, 50);
+    }
+    if (!ptr.size) surukle = null; };
+  tv.addEventListener('pointerup', birak); tv.addEventListener('pointercancel', e => { ptr.delete(e.pointerId); surukle = null; iki = null; });
+  tv.addEventListener('wheel', e => { e.preventDefault(); const k = e.deltaY < 0 ? 1.2 : 1 / 1.2, m = dun(e.offsetX, e.offsetY); P.gorunum.s *= k; P.gorunum.ox = e.offsetX - m[0] * P.gorunum.s; P.gorunum.oy = e.offsetY + m[1] * P.gorunum.s; ciz(); }, {passive: false});
+  const zum = k => { const m = dun(W / 2, Hh / 2); P.gorunum.s *= k; P.gorunum.ox = W / 2 - m[0] * P.gorunum.s; P.gorunum.oy = Hh / 2 + m[1] * P.gorunum.s; ciz(); };
+  $('#pYak').onclick = () => zum(1.5); $('#pUzak').onclick = () => zum(1 / 1.5); $('#pSigdir').onclick = () => { sigdir(); ciz(); };
+  const olcekSor = () => {
+    const ham = H2.uzunluk(P.nokta) * H2.METRE[P.birim];
+    perde(`<h2>Ölçek ayarla</h2><p class="alt-baslik">Seçtiğin iki nokta arası projede ${sayi(ham, 3)} m görünüyor. Gerçekte kaç metre?</p><label>Gerçek uzunluk (m)</label><input id="gercek" type="number" step="0.01" inputmode="decimal">
+      <div class="yanyana"><button class="dugme" id="oTamam">Ayarla</button><button class="dugme ikincil" id="oSifir">Ölçeği sıfırla</button></div>`, (p, kapat) => {
+      p.querySelector('#oTamam').onclick = () => { const g = parseFloat(p.querySelector('#gercek').value.replace(',', '.')); if (!g || !ham) return toast('Uzunluk yazın'); P.kal = g / ham; P.nokta = []; P.mod = 'olc'; kapat(); projeCiz(); toast('Ölçek ayarlandı'); };
+      p.querySelector('#oSifir').onclick = () => { P.kal = 1; P.nokta = []; P.mod = 'olc'; kapat(); projeCiz(); };
+    });
+  };
+  $('#projeAlan').querySelectorAll('[data-mod]').forEach(b => b.onclick = () => { P.mod = b.dataset.mod; if (P.mod === 'olcek') P.nokta = []; projeCiz(); });
+  $('#pBirim').onchange = e => { P.birim = +e.target.value; ciz(); };
+  $('#pGeri').onclick = () => { P.nokta.pop(); ciz(); };
+  $('#pSil').onclick = () => { P.nokta = []; ciz(); };
+  $('#pKaydet').onclick = () => { if (P.nokta.length < 2) return toast('Önce güzergâhı işaretle');
+    perde(`<h2>Ölçüyü kaydet</h2><label>Adı</label><input id="oAd" value="Hat ${olcumler.length + 1}"><div class="not">${sayi(H2.uzunluk(P.nokta) * metre(), 2)} m</div><div class="yanyana"><button class="dugme tam" id="oK">Kaydet</button></div>`, (p, kapat) => {
+      p.querySelector('#oK').onclick = () => { olcumler.push({ad: p.querySelector('#oAd').value || 'Hat', m: H2.uzunluk(P.nokta) * metre()}); P.nokta = []; kapat(); liste(); ciz(); toast('Ölçü kaydedildi'); Reklam.islem(); };
+    }); };
+  $('#pKatman').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; P.gizli.has(k) ? P.gizli.delete(k) : P.gizli.add(k); b.style.opacity = P.gizli.has(k) ? .4 : 1; b.style.textDecoration = P.gizli.has(k) ? 'line-through' : ''; ciz(); });
+}
+
+/* ---------- Metal ve akım bulucu ---------- */
+let radarDur = null;
+function radarEkrani(){
+  ekran.innerHTML = `<button class="geri">‹ Hesaplar</button>
+  <div class="kart" style="border-color:var(--kotu)"><b class="kotu">⚠ Güvenlik aracı değildir</b><div class="not" style="margin-top:4px">Telefon gerilim ölçemez. Bu bölüm yalnız manyetik alanı sezer: duvardaki demiri, çiviyi ve <b>o an akım çeken</b> kabloyu bulmaya yardım eder. Yüksüz kablo bulunamaz. Çalışmadan önce sigortayı kapatın ve gerilimi ölçü aletiyle kontrol edin.</div></div>
+  <div class="kart" style="text-align:center"><h2>Metal ve akım bulucu</h2><p class="alt-baslik">Telefonu duvardan uzakta tutup "Ayarla"ya bas, sonra duvarda yavaşça gezdir. Pusula algılayıcısı genelde telefonun üst kısmındadır.</p>
+    <svg viewBox="0 0 200 200" style="width:min(70vw,260px)"><circle cx="100" cy="100" r="86" fill="none" stroke="var(--cizgi)" stroke-width="14"/><circle id="rYay" cx="100" cy="100" r="86" fill="none" stroke="var(--vurgu)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 541" transform="rotate(-90 100 100)"/>
+      <text id="rYuzde" x="100" y="108" text-anchor="middle" font-size="38" font-weight="800" fill="var(--yazi)">—</text><text id="rAlan" x="100" y="136" text-anchor="middle" font-size="12" fill="var(--soluk)"></text></svg>
+    <div class="ozet" style="text-align:left"><span>Metal / sabit alan</span><b id="rMetal">—</b></div>
+    <div class="ozet" style="text-align:left"><span>Akım dalgalanması</span><b id="rAkim">—</b></div>
+    <div class="yanyana" style="justify-content:center"><button class="dugme" id="rBasla">Başlat</button><button class="dugme ikincil" id="rAyar">Ayarla</button><button class="dugme ikincil" id="rSes">🔊 Ses açık</button></div>
+    <div class="not" id="rNot"></div></div>`;
+  ekran.querySelector('.geri').onclick = () => { radarDurdur(); hesapListesi(); };
+  const radar = new R.Radar(); let ses = depo.al('radarSes', true), ac = null, sonBip = 0, calisiyor = false;
+  $('#rSes').textContent = ses ? '🔊 Ses açık' : '🔇 Ses kapalı';
+  $('#rSes').onclick = () => { ses = !ses; depo.koy('radarSes', ses); $('#rSes').textContent = ses ? '🔊 Ses açık' : '🔇 Ses kapalı'; };
+  $('#rAyar').onclick = () => { radar.ayarla(); toast('Ortam alanı öğreniliyor — telefonu duvardan uzak tut'); };
+  const bip = g => { const ara = R.bipAraligi(g), t = performance.now(); if (!ara || t - sonBip < ara) return; sonBip = t;
+    if (navigator.vibrate) navigator.vibrate(25);
+    if (!ses) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), k = ac.createGain();
+      o.frequency.value = 600 + 900 * g; k.gain.setValueAtTime(.25, ac.currentTime); k.gain.exponentialRampToValueAtTime(.001, ac.currentTime + .09); o.connect(k).connect(ac.destination); o.start(); o.stop(ac.currentTime + .1); } catch(e){} };
+  const goster = d => {
+    if (!d.hazir){ $('#rYuzde').textContent = '…'; return; }
+    const y = Math.round(d.guc * 100); $('#rYuzde').textContent = '%' + y; $('#rYay').setAttribute('stroke-dasharray', `${540 * d.guc} 541`);
+    $('#rYay').setAttribute('stroke', d.guc > .66 ? 'var(--kotu)' : d.guc > .33 ? 'var(--vurgu)' : 'var(--iyi)');
+    $('#rAlan').textContent = `${sayi(d.alan, 1)} µT (ayar ${sayi(d.taban, 1)})`;
+    $('#rMetal').textContent = '%' + Math.round(d.metal * 100); $('#rAkim').textContent = '%' + Math.round(d.akim * 100);
+    bip(d.guc);
+  };
+  const ornekAl = l => { let d; for (let i = 0; i + 2 < l.length; i += 3) d = radar.ekle(l[i], l[i + 1], l[i + 2]); if (d) goster(d); };
+  $('#rBasla').onclick = async () => {
+    if (calisiyor){ radarDurdur(); calisiyor = false; $('#rBasla').textContent = 'Başlat'; return; }
+    try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e){}
+    if (window.EMNative && window.EMNative.call){
+      window.__magOrnek = ornekAl;
+      try { await window.EMNative.call({action: 'magStart'}); radarDur = () => { window.EMNative.call({action: 'magStop'}).catch(() => {}); window.__magOrnek = null; }; }
+      catch(e){ $('#rNot').textContent = 'Bu telefonda pusula algılayıcısı bulunamadı.'; return; }
+    } else if ('Magnetometer' in window){
+      try { const s = new Magnetometer({frequency: 60}); s.onreading = () => ornekAl([s.x, s.y, s.z]); s.onerror = e => { $('#rNot').textContent = 'Algılayıcı açılamadı: izin verilmedi veya desteklenmiyor.'; }; s.start(); radarDur = () => s.stop(); }
+      catch(e){ $('#rNot').textContent = 'Algılayıcı açılamadı.'; return; }
+    } else { $('#rNot').textContent = 'Bu bölüm HızırUsta telefon uygulamasında çalışır; tarayıcı pusula algılayıcısına erişemez.'; return; }
+    calisiyor = true; radar.ayarla(); $('#rBasla').textContent = 'Durdur'; toast('Ortam alanı öğreniliyor…');
+  };
+}
+function radarDurdur(){ if (radarDur){ try { radarDur(); } catch(e){} radarDur = null; } }
+
+/* ---------- Firmam ---------- */
+function ayarEkrani(){
+  const f = depo.al('firma', {});
+  ekran.innerHTML = `<div class="kart"><h2>Firma bilgileri</h2><p class="alt-baslik">Tekliflerin üstünde görünür.</p>
+    <label>Firma veya usta adı</label><input id="ad" value="${kacis(f.ad || '')}"><label>Telefon</label><input id="tel" type="tel" value="${kacis(f.tel || '')}">
+    <label>Adres</label><input id="adres" value="${kacis(f.adres || '')}"><label>Vergi dairesi ve numarası</label><input id="vergi" value="${kacis(f.vergi || '')}">
+    <label>Logo</label><input id="logo" type="file" accept="image/*">${f.logo ? `<img src="${f.logo}" alt="" style="max-height:60px;margin-top:8px">` : ''}
+    <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button></div></div>
+    <div class="kart"><h2>Paketim</h2><p class="alt-baslik">${depo.al('abone', false) ? 'Usta Paketi aktif.' : Paket.kalanGun > 0 ? `Ücretsiz denemenin bitmesine ${Paket.kalanGun} gün var.` : 'Ücretsiz sürüm: bütün hesaplar açık.'}</p>
+    ${depo.al('abone', false) ? '' : `<button class="dugme ikincil" id="abone">Usta Paketi · aylık 249,99 ₺</button>`}</div>
+    <div class="not" style="text-align:center">HızırUsta · TUSNELDAX · Hesaplar yol göstericidir; son karar yetkili elektrikçinindir.</div>`;
+  $('#logo').onchange = e => { const d = e.target.files[0]; if (!d) return; const o = new FileReader(); o.onload = () => {
+    const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 360 / img.width); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); f.logo = c.toDataURL('image/png'); depo.koy('firma', f); ayarEkrani(); toast('Logo eklendi'); }; img.src = o.result; }; o.readAsDataURL(d); };
+  $('#kaydet').onclick = () => { ['ad', 'tel', 'adres', 'vergi'].forEach(k => f[k] = $('#' + k).value.trim()); depo.koy('firma', f); toast('Kaydedildi'); };
+  const a = $('#abone'); if (a) a.onclick = () => Paket.satinAl();
+}
+
+/* ---------- Gezinme ---------- */
+let aktifSekme = 'hesap';
+function git(s){
+  radarDurdur(); Reklam.islem(); aktifSekme = s; document.querySelectorAll('#altMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+  ({hesap: hesapListesi, teklif: teklifListesi, puantaj: puantajEkrani, tarama: taramaEkrani, ayar: ayarEkrani})[s](); rozet(); scrollTo(0, 0);
+}
+document.querySelectorAll('#altMenu button').forEach(b => b.onclick = () => git(b.dataset.s));
+git('hesap');
+</script>
+</body>
+</html>
