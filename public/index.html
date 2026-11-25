@@ -14,7 +14,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--yazi);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 header{position:sticky;top:0;z-index:5;background:#14213d;color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
-header .logo{width:30px;height:30px;border-radius:8px;background:var(--vurgu);display:grid;place-items:center;color:#14213d;font-weight:900}
+header .logo{width:30px;height:30px;flex:none}
 header h1{font-size:18px;margin:0;flex:1}
 header .rozet{font-size:12px;background:rgba(255,255,255,.14);padding:4px 9px;border-radius:99px}
 main{max-width:720px;margin:0 auto;padding:14px 16px calc(90px + env(safe-area-inset-bottom))}
@@ -98,7 +98,7 @@ table.pt td.h sup{color:var(--vurgu);font-size:9px}
 </style>
 </head>
 <body>
-<header><div class="logo">⚡</div><h1>HızırUsta</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
+<header><svg class="logo" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#fca311"/><rect x="250" y="230" width="132" height="564" rx="34" fill="#14213d"/><rect x="642" y="230" width="132" height="564" rx="34" fill="#14213d"/><path fill="#fff" d="M372 420 L612 420 L528 498 L652 498 L652 604 L412 604 L496 526 L372 526 Z"/></svg><h1>HızırUsta</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
 <main id="ekran"></main>
 <nav class="alt" id="altMenu">
   <button data-s="hesap" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/></svg>Hesaplar</button>
@@ -125,10 +125,10 @@ const depo = {
 };
 function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._z); t._z = setTimeout(() => t.classList.remove('on'), 2200); }
 
-/* Usta Paketi: teklif ve iş kaydı ücretli; ilk kullanımda 7 gün ücretsiz deneme.
+/* Usta Paketi: teklif ve iş kaydı ücretli; ilk kullanımda 3 gün ücretsiz deneme (reklamlı).
    Telefon uygulamasında abonelik mağaza üzerinden alınır (window.EMNative, 2. aşama). */
 const Paket = {
-  DENEME_GUN: 7,
+  DENEME_GUN: 3,
   get aktif(){ return depo.al('abone', false) || this.kalanGun > 0; },
   get kalanGun(){ const b = depo.al('denemeBas', 0); if (!b) return 0; return Math.max(0, this.DENEME_GUN - Math.floor((Date.now() - b) / 864e5)); },
   get denemeBasladi(){ return !!depo.al('denemeBas', 0); },
@@ -139,6 +139,16 @@ const Paket = {
       toast('Satın alma tamamlanmadı'); return false;
     }
     toast('Abonelik telefon uygulamasından alınır'); return false;
+  }
+};
+/* Reklam: abone olmayanlara her işlemden sonra geçiş reklamı (telefon uygulamasında AdMob).
+   Google'ın reklam kurallarına takılmamak için iki reklam arasında en az 60 saniye beklenir; abonelere hiç reklam çıkmaz. */
+const Reklam = {
+  ARALIK: 60000, son: 0,
+  async islem(){
+    if (depo.al('abone', false) || !(window.EMNative && window.EMNative.call)) return;
+    const t = Date.now(); if (t - this.son < this.ARALIK) return; this.son = t;
+    try { await window.EMNative.call({action: 'ad', kind: 'interstitial'}); } catch(e){}
   }
 };
 function rozet(){ const r = $('#paketRozet'); r.textContent = depo.al('abone', false) ? 'Usta Paketi' : Paket.kalanGun > 0 ? `Deneme: ${Paket.kalanGun} gün` : 'Ücretsiz'; }
@@ -161,7 +171,7 @@ function hesapListesi(){
   <button class="secim" id="projeAc" style="width:100%;margin-bottom:10px;flex-direction:row;align-items:center"><span class="ik">📐</span><span style="display:flex;flex-direction:column"><b style="color:var(--yazi);font-size:15px">Projeden ölçü al</b><span>Proje dosyasını aç, kablo metresini ölç, hesaba aktar</span></span></button>
   <button class="secim" id="radarAc" style="width:100%;margin-bottom:10px;flex-direction:row;align-items:center"><span class="ik">📡</span><span style="display:flex;flex-direction:column"><b style="color:var(--yazi);font-size:15px">Metal ve akım bulucu</b><span>Duvardaki demiri ve akım çeken kabloyu sezer (ölçü aleti değildir)</span></span></button>
   <div class="izgara">${HESAPLAR.map(h => `<button class="secim" data-h="${h.id}"><span class="ik">${h.ik}</span><b>${h.ad}</b><span>${h.acik}</span></button>`).join('')}</div></div>
-  <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif, aylık puantaj ve ödeme hesabı. İlk 7 gün ücretsiz.</p>
+  <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif, aylık puantaj ve ödeme hesabı. İlk 3 gün ücretsiz.</p>
   <div class="yanyana"><button class="dugme" data-git="teklif">Teklif hazırla</button><button class="dugme ikincil" data-git="puantaj">Puantaj</button><button class="dugme ikincil" data-git="tarama">Belge tara</button></div></div>`;
   ekran.querySelectorAll('[data-h]').forEach(b => b.onclick = () => hesapAc(b.dataset.h));
   $('#projeAc').onclick = projeEkrani; $('#radarAc').onclick = radarEkrani;
@@ -206,7 +216,7 @@ const HESAPLA = {
 function hesapAc(id, on){
   const h = HESAPLAR.find(x => x.id === id);
   ekran.innerHTML = `<button class="geri">‹ Hesaplar</button><div class="kart"><h2>${h.ad}</h2><p class="alt-baslik">${h.acik}</p><form id="f">${FORMLAR[id]()}</form><div class="sonuc" id="sonuc"></div></div>`;
-  ekran.querySelector('.geri').onclick = hesapListesi;
+  ekran.querySelector('.geri').onclick = () => { hesapListesi(); Reklam.islem(); };
   const calis = () => { try { $('#sonuc').innerHTML = HESAPLA[id](); } catch(e){ $('#sonuc').innerHTML = '<div class="not">Değerleri kontrol edin.</div>'; } };
   if (on) for (const [k, x] of Object.entries(on)){ const el = $('#' + k); if (el) el.value = x; }
   $('#f').addEventListener('input', calis); $('#f').addEventListener('submit', e => e.preventDefault()); calis();
@@ -223,8 +233,8 @@ const BIRIMLER = ['adet', 'm', 'm²', 'kg', 'top', 'paket', 'takım', 'gün', 's
 function kilitEkrani(neIcin){
   const deneme = !Paket.denemeBasladi;
   ekran.innerHTML = `<div class="kart kilit"><div class="ik">🔒</div><h2>Usta Paketi</h2><p class="alt-baslik">${neIcin} Usta Paketi'nde.<br>Logolu teklif, aylık puantaj, ödeme hesabı ve WhatsApp'tan gönderme.</p>
-  ${deneme ? `<button class="dugme tam" id="dene">7 gün ücretsiz dene</button>` : `<button class="dugme tam" id="al">Abone ol · aylık 149,99 ₺</button><div class="not">Deneme süreniz bitti.</div>`}</div>`;
-  const d = $('#dene'); if (d) d.onclick = () => { Paket.denemeBaslat(); toast('7 günlük deneme başladı'); git(aktifSekme); };
+  ${deneme ? `<button class="dugme tam" id="dene">3 gün ücretsiz dene</button>` : `<button class="dugme tam" id="al">Abone ol · aylık 249,99 ₺</button><div class="not">Deneme süreniz bitti.</div>`}</div>`;
+  const d = $('#dene'); if (d) d.onclick = () => { Paket.denemeBaslat(); toast('3 günlük deneme başladı'); git(aktifSekme); };
   const a = $('#al'); if (a) a.onclick = async () => { if (await Paket.satinAl()) git(aktifSekme); };
 }
 
@@ -250,7 +260,7 @@ function teklifEkrani(t){
   $('#iskonto').oninput = e => { taslak.iskonto = +e.target.value || 0; toplamCiz(); };
   $('#kdv').onchange = e => { taslak.kdv = +e.target.value; toplamCiz(); };
   $('#ekle').onclick = () => { taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''}); kalemCiz(); ekran.querySelectorAll('.kalem input[data-k="ad"]').forEach((x, i, a) => i === a.length - 1 && x.focus()); };
-  $('#kaydet').onclick = () => { kaydet(); toast('Teklif kaydedildi'); };
+  $('#kaydet').onclick = () => { kaydet(); toast('Teklif kaydedildi'); Reklam.islem(); };
   $('#yazdir').onclick = () => { kaydet(); belgeHazirla(); setTimeout(() => print(), 50); };
   $('#wp').onclick = () => { kaydet(); whatsapp(); };
   $('#yeni').onclick = () => { kaydet(); teklifEkrani(yeniTeklif()); };
@@ -362,7 +372,7 @@ function gunSec(isciId, g){
     let d = mevcut.d || 'T';
     p.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { d = b.dataset.d; p.querySelectorAll('[data-d]').forEach(x => x.classList.toggle('on', x === b)); if (d === '') kaydetGun(); });
     const kaydetGun = () => { kayit[isciId] = kayit[isciId] || {}; const m = parseFloat(p.querySelector('#mesai').value) || 0;
-      if (d === '') delete kayit[isciId][g]; else kayit[isciId][g] = {d, m}; depo.koy(pKey(), kayit); kapat(); puantajEkrani(); };
+      if (d === '') delete kayit[isciId][g]; else kayit[isciId][g] = {d, m}; depo.koy(pKey(), kayit); kapat(); puantajEkrani(); Reklam.islem(); };
     p.querySelector('#tamam').onclick = kaydetGun;
   });
 }
@@ -444,7 +454,7 @@ function kirpmaEkrani(dosya){
         let gw = (uz(q[0], q[1]) + uz(q[3], q[2])) / 2, gh = (uz(q[0], q[3]) + uz(q[1], q[2])) / 2; const s = Math.min(1, 1600 / Math.max(gw, gh)); gw = Math.round(gw * s); gh = Math.round(gh * s);
         const kaynak = cx.getImageData(0, 0, W, Hh).data, out = T.filtre(T.duzelt(kaynak, W, Hh, q, gw, gh), gw, gh, tFiltre);
         const oc = document.createElement('canvas'); oc.width = gw; oc.height = gh; oc.getContext('2d').putImageData(new ImageData(out, gw, gh), 0, 0);
-        tSayfalar.push({url: oc.toDataURL('image/jpeg', .85), w: gw, h: gh}); kapat(); bitti();
+        tSayfalar.push({url: oc.toDataURL('image/jpeg', .85), w: gw, h: gh}); kapat(); bitti(); Reklam.islem();
       };
       p.querySelector('#tEkle').onclick = () => { toast('Sayfa hazırlanıyor…'); setTimeout(() => ekle(kose), 30); };
       p.querySelector('#tTum').onclick = () => { toast('Sayfa hazırlanıyor…'); setTimeout(() => ekle([[0, 0], [W, 0], [W, Hh], [0, Hh]]), 30); };
@@ -570,7 +580,7 @@ function projeCiz(){
   $('#pSil').onclick = () => { P.nokta = []; ciz(); };
   $('#pKaydet').onclick = () => { if (P.nokta.length < 2) return toast('Önce güzergâhı işaretle');
     perde(`<h2>Ölçüyü kaydet</h2><label>Adı</label><input id="oAd" value="Hat ${olcumler.length + 1}"><div class="not">${sayi(H2.uzunluk(P.nokta) * metre(), 2)} m</div><div class="yanyana"><button class="dugme tam" id="oK">Kaydet</button></div>`, (p, kapat) => {
-      p.querySelector('#oK').onclick = () => { olcumler.push({ad: p.querySelector('#oAd').value || 'Hat', m: H2.uzunluk(P.nokta) * metre()}); P.nokta = []; kapat(); liste(); ciz(); toast('Ölçü kaydedildi'); };
+      p.querySelector('#oK').onclick = () => { olcumler.push({ad: p.querySelector('#oAd').value || 'Hat', m: H2.uzunluk(P.nokta) * metre()}); P.nokta = []; kapat(); liste(); ciz(); toast('Ölçü kaydedildi'); Reklam.islem(); };
     }); };
   $('#pKatman').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; P.gizli.has(k) ? P.gizli.delete(k) : P.gizli.add(k); b.style.opacity = P.gizli.has(k) ? .4 : 1; b.style.textDecoration = P.gizli.has(k) ? 'line-through' : ''; ciz(); });
 }
@@ -630,7 +640,7 @@ function ayarEkrani(){
     <label>Logo</label><input id="logo" type="file" accept="image/*">${f.logo ? `<img src="${f.logo}" alt="" style="max-height:60px;margin-top:8px">` : ''}
     <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button></div></div>
     <div class="kart"><h2>Paketim</h2><p class="alt-baslik">${depo.al('abone', false) ? 'Usta Paketi aktif.' : Paket.kalanGun > 0 ? `Ücretsiz denemenin bitmesine ${Paket.kalanGun} gün var.` : 'Ücretsiz sürüm: bütün hesaplar açık.'}</p>
-    ${depo.al('abone', false) ? '' : `<button class="dugme ikincil" id="abone">Usta Paketi · aylık 149,99 ₺</button>`}</div>
+    ${depo.al('abone', false) ? '' : `<button class="dugme ikincil" id="abone">Usta Paketi · aylık 249,99 ₺</button>`}</div>
     <div class="not" style="text-align:center">HızırUsta · TUSNELDAX · Hesaplar yol göstericidir; son karar yetkili elektrikçinindir.</div>`;
   $('#logo').onchange = e => { const d = e.target.files[0]; if (!d) return; const o = new FileReader(); o.onload = () => {
     const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 360 / img.width); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); f.logo = c.toDataURL('image/png'); depo.koy('firma', f); ayarEkrani(); toast('Logo eklendi'); }; img.src = o.result; }; o.readAsDataURL(d); };
@@ -641,7 +651,7 @@ function ayarEkrani(){
 /* ---------- Gezinme ---------- */
 let aktifSekme = 'hesap';
 function git(s){
-  radarDurdur(); aktifSekme = s; document.querySelectorAll('#altMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+  radarDurdur(); Reklam.islem(); aktifSekme = s; document.querySelectorAll('#altMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
   ({hesap: hesapListesi, teklif: teklifListesi, puantaj: puantajEkrani, tarama: taramaEkrani, ayar: ayarEkrani})[s](); rozet(); scrollTo(0, 0);
 }
 document.querySelectorAll('#altMenu button').forEach(b => b.onclick = () => git(b.dataset.s));
