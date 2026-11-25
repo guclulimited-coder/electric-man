@@ -326,6 +326,8 @@ const Native = {app: !!(window.EMNative && window.EMNative.call), platform: (win
   call(o){ return this.app ? window.EMNative.call(o) : Promise.reject(new Error('NO_NATIVE')); }};
 if (PORTAL){ Portal.init(); document.documentElement.classList.add('portal'); }
 else if (window.WebAds) WebAds.init({base: '../', app: Native.app});
+// 25 Kasım 2026: telefon uygulamasında her açılışta uygulama açılış reklamı (hazır değilse 4,5 sn'de vazgeçer); ilk oyun reklam kapanınca başlar
+const launchAd = Native.app && !PORTAL ? Native.call({action: 'ad', kind: 'appopen'}).catch(() => null) : Promise.resolve(null);
 /* 6 Kasım 2026: açılış hunisi — indirenler nerede kayboluyor? Yalnız günlük sayaç: aşama, bölüm kovası, platform, sürüm.
    Kimlik/hesap gönderilmez; aynı gün aynı aşama cihazda bir kez sayılır (src/funnel.mjs). */
 const Funnel = (() => {
@@ -3252,7 +3254,7 @@ function attach(model){
   if (store.get('resetNote', 0)){ store.set('resetNote', 0); setTimeout(() => showStory('Electric Hunter', T('ch1'), T('resetNote')), 600); }
   // 19 Kasım 2026: ilk açılışta oyuncunun yarısı "Portala gir"e basmadan çıkıyordu; ilk kez gelen oyuncu doğrudan oyuna girer
   const sv0 = store.get('save', null);
-  if (!(sv0 && (sv0.isl || sv0.eaten)) && !store.get('autoStart', 0)) setTimeout(() => { if (Online.gated() || $('title').hidden || b.disabled || b.hidden) return; store.set('autoStart', 1); store.set('introSeen', 1); $('title').hidden = true; startGame(); }, 700); // 25 Kasım: ilk girişte 16 sn'lik giriş filmini atla (oyuncular film sırasında çıkıyordu)
+  if (!(sv0 && (sv0.isl || sv0.eaten)) && !store.get('autoStart', 0)) launchAd.then(() => setTimeout(() => { if (Online.gated() || $('title').hidden || b.disabled || b.hidden) return; store.set('autoStart', 1); store.set('introSeen', 1); $('title').hidden = true; startGame(); }, 700)); // 25 Kasım: ilk girişte 16 sn'lik giriş filmini atla (oyuncular film sırasında çıkıyordu)
 }
 player.regen = .6; buildIsland(0); scaleIsland(islands[0], false); applyTheme(themeOf(0)); player.pos.copy(spawnPoint(0)); portal.position.set(player.pos.x, 1.8, player.pos.z - 2.5);
 renderSlots(); renderStats();
