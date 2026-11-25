@@ -15,3 +15,8 @@ for b in ['com.tusneldax.electricman','com.tusneldax.electrichunter']:
         v=g(f"/v1/apps/{x['id']}/appStoreVersions?filter[platform]=IOS&limit=5")['data']
         for y in v:
             s=y['attributes']; print('ASC',b,x['id'],s.get('versionString'),s.get('appStoreState'),s.get('appVersionState'),s.get('releaseType'),s.get('createdDate'))
+# Ömer onayı 25 Kasım: HızırUsta uygulama kimliği
+var = g('/v1/bundleIds?filter[identifier]=com.tusneldax.hizirusta')['data']
+if not [b for b in var if b['attributes']['identifier'] == 'com.tusneldax.hizirusta']:
+    print('KIMLIK', post('/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': 'com.tusneldax.hizirusta', 'name': 'HizirUsta', 'platform': 'IOS'}}}))
+else: print('KIMLIK zaten var')
