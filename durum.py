@@ -9,7 +9,7 @@ def post(p,b):
         with urllib.request.urlopen(r,timeout=60) as x: return x.status
     except urllib.error.HTTPError as e: return f'{e.code} {e.read().decode()[:300]}'
 def g(p): return json.load(urllib.request.urlopen(urllib.request.Request('https://api.appstoreconnect.apple.com'+p,headers={'Authorization':'Bearer '+t}),timeout=60))
-for b in ['com.tusneldax.electricman','com.tusneldax.electrichunter']:
+for b in ['com.tusneldax.electricman','com.tusneldax.electrichunter','com.tusneldax.hizirusta']:
     a=g(f'/v1/apps?filter[bundleId]={b}')['data']
     for x in a:
         v=g(f"/v1/apps/{x['id']}/appStoreVersions?filter[platform]=IOS&limit=5")['data']
