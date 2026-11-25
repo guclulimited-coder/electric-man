@@ -5,5 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for i in $(seq 1 20); do n=$(curl -sL -m 20 "https://electricman.tusneldax.com/hunter/index.html?x=$i" | grep -c 'giriş filmini atla'); [ "$n" = 1 ] && break; sleep 15; done
-          echo "EH_FILM $(curl -sL -m 20 'https://electricman.tusneldax.com/hunter/index.html?x=1' | grep -c 'giriş filmini atla')"
+          u=https://electricman.tusneldax.com/hunter/index.html
+          echo "EH_FILM $(curl -sL -m 20 "$u?x=$RANDOM" | grep -c 'giriş filmini atla' || true)"
+          echo "EH_TG $(curl -sL -m 20 "$u?x=$RANDOM" | grep -c 'tg=1' || true)"
+          echo "EM_PORTAL $(curl -sL -m 20 "https://electricman.tusneldax.com/portal.js?x=$RANDOM" | grep -c 'gamedistribution' || true)"
