@@ -1,0 +1,150 @@
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{e4f79c8 com.android.systemui.emulation.pixel_3a/10013} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{7a1fa61 com.android.systemui.emulation.pixel_4a/10000} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{2475986 com.android.systemui.emulation.pixel_6a/10042} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{94c2247 com.android.systemui.emulation.pixel_7a/10017} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{1c66a74 com.google.android.settings.intelligence/10118} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{8eba9f5 com.google.android.projection.gearhead/10123} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{fa2db9d com.google.android.uwb.resources/10179} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{75d0987 com.android.cts.ctsshim/10171} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{faf8812 com.google.android.wifi.resources/10180} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{91e9be3 com.google.android.wifi.dialog/10181} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{a19b9e0 com.google.android.apps.wallpaper/10161} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{6d69499 com.google.android.odad/10122} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{1fa135e com.android.settings.auto_generated_rro_product__/10028} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{215133f com.android.internal.systemui.navbar.gestural/10051} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{9b32ab6 com.google.android.apps.youtube.music/10156} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{7f2e155 com.android.bluetoothmidiservice/10106} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{fd0076a com.android.storagemanager.auto_generated_rro_product__/10026} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{3d1a45b com.google.android.cellbroadcastreceiver/10178} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{9b8e4f8 com.android.phone.auto_generated_rro_product__/10061} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{94d3dd1 android.auto_generated_rro_product__/10069} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{f5f3036 com.android.internal.systemui.navbar.gestural_narrow_back/10052} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{bfc2b37 com.google.android.inputmethod.latin/10141} BLOCKED
+11-25 19:00:15.655   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{31358a4 android.auto_generated_rro_vendor__/10075} BLOCKED
+11-25 19:00:15.661   522  1908 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{716e60d com.google.android.apps.restore/10119} BLOCKED
+11-25 19:00:15.662   522   755 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=110, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.662   522   755 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=110, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.663   522   755 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=110, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.663   522   755 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=110, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.682   522  1943 D ConnectivityService: requestNetwork for uid/pid:10192/2442 activeRequest: null callbackRequest: 111 [NetworkRequest [ REQUEST id=112, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-25 19:00:15.688   522   755 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=112, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.688   522   755 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=112, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.688   522   755 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=112, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.688   522   755 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=112, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: com.tusneldax.hizirusta UnderlyingNetworks: Null] ]
+11-25 19:00:15.871   522  1941 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{2f25b43 com.google.android.apps.maps/10153} BLOCKED
+11-25 19:00:16.154  2442  4102 W GooglePlayServicesUtil: Google Play services out of date for com.tusneldax.hizirusta.  Requires 243734000 but found 231818047
+11-25 19:00:16.246  2442  2619 I eldax.hizirusta: Background concurrent copying GC freed 12161(1090KB) AllocSpace objects, 11(1940KB) LOS objects, 49% free, 7461KB/14MB, paused 55us,30us total 218.285ms
+11-25 19:00:16.417  2442  4110 W GooglePlayServicesUtil: Google Play services out of date for com.tusneldax.hizirusta.  Requires 243734000 but found 231818047
+11-25 19:00:16.586  2442  4112 W GooglePlayServicesUtil: Google Play services out of date for com.tusneldax.hizirusta.  Requires 243734000 but found 231818047
+11-25 19:00:16.715  1461  1536 I BlockstoreStorage: Clearing Blockstore Data for package com.tusneldax.hizirusta [CONTEXT service_id=258 ]
+11-25 19:00:16.851  2442  2442 I chromium: [INFO:CONSOLE(1110)] "The jsLoaded GMSG has been sent", source: https://googleads.g.doubleclick.net/mads/static/mad/sdk/native/production/sdk-core-v40-impl.js?n=true&lv=sdk_20190107_RC02 (1110)
+11-25 19:00:17.222   522  1946 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{8204b2a com.google.android.settings.intelligence/10118} BLOCKED
+11-25 19:00:17.231   522  1870 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{4cfeff6 com.google.android.settings.intelligence/10118} BLOCKED
+11-25 19:00:17.483   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{6fdb803 com.google.android.googlequicksearchbox/10132} BLOCKED
+11-25 19:00:17.483   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{d6a7380 com.google.android.gm/10142} BLOCKED
+11-25 19:00:17.483   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{e2159ea com.google.android.devicelockcontroller/10185} BLOCKED
+11-25 19:00:17.483   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{294c4db com.google.android.rkpdapp/10173} BLOCKED
+11-25 19:00:17.483   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{9b4bb78 com.google.android.contacts/10155} BLOCKED
+11-25 19:00:17.483   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{8eba9f5 com.google.android.projection.gearhead/10123} BLOCKED
+11-25 19:00:17.483   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{9b32ab6 com.google.android.apps.youtube.music/10156} BLOCKED
+11-25 19:00:18.368  2442  2619 I eldax.hizirusta: Background young concurrent copying GC freed 32626(2210KB) AllocSpace objects, 30(5156KB) LOS objects, 0% free, 16MB/16MB, paused 363us,65us total 443.805ms
+11-25 19:00:19.192  2442  2619 I eldax.hizirusta: Background concurrent copying GC freed 44873(1764KB) AllocSpace objects, 28(7072KB) LOS objects, 49% free, 9739KB/19MB, paused 12.652ms,3.525ms total 817.539ms
+11-25 19:00:22.135  2442  2619 I eldax.hizirusta: Background young concurrent copying GC freed 143122(5127KB) AllocSpace objects, 30(2980KB) LOS objects, 21% free, 14MB/19MB, paused 4.301ms,38us total 186.434ms
+11-25 19:00:24.446  2442  2619 I eldax.hizirusta: Background young concurrent copying GC freed 79100(2796KB) AllocSpace objects, 34(6664KB) LOS objects, 30% free, 14MB/20MB, paused 56us,83us total 184.624ms
+11-25 19:00:25.075  2442  2442 I chromium: [INFO:CONSOLE(1117)] "The jsLoaded GMSG has been sent", source: https://googleads.g.doubleclick.net/mads/static/sdk/native/sdk-core-v40.html (1117)
+11-25 19:00:26.584  2442  2442 I chromium: [INFO:CONSOLE(478)] "Refused to get unsafe header "X-Afma-Gcache-IsGcacheHit"", source: https://www.gstatic.com/mysidia/5ce6e7161ac3453d7543f07da196ef3f.js?tag=addon/rewarded_video (478)
+11-25 19:00:26.586  2442  2442 I chromium: [INFO:CONSOLE(478)] "Refused to get unsafe header "X-Afma-Gcache-IsGcacheHit"", source: https://www.gstatic.com/mysidia/5ce6e7161ac3453d7543f07da196ef3f.js?tag=addon/rewarded_video (478)
+11-25 19:00:26.717  2442  2882 D eldax.hizirusta: PlayerBase::PlayerBase()
+11-25 19:00:27.322  2442  4673 W chromium: [WARNING:sync_reader.cc(175)] ASR: No room in socket buffer.: Broken pipe (32)
+11-25 19:00:27.489   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{6164991 com.google.android.gm/10142} BLOCKED
+11-25 19:00:27.489   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{90db0f6 com.google.android.contacts/10155} BLOCKED
+11-25 19:00:27.489   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{b037cf7 com.google.android.settings.intelligence/10118} BLOCKED
+11-25 19:00:28.041  4701  4701 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-25 19:00:28.066  4701  4701 I AndroidRuntime: Using default boot image
+11-25 19:00:28.066  4701  4701 I AndroidRuntime: Leaving lock profiling enabled
+11-25 19:00:28.223  4701  4701 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+11-25 19:00:28.325  4701  4701 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-25 19:00:29.703  4701  4701 D AndroidRuntime: Shutting down VM
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: FATAL EXCEPTION: UiAutomation
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: PID: 4701
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: java.lang.RuntimeException: Bad file descriptor
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.BinderProxy.transactNative(Native Method)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.accessibilityservice.IAccessibilityServiceConnection$Stub$Proxy.findAccessibilityNodeInfoByAccessibilityId(IAccessibilityServiceConnection.java:1161)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.view.accessibility.AccessibilityInteractionClient.findAccessibilityNodeInfoByAccessibilityId(AccessibilityInteractionClient.java:665)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.view.accessibility.AccessibilityNodeInfo.refresh(AccessibilityNodeInfo.java:1120)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.view.accessibility.AccessibilityCache$AccessibilityNodeRefresher.refreshNode(AccessibilityCache.java:888)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.view.accessibility.AccessibilityCache.onAccessibilityEvent(AccessibilityCache.java:294)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.view.accessibility.AccessibilityInteractionClient.onAccessibilityEvent(AccessibilityInteractionClient.java:1158)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper.lambda$onAccessibilityEvent$2(AccessibilityService.java:2925)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper.$r8$lambda$09cnCCQeC7txVafv5NeCrjYkmcY(Unknown Source:0)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8.run(Unknown Source:6)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.Handler.handleCallback(Handler.java:958)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:294)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: Error reporting crash
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: java.lang.RuntimeException: Bad file descriptor
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.BinderProxy.transactNative(Native Method)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.IServiceManager$Stub$Proxy.checkService(IServiceManager.java:443)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.ServiceManagerProxy.getService(ServiceManagerNative.java:63)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.ServiceManager.rawGetService(ServiceManager.java:378)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.os.ServiceManager.getService(ServiceManager.java:147)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.app.ActivityManager$3.create(ActivityManager.java:5214)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.app.ActivityManager$3.create(ActivityManager.java:5211)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.util.Singleton.get(Singleton.java:43)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at android.app.ActivityManager.getService(ActivityManager.java:5202)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$KillApplicationHandler.uncaughtException(RuntimeInit.java:160)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at java.lang.ThreadGroup.uncaughtException(ThreadGroup.java:1071)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at java.lang.ThreadGroup.uncaughtException(ThreadGroup.java:1066)
+11-25 19:00:29.704  4701  4725 E AndroidRuntime: 	at java.lang.Thread.dispatchUncaughtException(Thread.java:2306)
+11-25 19:00:29.858  2442  2442 W eldax.hizirusta: Accessing hidden method Landroid/view/MotionEvent;->getEventTimeNano()J (unsupported, reflection, allowed)
+11-25 19:00:29.889  1558  1558 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x12000000 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=com.tusneldax.hizirusta fieldId=0 fieldName=null extras=null}, false)
+11-25 19:00:34.245  4840  4840 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-25 19:00:34.253  4840  4840 I AndroidRuntime: Using default boot image
+11-25 19:00:34.253  4840  4840 I AndroidRuntime: Leaving lock profiling enabled
+11-25 19:00:34.363  4840  4840 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+11-25 19:00:34.409  4840  4840 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-25 19:00:35.165  1410  1527 I HeterodyneSyncScheduler: Scheduling Phenotype for a PhenotypeSyncImmediately(6, org.chromium.net.cronet) one off with window [1, 2] in seconds [CONTEXT service_id=51 ]
+11-25 19:00:35.460  4840  4840 D AndroidRuntime: Shutting down VM
+11-25 19:00:38.346   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{e0cdda5 com.google.android.youtube/10139} BLOCKED
+11-25 19:00:38.346   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{9a0d57a com.google.android.as/10125} BLOCKED
+11-25 19:00:38.346   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{d7e492f com.google.android.apps.maps/10153} BLOCKED
+11-25 19:00:38.346   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{e2412b com.google.android.contacts/10155} BLOCKED
+11-25 19:00:38.812  4415  4968 I cr_CronetUrlRequestContext: destroyNativeStreamLocked org.chromium.net.impl.CronetBidirectionalStream@26ac7c4
+11-25 19:00:39.534  2442  2442 V ActivityThread: getPackageInfo() caused update to cached ApplicationInfo for package com.tusneldax.hizirusta
+11-25 19:00:40.916  5078  5078 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-25 19:00:40.924  5078  5078 I AndroidRuntime: Using default boot image
+11-25 19:00:40.924  5078  5078 I AndroidRuntime: Leaving lock profiling enabled
+11-25 19:00:41.180  5078  5078 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+11-25 19:00:41.268  5078  5078 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-25 19:00:42.403  5078  5078 D AndroidRuntime: Shutting down VM
+11-25 19:00:43.973   522  1945 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{e078d32 com.google.android.settings.intelligence/10118} BLOCKED
+11-25 19:00:47.794  5218  5218 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-25 19:00:47.811  5218  5218 I AndroidRuntime: Using default boot image
+11-25 19:00:47.821  5218  5218 I AndroidRuntime: Leaving lock profiling enabled
+11-25 19:00:47.974  5218  5218 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+11-25 19:00:48.043  5218  5218 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-25 19:00:49.084  5218  5218 D AndroidRuntime: Shutting down VM
+11-25 19:00:49.599   522   572 I AppsFilter: interaction: PackageSetting{9725b78 com.tusneldax.hizirusta/10192} -> PackageSetting{d596416 com.google.android.googlequicksearchbox/10132} BLOCKED
+11-25 19:00:54.360  5355  5355 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-25 19:00:54.363  5355  5355 I AndroidRuntime: Using default boot image
+11-25 19:00:54.363  5355  5355 I AndroidRuntime: Leaving lock profiling enabled
+11-25 19:00:54.419  5355  5355 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+11-25 19:00:54.454  5355  5355 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-25 19:00:55.518  5355  5355 D AndroidRuntime: Shutting down VM
+11-25 19:00:59.684  5717  5717 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-25 19:00:59.687  5717  5717 I AndroidRuntime: Using default boot image
+11-25 19:00:59.687  5717  5717 I AndroidRuntime: Leaving lock profiling enabled
+11-25 19:00:59.746  5717  5717 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+11-25 19:00:59.773  5717  5717 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-25 19:01:00.823  5717  5717 D AndroidRuntime: Shutting down VM
+11-25 19:01:01.720   832   866 V WindowManagerShell: Transition requested: android.os.BinderProxy@911d91c TransitionRequestInfo { type = CLOSE, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=false baseIntent=Intent { flg=0x10000000 cmp=com.tusneldax.hizirusta/.MainActivity } baseActivity=null topActivity=null origActivity=null realActivity=ComponentInfo{com.tusneldax.hizirusta/com.tusneldax.hizirusta.MainActivity} numActivities=0 lastActiveTime=35537 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@4682925} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=null launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-25 19:01:02.567   522   539 V WindowManager: Sent Transition #7 createdAt=11-25 19:01:01.696 via request=TransitionRequestInfo { type = CLOSE, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=false baseIntent=Intent { flg=0x10000000 cmp=com.tusneldax.hizirusta/.MainActivity } baseActivity=null topActivity=null origActivity=null realActivity=ComponentInfo{com.tusneldax.hizirusta/com.tusneldax.hizirusta.MainActivity} numActivities=0 lastActiveTime=35537 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{4108b19 Task{f08cad1 #8 type=standard A=10192:com.tusneldax.hizirusta}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=null launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-25 19:01:02.568   522   539 V WindowManager:     info={id=7 t=CLOSE f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{b053eee Task{94a4d43 #1 type=home}}} m=TO_FRONT f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0xc3b101f sb=Rect(0, 0 - 1080, 1920) eb=Rect(0, 0 - 1080, 1920) d=0},{WCT{RemoteToken{4108b19 Task{f08cad1 #8 type=standard A=10192:com.tusneldax.hizirusta}}} m=CLOSE f=NONE leash=Surface(name=Task=8)/@0x23a3492 sb=Rect(0, 0 - 1080, 1920) eb=Rect(0, 0 - 1080, 1920) d=0},{null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{e1a87fe token=android.os.Binder@dde1981})/@0x5ac76f0 sb=Rect(0, 0 - 1080, 1920) eb=Rect(0, 0 - 1080, 1920) d=0}]}
+11-25 19:01:03.457  2442  2442 W BillingClient: 	at com.tusneldax.hizirusta.BillingManager.close(BillingManager.java:124)
+11-25 19:01:03.457  2442  2442 W BillingClient: 	at com.tusneldax.hizirusta.MainActivity.onDestroy(MainActivity.java:293)
+11-25 19:01:03.458   522  1943 D CoreBackPreview: Window{20db78d u0 com.tusneldax.hizirusta/com.tusneldax.hizirusta.MainActivity}: Setting back callback null
+11-25 19:01:03.465   522  1943 W InputManager-JNI: Input channel object '20db78d com.tusneldax.hizirusta/com.tusneldax.hizirusta.MainActivity (client)' was disposed without first being removed with the input manager!
