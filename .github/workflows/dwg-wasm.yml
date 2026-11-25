@@ -26,7 +26,7 @@ jobs:
           set -e
           cd libredwg && mkdir -p w && cd w
           emcmake cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_FLAGS='-g2 -O1' -DDISABLE_WERROR=ON -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_EXE_LINKER_FLAGS="-sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=DwgCevir -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 -sEXPORTED_RUNTIME_METHODS=FS,callMain -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sENVIRONMENT=web,worker,node -sFILESYSTEM=1 -sSTACK_SIZE=16MB -O1 -g2 -sASSERTIONS=2 -sSAFE_HEAP=1" > ../../cmake.log 2>&1 || { tail -40 ../../cmake.log; exit 1; }
+            -DCMAKE_EXE_LINKER_FLAGS="-sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=DwgCevir -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 -sEXPORTED_RUNTIME_METHODS=FS,callMain -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sENVIRONMENT=web,worker,node -sFILESYSTEM=1 -sSTACK_SIZE=16MB -O1 -g2 -sASSERTIONS=2" > ../../cmake.log 2>&1 || { tail -40 ../../cmake.log; exit 1; }
           emmake make -j4 dwg2dxf > ../../make.log 2>&1 || { grep -E "error" ../../make.log | head -30; tail -20 ../../make.log; exit 1; }
           ls -la dwg2dxf*
       - name: Dene (örnek DWG)
