@@ -1,0 +1,1 @@
+LibreDWG 80238a20 — GPLv3, kaynak: https://github.com/LibreDWG/libredwg
