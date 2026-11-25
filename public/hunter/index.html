@@ -3252,7 +3252,7 @@ function attach(model){
   if (store.get('resetNote', 0)){ store.set('resetNote', 0); setTimeout(() => showStory('Electric Hunter', T('ch1'), T('resetNote')), 600); }
   // 19 Kasım 2026: ilk açılışta oyuncunun yarısı "Portala gir"e basmadan çıkıyordu; ilk kez gelen oyuncu doğrudan oyuna girer
   const sv0 = store.get('save', null);
-  if (!(sv0 && (sv0.isl || sv0.eaten)) && !store.get('autoStart', 0)) setTimeout(() => { if (Online.gated() || $('title').hidden || b.disabled || b.hidden) return; store.set('autoStart', 1); b.click(); }, 700);
+  if (!(sv0 && (sv0.isl || sv0.eaten)) && !store.get('autoStart', 0)) setTimeout(() => { if (Online.gated() || $('title').hidden || b.disabled || b.hidden) return; store.set('autoStart', 1); store.set('introSeen', 1); $('title').hidden = true; startGame(); }, 700); // 25 Kasım: ilk girişte 16 sn'lik giriş filmini atla (oyuncular film sırasında çıkıyordu)
 }
 player.regen = .6; buildIsland(0); scaleIsland(islands[0], false); applyTheme(themeOf(0)); player.pos.copy(spawnPoint(0)); portal.position.set(player.pos.x, 1.8, player.pos.z - 2.5);
 renderSlots(); renderStats();
