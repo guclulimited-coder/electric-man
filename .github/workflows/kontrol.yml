@@ -4,9 +4,10 @@ jobs:
   k:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          u=https://electricman.tusneldax.com/hunter/index.html
-          echo "EH_ACILIS $(curl -sL -m 20 "$u?x=$RANDOM" | grep -c 'launchAd' || true)"
-          for b in electricman electrichunter; do for c in tr us; do
-            echo "IOS $b $c $(curl -s -m 20 "https://itunes.apple.com/lookup?bundleId=com.tusneldax.$b&country=$c" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['resultCount'],[(r.get('version'),r.get('currentVersionReleaseDate')) for r in d['results']])" || true)"
-          done; done
+      - uses: actions/checkout@v5
+      - run: pip install -q pyjwt cryptography
+      - env:
+          K: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISS: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: python3 durum.py 2>&1 | grep -v -i key || true
