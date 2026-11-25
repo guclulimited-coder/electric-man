@@ -99,3 +99,20 @@ export function teklifToplam(kalemler, {iskonto = 0, kdv = 20} = {}){
   const isk = ara * iskonto / 100, matrah = ara - isk, vergi = matrah * kdv / 100;
   return {ara: r(ara), iskonto: r(isk), matrah: r(matrah), kdv: r(vergi), toplam: r(matrah + vergi)};
 }
+
+// Puantaj: bir işçinin aylık hakedişi.
+// gunler: {gün: {d: 'T' tam | 'Y' yarım | 'X' gelmedi | 'I' izinli (ücretli) | 'R' raporlu/ücretsiz izin, m: fazla mesai saati}}
+// gunluk: günlük ücret; mesaiKat: fazla mesai çarpanı (varsayılan 1,5); avanslar: [{tutar}]
+export const GUN_DEGERI = {T: 1, Y: 0.5, I: 1, X: 0, R: 0};
+export function puantaj({gunler = {}, gunluk = 0, mesaiKat = 1.5, gunlukSaat = 8, avanslar = []}){
+  let gun = 0, mesai = 0, tam = 0, yarim = 0, yok = 0, izin = 0;
+  for (const g of Object.values(gunler)){
+    if (!g) continue;
+    gun += GUN_DEGERI[g.d] || 0; mesai += Number(g.m) || 0;
+    if (g.d === 'T') tam++; else if (g.d === 'Y') yarim++; else if (g.d === 'X') yok++; else if (g.d === 'I' || g.d === 'R') izin++;
+  }
+  const saatUcret = gunluk / gunlukSaat, gunTutar = gun * gunluk, mesaiTutar = mesai * saatUcret * mesaiKat;
+  const avans = avanslar.reduce((t, a) => t + (Number(a.tutar) || 0), 0), brut = gunTutar + mesaiTutar;
+  return {gun, mesai, tam, yarim, yok, izin, gunTutar: r(gunTutar), mesaiTutar: r(mesaiTutar), brut: r(brut), avans: r(avans), odenecek: r(brut - avans)};
+}
+export const ayGunSayisi = ay => { const [y, m] = ay.split('-').map(Number); return new Date(y, m, 0).getDate(); };

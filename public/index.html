@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Elektrikçi Cebi</title>
-<meta name="description" content="Elektrikçiler için kablo kesiti, gerilim düşümü, kompanzasyon, topraklama hesapları ve teklif hazırlama.">
+<title>Takım Çantası</title>
+<meta name="description" content="Elektrikçiler için hesaplar, teklif, puantaj ve belge tarama.">
 <meta name="theme-color" content="#14213d">
 <style>
+@page{margin:12mm}
 :root{--bg:#f4f5f7;--kart:#fff;--yazi:#16181d;--soluk:#5d6470;--cizgi:#e1e4ea;--ana:#14213d;--vurgu:#fca311;--iyi:#1f8a4c;--kotu:#c0392b;--alan:#f8f9fb}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1218;--kart:#181c24;--yazi:#eef0f4;--soluk:#9aa2b1;--cizgi:#2a303c;--ana:#e9edf5;--alan:#11151c}}
 :root[data-theme="dark"]{--bg:#0f1218;--kart:#181c24;--yazi:#eef0f4;--soluk:#9aa2b1;--cizgi:#2a303c;--ana:#e9edf5;--alan:#11151c}
@@ -44,8 +45,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--vurgu);outline-o
 .not{font-size:12px;color:var(--soluk);margin-top:10px}
 .kilit{text-align:center;padding:26px 18px}
 .kilit .ik{font-size:34px}
-.kalem{display:grid;grid-template-columns:1fr 64px 84px 34px;gap:6px;align-items:end;margin-bottom:8px}
-.kalem input{padding:9px 8px}
+.kalem{display:grid;grid-template-columns:1fr 1fr 1fr 34px;gap:6px;align-items:end;margin-bottom:8px}
+.kalem input,.kalem select{padding:9px 8px}
+.kalem input[data-k="ad"]{grid-column:1/-1}
 .kalem button{height:42px;border:1px solid var(--cizgi);background:var(--kart);color:var(--kotu);border-radius:10px;font-size:18px}
 .toplam{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:14px;margin-top:10px}
 .toplam .son{font-size:18px;font-weight:800;border-top:1px solid var(--cizgi);padding-top:6px}
@@ -57,6 +59,31 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--vurgu);outline-o
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#14213d;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;opacity:0;transition:.2s;pointer-events:none}
 .toast.on{opacity:1}
 #belge{display:none}
+.tablo-kap{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table.pt{border-collapse:separate;border-spacing:0;font-size:13px}
+table.pt th,table.pt td{border-bottom:1px solid var(--cizgi);padding:0;text-align:center;min-width:34px;height:38px}
+table.pt th{font-weight:600;color:var(--soluk);font-size:11px;line-height:1.2}
+table.pt th.hs{color:var(--kotu)}
+table.pt .ad{position:sticky;left:0;background:var(--kart);text-align:left;min-width:96px;max-width:120px;padding:0 8px 0 0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:1}
+table.pt td.h{cursor:pointer;font-weight:700}
+table.pt td.h sup{color:var(--vurgu);font-size:9px}
+.d-T{color:var(--iyi)}.d-Y{color:#b8740a}.d-X{color:var(--kotu)}.d-I,.d-R{color:var(--soluk)}
+.perde{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sayfa-alt{background:var(--kart);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.secenekler{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.secenekler button{border:1px solid var(--cizgi);background:var(--alan);color:var(--yazi);border-radius:10px;padding:12px 4px;font:700 14px system-ui}
+.secenekler button.on{border-color:var(--vurgu);background:rgba(252,163,17,.18)}
+.ozet{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:14px;padding:10px 0;border-bottom:1px solid var(--cizgi)}
+.ozet:last-child{border:0}
+.kirp{position:relative;touch-action:none;user-select:none;margin:0 auto}
+.kirp canvas{width:100%;display:block;border-radius:8px}
+.kirp svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.tutamak{fill:var(--vurgu);stroke:#fff;stroke-width:2}
+.sayfalar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.sayfalar figure{margin:0;position:relative}
+.sayfalar img{width:100%;aspect-ratio:1/1.41;object-fit:cover;border-radius:6px;border:1px solid var(--cizgi);background:#fff}
+.sayfalar figcaption{position:absolute;top:4px;left:4px;background:#14213d;color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sayfalar button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff}
 @media print{
   body{background:#fff}header,nav.alt,main,.toast{display:none!important}
   #belge{display:block;color:#000;font:12pt/1.45 system-ui,sans-serif;padding:0}
@@ -65,16 +92,19 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--vurgu);outline-o
   #belge td.s,#belge th.s{text-align:right}
   #belge .bas{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #fca311;padding-bottom:10px}
   #belge img{max-height:70px;max-width:180px}
+  #belge table.pt th,#belge table.pt td{border:1px solid #bbb;padding:2px;font-size:8pt;text-align:center;min-width:0;height:auto}
+  #belge table.pt .ad{text-align:left;position:static}
 }
 </style>
 </head>
 <body>
-<header><div class="logo">⚡</div><h1>Elektrikçi Cebi</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
+<header><div class="logo">🧰</div><h1>Takım Çantası</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
 <main id="ekran"></main>
 <nav class="alt" id="altMenu">
   <button data-s="hesap" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/></svg>Hesaplar</button>
   <button data-s="teklif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Teklif</button>
-  <button data-s="isler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>İşlerim</button>
+  <button data-s="puantaj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Puantaj</button>
+  <button data-s="tarama"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg>Tarama</button>
   <button data-s="ayar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Firmam</button>
 </nav>
 <div id="belge"></div>
@@ -82,6 +112,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--vurgu);outline-o
 
 <script type="module">
 import * as H from './hesap.mjs';
+import * as T from './tarama.mjs';
 const $ = s => document.querySelector(s), ekran = $('#ekran');
 const sayi = (x, n = 2) => Number(x).toLocaleString('tr-TR', {maximumFractionDigits: n});
 const tl = x => Number(x).toLocaleString('tr-TR', {style: 'currency', currency: 'TRY'});
@@ -126,10 +157,10 @@ const v = id => parseFloat(String($('#' + id).value).replace(',', '.'));
 function hesapListesi(){
   ekran.innerHTML = `<div class="kart"><h2>Hesaplar</h2><p class="alt-baslik">Yönetmeliğe uygun hızlı hesaplar. Hepsi ücretsiz.</p>
   <div class="izgara">${HESAPLAR.map(h => `<button class="secim" data-h="${h.id}"><span class="ik">${h.ik}</span><b>${h.ad}</b><span>${h.acik}</span></button>`).join('')}</div></div>
-  <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif hazırla, WhatsApp'tan gönder, müşteri ve işlerini kaydet.</p>
-  <button class="dugme tam" data-git="teklif">Teklif hazırla</button></div>`;
+  <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif, aylık puantaj ve ödeme hesabı. İlk 7 gün ücretsiz.</p>
+  <div class="yanyana"><button class="dugme" data-git="teklif">Teklif hazırla</button><button class="dugme ikincil" data-git="puantaj">Puantaj</button><button class="dugme ikincil" data-git="tarama">Belge tara</button></div></div>`;
   ekran.querySelectorAll('[data-h]').forEach(b => b.onclick = () => hesapAc(b.dataset.h));
-  ekran.querySelector('[data-git]').onclick = () => git('teklif');
+  ekran.querySelectorAll('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
 }
 
 const FORMLAR = {
@@ -181,30 +212,32 @@ const MALZEME = [['NYM 3x2,5 kablo', 'm'], ['NYM 3x1,5 kablo', 'm'], ['NYM 5x6 k
   ['Otomat sigorta 16 A', 'adet'], ['Otomat sigorta 25 A', 'adet'], ['Kaçak akım rölesi 30 mA', 'adet'], ['Sigorta kutusu (12 modül)', 'adet'], ['Topraklama çubuğu', 'adet'], ['LED armatür', 'adet'], ['İşçilik', 'gün'], ['Proje ve test', 'iş']];
 const yeniTeklif = () => ({id: Date.now().toString(36), no: depo.al('sonNo', 0) + 1, tarih: new Date().toISOString().slice(0, 10), musteri: '', tel: '', adres: '', kalemler: [{ad: '', miktar: 1, birim: 'adet', fiyat: ''}], iskonto: 0, kdv: 20, not: 'Teklif 15 gün geçerlidir. Malzeme fiyatları değişirse güncellenir.', durum: 'Teklif verildi'});
 let taslak = null;
+const BIRIMLER = ['adet', 'm', 'm²', 'kg', 'top', 'paket', 'takım', 'gün', 'saat', 'iş'];
 
 function kilitEkrani(neIcin){
   const deneme = !Paket.denemeBasladi;
-  ekran.innerHTML = `<div class="kart kilit"><div class="ik">🔒</div><h2>Usta Paketi</h2><p class="alt-baslik">${neIcin} Usta Paketi'nde.<br>Logolu teklif, WhatsApp'tan gönderme, müşteri ve iş kaydı.</p>
-  ${deneme ? `<button class="dugme tam" id="dene">7 gün ücretsiz dene</button>` : `<button class="dugme tam" id="al">Abone ol · aylık 99,99 ₺</button><div class="not">Deneme süreniz bitti.</div>`}</div>`;
+  ekran.innerHTML = `<div class="kart kilit"><div class="ik">🔒</div><h2>Usta Paketi</h2><p class="alt-baslik">${neIcin} Usta Paketi'nde.<br>Logolu teklif, aylık puantaj, ödeme hesabı ve WhatsApp'tan gönderme.</p>
+  ${deneme ? `<button class="dugme tam" id="dene">7 gün ücretsiz dene</button>` : `<button class="dugme tam" id="al">Abone ol · aylık 149,99 ₺</button><div class="not">Deneme süreniz bitti.</div>`}</div>`;
   const d = $('#dene'); if (d) d.onclick = () => { Paket.denemeBaslat(); toast('7 günlük deneme başladı'); git(aktifSekme); };
   const a = $('#al'); if (a) a.onclick = async () => { if (await Paket.satinAl()) git(aktifSekme); };
 }
 
 function teklifEkrani(t){
   if (!Paket.aktif) return kilitEkrani('Teklif hazırlama');
-  taslak = t || taslak || yeniTeklif();
+  taslak = t || yeniTeklif();
   const f = depo.al('firma', {});
-  ekran.innerHTML = `<div class="kart"><h2>Teklif No ${taslak.no}</h2><p class="alt-baslik">${f.ad ? kacis(f.ad) : '<a href="#" id="firmaGit">Firma bilgilerini girin</a> — teklifte görünür.'}</p>
+  ekran.innerHTML = `<button class="geri" id="listeyeDon">‹ Teklifler</button><div class="kart"><h2>Teklif No ${taslak.no}</h2><p class="alt-baslik">${f.ad ? kacis(f.ad) : '<a href="#" id="firmaGit">Firma bilgilerini girin</a> — teklifte görünür.'}</p>
     <label>Müşteri adı</label><input id="musteri" value="${kacis(taslak.musteri)}" autocomplete="off">
     <div class="satir"><div><label>Telefon</label><input id="tel" type="tel" value="${kacis(taslak.tel)}"></div><div><label>Tarih</label><input id="tarih" type="date" value="${taslak.tarih}"></div></div>
     <label>Adres</label><input id="adres" value="${kacis(taslak.adres)}"></div>
-  <div class="kart"><h2>Malzeme ve işçilik</h2><p class="alt-baslik">Adı · miktar · birim fiyat (KDV hariç)</p><div id="kalemler"></div>
+  <div class="kart"><h2>Malzeme ve işçilik</h2><p class="alt-baslik">Malzeme veya iş adı, miktarı, birimi ve birim fiyatı (KDV hariç)</p><div id="kalemler"></div>
     <datalist id="malzemeler">${MALZEME.map(m => `<option value="${m[0]}">`).join('')}</datalist>
     <button class="dugme ikincil tam" id="ekle">+ Kalem ekle</button>
     <div class="satir"><div><label>İskonto (%)</label><input id="iskonto" type="number" min="0" max="100" value="${taslak.iskonto}"></div><div><label>KDV (%)</label><select id="kdv">${[20, 10, 1, 0].map(k => `<option ${k == taslak.kdv ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
     <div class="toplam" id="toplam"></div>
     <label>Not</label><textarea id="not" rows="2">${kacis(taslak.not)}</textarea>
     <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button><button class="dugme ikincil" id="yazdir">Belge / PDF</button><button class="dugme ikincil" id="wp">WhatsApp</button><button class="dugme ikincil" id="yeni">Yeni teklif</button></div></div>`;
+  $('#listeyeDon').onclick = () => { kaydet(); teklifListesi(); };
   const fg = $('#firmaGit'); if (fg) fg.onclick = e => { e.preventDefault(); git('ayar'); };
   kalemCiz();
   ['musteri', 'tel', 'adres', 'tarih', 'not'].forEach(k => $('#' + k).oninput = e => { taslak[k] = e.target.value; });
@@ -214,13 +247,13 @@ function teklifEkrani(t){
   $('#kaydet').onclick = () => { kaydet(); toast('Teklif kaydedildi'); };
   $('#yazdir').onclick = () => { kaydet(); belgeHazirla(); setTimeout(() => print(), 50); };
   $('#wp').onclick = () => { kaydet(); whatsapp(); };
-  $('#yeni').onclick = () => { taslak = yeniTeklif(); teklifEkrani(taslak); };
+  $('#yeni').onclick = () => { kaydet(); teklifEkrani(yeniTeklif()); };
 }
 function kalemCiz(){
-  $('#kalemler').innerHTML = taslak.kalemler.map((k, i) => `<div class="kalem" data-i="${i}"><input data-k="ad" list="malzemeler" placeholder="Malzeme veya iş" value="${kacis(k.ad)}"><input data-k="miktar" type="number" inputmode="decimal" value="${kacis(k.miktar)}"><input data-k="fiyat" type="number" inputmode="decimal" placeholder="₺" value="${kacis(k.fiyat)}"><button aria-label="Sil">×</button></div>`).join('');
+  $('#kalemler').innerHTML = taslak.kalemler.map((k, i) => `<div class="kalem" data-i="${i}"><input data-k="ad" list="malzemeler" placeholder="Malzeme veya iş" value="${kacis(k.ad)}"><input data-k="miktar" type="number" inputmode="decimal" value="${kacis(k.miktar)}"><select data-k="birim">${BIRIMLER.map(b => `<option ${b === k.birim ? 'selected' : ''}>${b}</option>`).join('')}</select><input data-k="fiyat" type="number" inputmode="decimal" placeholder="₺" value="${kacis(k.fiyat)}"><button aria-label="Sil">×</button></div>`).join('');
   $('#kalemler').querySelectorAll('.kalem').forEach(r => {
     const i = +r.dataset.i;
-    r.querySelectorAll('input').forEach(inp => inp.oninput = () => { const k = taslak.kalemler[i]; k[inp.dataset.k] = inp.value; if (inp.dataset.k === 'ad'){ const m = MALZEME.find(m => m[0] === inp.value); if (m) k.birim = m[1]; } toplamCiz(); });
+    r.querySelectorAll('input,select').forEach(inp => inp.oninput = () => { const k = taslak.kalemler[i]; k[inp.dataset.k] = inp.value; if (inp.dataset.k === 'ad'){ const m = MALZEME.find(m => m[0] === inp.value); if (m){ k.birim = m[1]; r.querySelector('select').value = m[1]; } } toplamCiz(); });
     r.querySelector('button').onclick = () => { taslak.kalemler.splice(i, 1); if (!taslak.kalemler.length) taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''}); kalemCiz(); };
   });
   toplamCiz();
@@ -253,19 +286,176 @@ function whatsapp(){
   open(`https://wa.me/${tel.length >= 11 ? tel : ''}?text=${encodeURIComponent(metin)}`, '_blank');
 }
 
-/* ---------- İşlerim ---------- */
+/* ---------- Teklif listesi ---------- */
 const DURUMLAR = ['Teklif verildi', 'Onaylandı', 'İş bitti', 'Ödendi', 'İptal'];
-function islerEkrani(){
-  if (!Paket.aktif) return kilitEkrani('İş ve müşteri kaydı');
+function teklifListesi(){
+  if (!Paket.aktif) return kilitEkrani('Teklif hazırlama');
   const isler = depo.al('isler', []);
   const acik = isler.filter(x => x.durum === 'Onaylandı' || x.durum === 'İş bitti').reduce((s, x) => s + H.teklifToplam(x.kalemler, x).toplam, 0);
-  ekran.innerHTML = `<div class="kart"><h2>İşlerim</h2><p class="alt-baslik">${isler.length} kayıt · tahsil edilecek ${tl(acik)}</p><input id="ara" placeholder="Müşteri ara"><div class="liste" id="liste"></div></div>`;
+  ekran.innerHTML = `<div class="kart"><h2>Teklifler</h2><p class="alt-baslik">${isler.length} teklif · onaylanan işlerden tahsil edilecek ${tl(acik)}</p><button class="dugme tam" id="yeniT">+ Yeni teklif</button><label>Müşteri ara</label><input id="ara"><div class="liste" id="liste"></div></div>`;
+  $('#yeniT').onclick = () => teklifEkrani(yeniTeklif());
   const ciz = q => { const l = isler.filter(x => !q || (x.musteri || '').toLocaleLowerCase('tr').includes(q));
-    $('#liste').innerHTML = l.length ? l.map(x => `<div class="is" data-id="${x.id}"><div><b>${kacis(x.musteri || 'Adsız müşteri')}</b><div class="not" style="margin:2px 0 0">No ${x.no} · ${new Date(x.tarih).toLocaleDateString('tr-TR')} · ${tl(H.teklifToplam(x.kalemler, x).toplam)}</div></div><select class="durum" data-d="${x.id}">${DURUMLAR.map(d => `<option ${d === x.durum ? 'selected' : ''}>${d}</option>`).join('')}</select></div>`).join('') : '<div class="bos">Henüz kayıt yok. Teklif sekmesinden ilk teklifini hazırla.</div>';
-    $('#liste').querySelectorAll('.is').forEach(r => r.onclick = e => { if (e.target.tagName === 'SELECT') return; taslak = isler.find(x => x.id === r.dataset.id); git('teklif'); });
+    $('#liste').innerHTML = l.length ? l.map(x => `<div class="is" data-id="${x.id}"><div><b>${kacis(x.musteri || 'Adsız müşteri')}</b><div class="not" style="margin:2px 0 0">No ${x.no} · ${new Date(x.tarih).toLocaleDateString('tr-TR')} · ${tl(H.teklifToplam(x.kalemler, x).toplam)}</div></div><select class="durum" data-d="${x.id}">${DURUMLAR.map(d => `<option ${d === x.durum ? 'selected' : ''}>${d}</option>`).join('')}</select></div>`).join('') : '<div class="bos">Henüz teklif yok.</div>';
+    $('#liste').querySelectorAll('.is').forEach(r => r.onclick = e => { if (e.target.tagName === 'SELECT') return; teklifEkrani(isler.find(x => x.id === r.dataset.id)); });
     $('#liste').querySelectorAll('select').forEach(s => s.onchange = () => { isler.find(x => x.id === s.dataset.d).durum = s.value; depo.koy('isler', isler); toast('Durum güncellendi'); });
   };
   $('#ara').oninput = e => ciz(e.target.value.toLocaleLowerCase('tr')); ciz('');
+}
+
+/* ---------- Puantaj ---------- */
+const DURUM_ADI = {T: 'Tam gün', Y: 'Yarım gün', X: 'Gelmedi', I: 'İzinli (ücretli)', R: 'Raporlu / ücretsiz izin'};
+const DURUM_IS = {T: '✓', Y: '½', X: '✗', I: 'İ', R: 'R'};
+const GUN_HARF = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
+let pAy = new Date().toISOString().slice(0, 7);
+const pKey = () => 'puantaj-' + pAy, aKey = () => 'avans-' + pAy;
+function puantajEkrani(){
+  if (!Paket.aktif) return kilitEkrani('Puantaj');
+  const isciler = depo.al('isciler', []), kayit = depo.al(pKey(), {}), avans = depo.al(aKey(), {});
+  const N = H.ayGunSayisi(pAy), [yy, mm] = pAy.split('-').map(Number), bugun = new Date();
+  const hafta = g => new Date(yy, mm - 1, g).getDay();
+  const ozetler = isciler.map(i => ({i, o: H.puantaj({gunler: kayit[i.id] || {}, gunluk: i.gunluk, mesaiKat: i.mesaiKat || 1.5, avanslar: avans[i.id] || []})}));
+  const genel = ozetler.reduce((t, x) => t + x.o.odenecek, 0);
+  ekran.innerHTML = `<div class="kart"><h2>Puantaj</h2><p class="alt-baslik">Hücreye dokunarak günü işaretle. Fazla mesai saatini de oradan gir.</p>
+    <div class="satir"><div><label>Ay</label><input id="ay" type="month" value="${pAy}"></div><div><label>&nbsp;</label><button class="dugme ikincil tam" id="bugunTam">Bugün herkes tam</button></div></div></div>
+  <div class="kart">${isciler.length ? `<div class="tablo-kap"><table class="pt"><thead><tr><th class="ad">İşçi</th>${Array.from({length: N}, (_, k) => `<th class="${hafta(k + 1) === 0 ? 'hs' : ''}">${k + 1}<br>${GUN_HARF[hafta(k + 1)]}</th>`).join('')}</tr></thead><tbody>
+    ${isciler.map(i => `<tr><td class="ad" data-isci="${i.id}">${kacis(i.ad)}</td>${Array.from({length: N}, (_, k) => { const g = (kayit[i.id] || {})[k + 1]; return `<td class="h ${g ? 'd-' + g.d : ''}" data-i="${i.id}" data-g="${k + 1}">${g ? DURUM_IS[g.d] : ''}${g && g.m ? `<sup>+${g.m}</sup>` : ''}</td>`; }).join('')}</tr>`).join('')}
+    </tbody></table></div>` : '<div class="bos">Önce işçi ekle.</div>'}
+    <button class="dugme ikincil tam" id="isciEkle" style="margin-top:12px">+ İşçi ekle</button></div>
+  <div class="kart"><h2>Ay sonu hesabı</h2><p class="alt-baslik">Toplam ödenecek: <b>${tl(genel)}</b></p>
+    ${ozetler.map(({i, o}) => `<div class="ozet"><b>${kacis(i.ad)}</b><b>${tl(o.odenecek)}</b>
+      <span class="not" style="margin:0">${sayi(o.gun, 1)} gün × ${tl(i.gunluk)}${o.mesai ? ` · ${sayi(o.mesai, 1)} saat mesai ${tl(o.mesaiTutar)}` : ''}${o.avans ? ` · avans −${tl(o.avans)}` : ''}</span>
+      <button class="dugme ikincil" style="padding:6px 10px;font-size:13px" data-avans="${i.id}">Avans</button></div>`).join('') || '<div class="bos">Kayıt yok.</div>'}
+    <div class="yanyana"><button class="dugme ikincil" id="pPdf">Belge / PDF</button><button class="dugme ikincil" id="pWp">WhatsApp</button></div></div>`;
+  $('#ay').onchange = e => { if (e.target.value){ pAy = e.target.value; puantajEkrani(); } };
+  $('#bugunTam').onclick = () => {
+    if (bugun.toISOString().slice(0, 7) !== pAy) return toast('Bugün bu ayda değil');
+    const g = bugun.getDate(); for (const i of isciler){ kayit[i.id] = kayit[i.id] || {}; if (!kayit[i.id][g]) kayit[i.id][g] = {d: 'T', m: 0}; }
+    depo.koy(pKey(), kayit); puantajEkrani(); toast('Bugün işaretlendi');
+  };
+  $('#isciEkle').onclick = () => isciFormu();
+  ekran.querySelectorAll('td.ad[data-isci]').forEach(td => td.onclick = () => isciFormu(isciler.find(i => i.id === td.dataset.isci)));
+  ekran.querySelectorAll('td.h').forEach(td => td.onclick = () => gunSec(td.dataset.i, +td.dataset.g));
+  ekran.querySelectorAll('[data-avans]').forEach(b => b.onclick = () => avansFormu(isciler.find(i => i.id === b.dataset.avans)));
+  $('#pPdf').onclick = () => { puantajBelgesi(isciler, kayit, ozetler, N); setTimeout(() => print(), 50); };
+  $('#pWp').onclick = () => {
+    const f = depo.al('firma', {}), ayAdi = new Date(yy, mm - 1, 1).toLocaleDateString('tr-TR', {month: 'long', year: 'numeric'});
+    const metin = `${f.ad ? f.ad + ' — ' : ''}${ayAdi} puantajı\n\n` + ozetler.map(({i, o}) => `${i.ad}: ${sayi(o.gun, 1)} gün${o.mesai ? ', ' + sayi(o.mesai, 1) + ' saat mesai' : ''}${o.avans ? ', avans ' + tl(o.avans) : ''} → ${tl(o.odenecek)}`).join('\n') + `\n\nToplam: ${tl(genel)}`;
+    open('https://wa.me/?text=' + encodeURIComponent(metin), '_blank');
+  };
+}
+function perde(html, kur){
+  const p = document.createElement('div'); p.className = 'perde'; p.innerHTML = `<div class="sayfa-alt">${html}</div>`;
+  p.onclick = e => { if (e.target === p) p.remove(); }; document.body.appendChild(p); kur(p, () => p.remove()); return p;
+}
+function gunSec(isciId, g){
+  const kayit = depo.al(pKey(), {}), isci = depo.al('isciler', []).find(i => i.id === isciId), mevcut = (kayit[isciId] || {})[g] || {};
+  const [yy, mm] = pAy.split('-').map(Number), tarih = new Date(yy, mm - 1, g).toLocaleDateString('tr-TR', {day: 'numeric', month: 'long', weekday: 'long'});
+  perde(`<h2>${kacis(isci.ad)}</h2><p class="alt-baslik">${tarih}</p><div class="secenekler">${Object.entries(DURUM_ADI).map(([k, a]) => `<button data-d="${k}" class="${(mevcut.d || 'T') === k ? 'on' : ''}">${DURUM_IS[k]} ${a.split(' ')[0]}</button>`).join('')}<button data-d="">Sil</button></div>
+    <label>Fazla mesai (saat)</label><input id="mesai" type="number" min="0" step="0.5" inputmode="decimal" value="${mevcut.m || ''}">
+    <div class="yanyana"><button class="dugme tam" id="tamam">Kaydet</button></div>`, (p, kapat) => {
+    let d = mevcut.d || 'T';
+    p.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { d = b.dataset.d; p.querySelectorAll('[data-d]').forEach(x => x.classList.toggle('on', x === b)); if (d === '') kaydetGun(); });
+    const kaydetGun = () => { kayit[isciId] = kayit[isciId] || {}; const m = parseFloat(p.querySelector('#mesai').value) || 0;
+      if (d === '') delete kayit[isciId][g]; else kayit[isciId][g] = {d, m}; depo.koy(pKey(), kayit); kapat(); puantajEkrani(); };
+    p.querySelector('#tamam').onclick = kaydetGun;
+  });
+}
+function isciFormu(isci){
+  const yeni = !isci; isci = isci || {id: Date.now().toString(36), ad: '', gunluk: '', mesaiKat: 1.5};
+  perde(`<h2>${yeni ? 'İşçi ekle' : 'İşçiyi düzenle'}</h2><label>Ad soyad</label><input id="iAd" value="${kacis(isci.ad)}">
+    <div class="satir"><div><label>Günlük ücret (₺)</label><input id="iUcret" type="number" inputmode="decimal" value="${kacis(isci.gunluk)}"></div><div><label>Mesai çarpanı</label><input id="iKat" type="number" step="0.1" value="${isci.mesaiKat || 1.5}"></div></div>
+    <div class="not">Saatlik ücret = günlük ücret ÷ 8. Fazla mesai saat ücreti bu çarpanla artar.</div>
+    <div class="yanyana"><button class="dugme" id="iKaydet">Kaydet</button>${yeni ? '' : '<button class="dugme ikincil" id="iSil" style="color:var(--kotu)">Listeden çıkar</button>'}</div>`, (p, kapat) => {
+    p.querySelector('#iKaydet').onclick = () => {
+      const ad = p.querySelector('#iAd').value.trim(); if (!ad) return toast('Ad yazın');
+      const l = depo.al('isciler', []); Object.assign(isci, {ad, gunluk: parseFloat(p.querySelector('#iUcret').value) || 0, mesaiKat: parseFloat(p.querySelector('#iKat').value) || 1.5});
+      const k = l.findIndex(x => x.id === isci.id); if (k < 0) l.push(isci); else l[k] = isci; depo.koy('isciler', l); kapat(); puantajEkrani();
+    };
+    const sil = p.querySelector('#iSil'); if (sil) sil.onclick = () => { depo.koy('isciler', depo.al('isciler', []).filter(x => x.id !== isci.id)); kapat(); puantajEkrani(); toast('Listeden çıkarıldı; eski aylardaki kayıtları silinmedi'); };
+  });
+}
+function avansFormu(isci){
+  const avans = depo.al(aKey(), {}), l = avans[isci.id] || [];
+  perde(`<h2>${kacis(isci.ad)} · avanslar</h2>${l.map((a, k) => `<div class="ozet"><span>${new Date(a.tarih).toLocaleDateString('tr-TR')}</span><span>${tl(a.tutar)} <button data-sil="${k}" style="border:0;background:none;color:var(--kotu);font-size:16px">×</button></span></div>`).join('') || '<div class="not">Bu ay avans yok.</div>'}
+    <div class="satir"><div><label>Tutar (₺)</label><input id="aT" type="number" inputmode="decimal"></div><div><label>Tarih</label><input id="aD" type="date" value="${new Date().toISOString().slice(0, 10)}"></div></div>
+    <div class="yanyana"><button class="dugme tam" id="aEkle">Avans ekle</button></div>`, (p, kapat) => {
+    p.querySelector('#aEkle').onclick = () => { const t = parseFloat(p.querySelector('#aT').value); if (!t) return toast('Tutar yazın'); l.push({tutar: t, tarih: p.querySelector('#aD').value}); avans[isci.id] = l; depo.koy(aKey(), avans); kapat(); puantajEkrani(); };
+    p.querySelectorAll('[data-sil]').forEach(b => b.onclick = () => { l.splice(+b.dataset.sil, 1); avans[isci.id] = l; depo.koy(aKey(), avans); kapat(); puantajEkrani(); });
+  });
+}
+function puantajBelgesi(isciler, kayit, ozetler, N){
+  const f = depo.al('firma', {}), [yy, mm] = pAy.split('-').map(Number), ayAdi = new Date(yy, mm - 1, 1).toLocaleDateString('tr-TR', {month: 'long', year: 'numeric'});
+  $('#belge').innerHTML = `<div class="bas"><div>${f.logo ? `<img src="${f.logo}" alt="">` : ''}<h2 style="margin:6px 0 0">${kacis(f.ad || '')}</h2></div><div style="text-align:right"><h1 style="margin:0;font-size:18pt">PUANTAJ</h1><div>${ayAdi}</div></div></div>
+    <table class="pt"><thead><tr><th class="ad">İşçi</th>${Array.from({length: N}, (_, k) => `<th>${k + 1}</th>`).join('')}<th>Gün</th><th>Mesai</th></tr></thead><tbody>
+    ${ozetler.map(({i, o}) => `<tr><td class="ad">${kacis(i.ad)}</td>${Array.from({length: N}, (_, k) => { const g = (kayit[i.id] || {})[k + 1]; return `<td>${g ? DURUM_IS[g.d] + (g.m ? '+' + g.m : '') : ''}</td>`; }).join('')}<td>${sayi(o.gun, 1)}</td><td>${sayi(o.mesai, 1)}</td></tr>`).join('')}</tbody></table>
+    <table><thead><tr><th>İşçi</th><th class="s">Günlük</th><th class="s">Gün tutarı</th><th class="s">Mesai</th><th class="s">Avans</th><th class="s">Ödenecek</th><th>İmza</th></tr></thead><tbody>
+    ${ozetler.map(({i, o}) => `<tr><td>${kacis(i.ad)}</td><td class="s">${tl(i.gunluk)}</td><td class="s">${tl(o.gunTutar)}</td><td class="s">${tl(o.mesaiTutar)}</td><td class="s">${tl(o.avans)}</td><td class="s"><b>${tl(o.odenecek)}</b></td><td style="width:90px"></td></tr>`).join('')}
+    <tr><th colspan="5">Toplam</th><th class="s">${tl(ozetler.reduce((t, x) => t + x.o.odenecek, 0))}</th><th></th></tr></tbody></table>
+    <p style="font-size:9pt">✓ tam gün · ½ yarım gün · ✗ gelmedi · İ izinli · R raporlu; +sayı fazla mesai saati</p>`;
+}
+
+/* ---------- Belge tarama ---------- */
+const tSayfalar = []; let tFiltre = depo.al('taramaFiltre', 'sb');
+function taramaEkrani(){
+  ekran.innerHTML = `<div class="kart"><h2>Belge tarama</h2><p class="alt-baslik">Fotoğraf çek veya galeriden seç; kenarlar otomatik bulunur, sayfa düzeltilir ve PDF olur.</p>
+    <div class="satir"><button class="dugme" id="cek">📷 Fotoğraf çek</button><button class="dugme ikincil" id="galeri">Galeriden seç</button></div>
+    <input type="file" id="dosyaCek" accept="image/*" capture="environment" hidden><input type="file" id="dosyaGal" accept="image/*" multiple hidden>
+    <label>Görünüm</label><select id="filtre"><option value="sb">Siyah-beyaz belge</option><option value="gri">Gri</option><option value="renk">Renkli</option></select></div>
+  <div class="kart"><h2>Sayfalar (${tSayfalar.length})</h2>${tSayfalar.length ? `<div class="sayfalar">${tSayfalar.map((s, i) => `<figure><img src="${s.url}" alt=""><figcaption>${i + 1}</figcaption><button data-sil="${i}" aria-label="Sil">×</button></figure>`).join('')}</div>
+    <label>Dosya adı</label><input id="pdfAd" value="tarama-${new Date().toISOString().slice(0, 10)}">
+    <div class="yanyana"><button class="dugme" id="pdfYap">PDF oluştur</button><button class="dugme ikincil" id="temizle">Hepsini sil</button></div>` : '<div class="bos">Henüz sayfa yok.</div>'}</div>`;
+  $('#filtre').value = tFiltre; $('#filtre').onchange = e => { tFiltre = e.target.value; depo.koy('taramaFiltre', tFiltre); };
+  $('#cek').onclick = () => $('#dosyaCek').click(); $('#galeri').onclick = () => $('#dosyaGal').click();
+  const al = async e => { const l = [...e.target.files]; e.target.value = ''; for (const d of l) await kirpmaEkrani(d); taramaEkrani(); };
+  $('#dosyaCek').onchange = al; $('#dosyaGal').onchange = al;
+  ekran.querySelectorAll('[data-sil]').forEach(b => b.onclick = () => { tSayfalar.splice(+b.dataset.sil, 1); taramaEkrani(); });
+  const t = $('#temizle'); if (t) t.onclick = () => { tSayfalar.length = 0; taramaEkrani(); };
+  const p = $('#pdfYap'); if (p) p.onclick = () => pdfIndir(($('#pdfAd').value.trim() || 'tarama').replace(/[\\/:*?"<>|]/g, '-'));
+}
+const resimYukle = d => new Promise((ok, no) => { const u = URL.createObjectURL(d), im = new Image(); im.onload = () => { ok(im); setTimeout(() => URL.revokeObjectURL(u), 1000); }; im.onerror = no; im.src = u; });
+function kirpmaEkrani(dosya){
+  return new Promise(async bitti => {
+    let im; try { im = await resimYukle(dosya); } catch(e){ toast('Fotoğraf açılamadı'); return bitti(); }
+    const k = Math.min(1, 2000 / Math.max(im.width, im.height)), W = Math.round(im.width * k), Hh = Math.round(im.height * k);
+    const c = document.createElement('canvas'); c.width = W; c.height = Hh; const cx = c.getContext('2d'); cx.drawImage(im, 0, 0, W, Hh);
+    // kenar bulma küçük kopyada
+    const kk = 320 / Math.max(W, Hh), w = Math.round(W * kk), h = Math.round(Hh * kk), kc = document.createElement('canvas'); kc.width = w; kc.height = h;
+    const kx = kc.getContext('2d'); kx.filter = 'blur(2px)'; kx.drawImage(c, 0, 0, w, h); const d = kx.getImageData(0, 0, w, h).data, gri = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) gri[i] = .299 * d[i * 4] + .587 * d[i * 4 + 1] + .114 * d[i * 4 + 2];
+    const bul = T.kenarBul(gri, w, h); let kose = bul.koseler.map(([x, y]) => [x / kk, y / kk]);
+    perde(`<h2>Kenarları ayarla</h2><p class="alt-baslik">${bul.bulundu ? 'Kâğıt bulundu. Gerekirse turuncu noktaları sürükle.' : 'Kâğıt bulunamadı; turuncu noktaları köşelere sürükle.'}</p>
+      <div class="kirp" id="kirp" style="max-width:${Math.round(Math.min(480, 62 * innerHeight / 100 * W / Hh))}px"><svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none"><polygon id="cerceve" fill="rgba(252,163,17,.15)" stroke="#fca311" stroke-width="${W / 200}"/>${[0, 1, 2, 3].map(i => `<circle class="tutamak" data-k="${i}" r="${W / 28}"/>`).join('')}</svg></div>
+      <div class="yanyana"><button class="dugme" id="tEkle">Düzelt ve ekle</button><button class="dugme ikincil" id="tTum">Tamamını al</button><button class="dugme ikincil" id="tVaz">Vazgeç</button></div>`, (p, kapat) => {
+      const kap = p.querySelector('#kirp'); kap.prepend(c);
+      const ciz = () => { p.querySelector('#cerceve').setAttribute('points', kose.map(q => q.join(',')).join(' ')); p.querySelectorAll('.tutamak').forEach((t, i) => { t.setAttribute('cx', kose[i][0]); t.setAttribute('cy', kose[i][1]); }); };
+      ciz(); let surukle = -1;
+      const nokta = e => { const r = kap.getBoundingClientRect(); return [Math.max(0, Math.min(W, (e.clientX - r.left) / r.width * W)), Math.max(0, Math.min(Hh, (e.clientY - r.top) / r.height * Hh))]; };
+      kap.addEventListener('pointerdown', e => { const q = nokta(e); let en = Infinity; kose.forEach((k, i) => { const d = Math.hypot(k[0] - q[0], k[1] - q[1]); if (d < en){ en = d; surukle = i; } }); if (en > W / 6) surukle = -1; else { kap.setPointerCapture(e.pointerId); kose[surukle] = q; ciz(); } });
+      kap.addEventListener('pointermove', e => { if (surukle < 0) return; kose[surukle] = nokta(e); ciz(); });
+      kap.addEventListener('pointerup', () => { surukle = -1; });
+      const ekle = q => {
+        q = T.sirala(q); const uz = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+        let gw = (uz(q[0], q[1]) + uz(q[3], q[2])) / 2, gh = (uz(q[0], q[3]) + uz(q[1], q[2])) / 2; const s = Math.min(1, 1600 / Math.max(gw, gh)); gw = Math.round(gw * s); gh = Math.round(gh * s);
+        const kaynak = cx.getImageData(0, 0, W, Hh).data, out = T.filtre(T.duzelt(kaynak, W, Hh, q, gw, gh), gw, gh, tFiltre);
+        const oc = document.createElement('canvas'); oc.width = gw; oc.height = gh; oc.getContext('2d').putImageData(new ImageData(out, gw, gh), 0, 0);
+        tSayfalar.push({url: oc.toDataURL('image/jpeg', .85), w: gw, h: gh}); kapat(); bitti();
+      };
+      p.querySelector('#tEkle').onclick = () => { toast('Sayfa hazırlanıyor…'); setTimeout(() => ekle(kose), 30); };
+      p.querySelector('#tTum').onclick = () => { toast('Sayfa hazırlanıyor…'); setTimeout(() => ekle([[0, 0], [W, 0], [W, Hh], [0, Hh]]), 30); };
+      p.querySelector('#tVaz').onclick = () => { kapat(); bitti(); };
+      p.onclick = null;
+    });
+  });
+}
+async function pdfIndir(ad){
+  const bayt = u => { const b = atob(u.split(',')[1]), a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; };
+  const pdf = T.pdfYap(tSayfalar.map(s => ({jpeg: bayt(s.url), w: s.w, h: s.h})));
+  const dosya = new File([pdf], ad + '.pdf', {type: 'application/pdf'});
+  if (window.EMNative && window.EMNative.call){
+    try { let s = ''; for (let i = 0; i < pdf.length; i += 32768) s += String.fromCharCode(...pdf.subarray(i, i + 32768)); await window.EMNative.call({action: 'shareFile', name: dosya.name, mime: 'application/pdf', base64: btoa(s)}); return; } catch(e){}
+  }
+  try { if (navigator.canShare && navigator.canShare({files: [dosya]})){ await navigator.share({files: [dosya], title: dosya.name}); return; } } catch(e){ if (e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(dosya); a.download = dosya.name; document.body.appendChild(a); a.click(); a.remove(); toast('PDF indirildi');
 }
 
 /* ---------- Firmam ---------- */
@@ -277,8 +467,8 @@ function ayarEkrani(){
     <label>Logo</label><input id="logo" type="file" accept="image/*">${f.logo ? `<img src="${f.logo}" alt="" style="max-height:60px;margin-top:8px">` : ''}
     <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button></div></div>
     <div class="kart"><h2>Paketim</h2><p class="alt-baslik">${depo.al('abone', false) ? 'Usta Paketi aktif.' : Paket.kalanGun > 0 ? `Ücretsiz denemenin bitmesine ${Paket.kalanGun} gün var.` : 'Ücretsiz sürüm: bütün hesaplar açık.'}</p>
-    ${depo.al('abone', false) ? '' : `<button class="dugme ikincil" id="abone">Usta Paketi · aylık 99,99 ₺</button>`}</div>
-    <div class="not" style="text-align:center">Elektrikçi Cebi · TUSNELDAX · Hesaplar yol göstericidir; son karar yetkili elektrikçinindir.</div>`;
+    ${depo.al('abone', false) ? '' : `<button class="dugme ikincil" id="abone">Usta Paketi · aylık 149,99 ₺</button>`}</div>
+    <div class="not" style="text-align:center">Takım Çantası · TUSNELDAX · Hesaplar yol göstericidir; son karar yetkili elektrikçinindir.</div>`;
   $('#logo').onchange = e => { const d = e.target.files[0]; if (!d) return; const o = new FileReader(); o.onload = () => {
     const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 360 / img.width); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); f.logo = c.toDataURL('image/png'); depo.koy('firma', f); ayarEkrani(); toast('Logo eklendi'); }; img.src = o.result; }; o.readAsDataURL(d); };
   $('#kaydet').onclick = () => { ['ad', 'tel', 'adres', 'vergi'].forEach(k => f[k] = $('#' + k).value.trim()); depo.koy('firma', f); toast('Kaydedildi'); };
@@ -289,7 +479,7 @@ function ayarEkrani(){
 let aktifSekme = 'hesap';
 function git(s){
   aktifSekme = s; document.querySelectorAll('#altMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
-  ({hesap: hesapListesi, teklif: () => teklifEkrani(), isler: islerEkrani, ayar: ayarEkrani})[s](); rozet(); scrollTo(0, 0);
+  ({hesap: hesapListesi, teklif: teklifListesi, puantaj: puantajEkrani, tarama: taramaEkrani, ayar: ayarEkrani})[s](); rozet(); scrollTo(0, 0);
 }
 document.querySelectorAll('#altMenu button').forEach(b => b.onclick = () => git(b.dataset.s));
 git('hesap');

@@ -16,3 +16,8 @@ test('kompanzasyon', () => { yak(H.kompanzasyon({P: 100, cos1: .8}).Q, 54.69); a
 test('topraklama', () => { yak(H.topraklama({rho: 100}).R1, 60.5, .1); assert.equal(H.kacakAkimSiniri(30), 1667); });
 test('ohm', () => { assert.deepEqual(H.ohm({U: 230, I: 10}), {U: 230, I: 10, R: 23, P: 2300}); yak(H.ohm({P: 2300, U: 230}).R, 23); });
 test('teklif', () => { const t = H.teklifToplam([{miktar: 2, fiyat: 100}, {miktar: 1, fiyat: 50}], {iskonto: 10, kdv: 20}); assert.deepEqual(t, {ara: 250, iskonto: 25, matrah: 225, kdv: 45, toplam: 270}); });
+test('puantaj', () => {
+  const p = H.puantaj({gunluk: 1600, gunler: {1: {d: 'T', m: 2}, 2: {d: 'Y'}, 3: {d: 'X'}, 4: {d: 'I'}, 5: {d: 'T', m: 1}}, avanslar: [{tutar: 1000}]});
+  assert.equal(p.gun, 3.5); assert.equal(p.mesai, 3); assert.equal(p.gunTutar, 5600); assert.equal(p.mesaiTutar, 900); assert.equal(p.odenecek, 5500);
+  assert.equal(H.ayGunSayisi('2026-02'), 28); assert.equal(H.ayGunSayisi('2028-02'), 29);
+});
