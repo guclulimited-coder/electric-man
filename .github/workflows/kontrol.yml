@@ -6,6 +6,7 @@ jobs:
     steps:
       - run: |
           u=https://electricman.tusneldax.com/hunter/index.html
-          echo "EH_FILM $(curl -sL -m 20 "$u?x=$RANDOM" | grep -c 'giriş filmini atla' || true)"
-          echo "EH_TG $(curl -sL -m 20 "$u?x=$RANDOM" | grep -c 'tg=1' || true)"
-          echo "EM_PORTAL $(curl -sL -m 20 "https://electricman.tusneldax.com/portal.js?x=$RANDOM" | grep -c 'gamedistribution' || true)"
+          echo "EH_ACILIS $(curl -sL -m 20 "$u?x=$RANDOM" | grep -c 'launchAd' || true)"
+          for b in electricman electrichunter; do for c in tr us; do
+            echo "IOS $b $c $(curl -s -m 20 "https://itunes.apple.com/lookup?bundleId=com.tusneldax.$b&country=$c" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['resultCount'],[(r.get('version'),r.get('currentVersionReleaseDate')) for r in d['results']])" || true)"
+          done; done
