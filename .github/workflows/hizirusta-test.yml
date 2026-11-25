@@ -1,0 +1,48 @@
+name: HizirUsta emulator test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/scripts/hizirusta-test.sh']
+permissions:
+  contents: write
+jobs:
+  dene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Uygulama sayfaları
+        run: mkdir -p hizirusta-app/android/app/src/main/assets/www && cp hizirusta-app/www/*.html hizirusta-app/www/*.mjs hizirusta-app/android/app/src/main/assets/www/
+      - name: Android SDK 36
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - name: Debug APK
+        run: gradle -p hizirusta-app/android assembleDebug --no-daemon -q
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Emülatörde dene
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash .github/scripts/hizirusta-test.sh
+      - name: Sonuçları hizirusta-test dalına koy
+        if: always()
+        run: |
+          cd hu-test && git init -q -b hizirusta-test && git config user.name "github-actions[bot]" && git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -qm "HızırUsta emülatör denemesi" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" hizirusta-test
