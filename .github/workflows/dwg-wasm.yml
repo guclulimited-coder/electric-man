@@ -21,27 +21,33 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 3.1.74
-      - name: Derle
+      - name: Derle (autotools, LibreDWG'in emscripten yolu)
         run: |
           set -e
-          cd libredwg && mkdir -p w && cd w
-          emcmake cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_FLAGS='-g2 -O1' -DDISABLE_WERROR=ON -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_EXE_LINKER_FLAGS="-sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=DwgCevir -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 -sEXPORTED_RUNTIME_METHODS=FS,callMain -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sENVIRONMENT=web,worker,node -sFILESYSTEM=1 -sSTACK_SIZE=16MB -O1 -g2 -sASSERTIONS=2" > ../../cmake.log 2>&1 || { tail -40 ../../cmake.log; exit 1; }
-          emmake make -j4 dwg2dxf > ../../make.log 2>&1 || { grep -E "error" ../../make.log | head -30; tail -20 ../../make.log; exit 1; }
-          ls -la dwg2dxf*
+          sudo apt-get install -y -qq autoconf automake libtool texinfo pkg-config > /dev/null
+          cd libredwg
+          sh autogen.sh > ../autogen.log 2>&1 || { tail -30 ../autogen.log; exit 1; }
+          emconfigure ./configure --disable-shared --enable-static --disable-bindings --disable-python --disable-docs --disable-werror CFLAGS="-O2" > ../conf.log 2>&1 || { tail -40 ../conf.log; exit 1; }
+          grep -E "SIZEOF|WCHAR" src/config.h | head -20
+          emmake make -C src -j4 > ../make.log 2>&1 || { grep -E "error" ../make.log | head -30; exit 1; }
+          emmake make -C programs dwg2dxf.o > ../make2.log 2>&1 || { tail -30 ../make2.log; exit 1; }
+          emcc -O2 programs/dwg2dxf.o src/.libs/libredwg.a -lm -o dwg2dxf.mjs \
+            -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=DwgCevir -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 -sEXPORTED_RUNTIME_METHODS=FS,callMain \
+            -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sSTACK_SIZE=8MB -sENVIRONMENT=web,worker,node -sFILESYSTEM=1
+          ls -la dwg2dxf.*
       - name: Dene (örnek DWG)
         run: |
           set -e
-          mkdir -p cikti && cp libredwg/w/dwg2dxf.js cikti/dwg2dxf.mjs && cp libredwg/w/dwg2dxf.wasm cikti/
+          mkdir -p cikti && cp libredwg/dwg2dxf.mjs libredwg/dwg2dxf.wasm cikti/
           cat > dene.mjs <<'JS'
           import Mod from './cikti/dwg2dxf.mjs';
           import {readFileSync} from 'node:fs';
           for (const f of ['libredwg/test/test-data/example_2018.dwg', 'libredwg/test/test-data/example_2000.dwg']){
-            const m = await Mod({print: x => console.log('o', x), printErr: x => console.log('e', x)});
+            const satir = []; const m = await Mod({print: x => satir.push(x), printErr: x => satir.push(x)});
             m.FS.writeFile('/g.dwg', readFileSync(f));
             const t = performance.now(); const kod = m.callMain(['-y', '-o', '/c.dxf', '/g.dwg']);
             const out = m.FS.readFile('/c.dxf');
-            console.log(f, 'kod', kod, 'boyut', out.length, Math.round(performance.now() - t) + 'ms');
+            console.log(f, 'kod', kod, 'boyut', out.length, Math.round(performance.now() - t) + 'ms', satir.slice(0, 3).join(' / '));
           }
           JS
           node dene.mjs
