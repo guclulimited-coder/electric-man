@@ -113,6 +113,7 @@ table.pt td.h sup{color:var(--vurgu);font-size:9px}
 <script type="module">
 import * as H from './hesap.mjs';
 import * as T from './tarama.mjs';
+import * as H2 from './dxf.mjs';
 const $ = s => document.querySelector(s), ekran = $('#ekran');
 const sayi = (x, n = 2) => Number(x).toLocaleString('tr-TR', {maximumFractionDigits: n});
 const tl = x => Number(x).toLocaleString('tr-TR', {style: 'currency', currency: 'TRY'});
@@ -156,10 +157,12 @@ const v = id => parseFloat(String($('#' + id).value).replace(',', '.'));
 
 function hesapListesi(){
   ekran.innerHTML = `<div class="kart"><h2>Hesaplar</h2><p class="alt-baslik">Yönetmeliğe uygun hızlı hesaplar. Hepsi ücretsiz.</p>
+  <button class="secim" id="projeAc" style="width:100%;margin-bottom:10px;flex-direction:row;align-items:center"><span class="ik">📐</span><span style="display:flex;flex-direction:column"><b style="color:var(--yazi);font-size:15px">Projeden ölçü al</b><span>Proje dosyasını aç, kablo metresini ölç, hesaba aktar</span></span></button>
   <div class="izgara">${HESAPLAR.map(h => `<button class="secim" data-h="${h.id}"><span class="ik">${h.ik}</span><b>${h.ad}</b><span>${h.acik}</span></button>`).join('')}</div></div>
   <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif, aylık puantaj ve ödeme hesabı. İlk 7 gün ücretsiz.</p>
   <div class="yanyana"><button class="dugme" data-git="teklif">Teklif hazırla</button><button class="dugme ikincil" data-git="puantaj">Puantaj</button><button class="dugme ikincil" data-git="tarama">Belge tara</button></div></div>`;
   ekran.querySelectorAll('[data-h]').forEach(b => b.onclick = () => hesapAc(b.dataset.h));
+  $('#projeAc').onclick = projeEkrani;
   ekran.querySelectorAll('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
 }
 
@@ -198,11 +201,12 @@ const HESAPLA = {
     const x = H.ohm({U: g('U'), I: g('I'), R: g('R'), P: g('Pw')}); if (!x) return `<div class="not">İki değer girin.</div>`;
     return dl([['Gerilim', sayi(x.U) + ' V'], ['Akım', sayi(x.I, 3) + ' A'], ['Direnç', sayi(x.R, 3) + ' Ω'], ['Güç', sayi(x.P) + ' W']]); }
 };
-function hesapAc(id){
+function hesapAc(id, on){
   const h = HESAPLAR.find(x => x.id === id);
   ekran.innerHTML = `<button class="geri">‹ Hesaplar</button><div class="kart"><h2>${h.ad}</h2><p class="alt-baslik">${h.acik}</p><form id="f">${FORMLAR[id]()}</form><div class="sonuc" id="sonuc"></div></div>`;
   ekran.querySelector('.geri').onclick = hesapListesi;
   const calis = () => { try { $('#sonuc').innerHTML = HESAPLA[id](); } catch(e){ $('#sonuc').innerHTML = '<div class="not">Değerleri kontrol edin.</div>'; } };
+  if (on) for (const [k, x] of Object.entries(on)){ const el = $('#' + k); if (el) el.value = x; }
   $('#f').addEventListener('input', calis); $('#f').addEventListener('submit', e => e.preventDefault()); calis();
   scrollTo(0, 0);
 }
@@ -456,6 +460,117 @@ async function pdfIndir(ad){
   }
   try { if (navigator.canShare && navigator.canShare({files: [dosya]})){ await navigator.share({files: [dosya], title: dosya.name}); return; } } catch(e){ if (e.name === 'AbortError') return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(dosya); a.download = dosya.name; document.body.appendChild(a); a.click(); a.remove(); toast('PDF indirildi');
+}
+
+/* ---------- Projeden ölçü (DXF) ---------- */
+let P = null; // {d: çizim, birim, kal: kalibrasyon katsayısı, gizli: Set, uclar, ad}
+const olcumler = [];
+function projeEkrani(){
+  ekran.innerHTML = `<button class="geri">‹ Hesaplar</button><div class="kart"><h2>Projeden ölçü</h2><p class="alt-baslik">Proje dosyasını aç, kablo güzergâhına dokunarak metreyi bul, kablo hesabına aktar.</p>
+    <button class="dugme tam" id="dxfSec">${P ? 'Başka proje aç' : 'Proje dosyası aç'}</button><input type="file" id="dxfDosya" accept=".dxf,.dwg,application/dxf,image/vnd.dxf" hidden>
+    <div class="not">Şimdilik DXF biçimi açılıyor. DWG dosyasını çizim programında "Farklı kaydet → DXF" ile kaydedin; DWG'yi doğrudan açma yakında geliyor.</div></div>
+    <div id="projeAlan"></div>`;
+  ekran.querySelector('.geri').onclick = hesapListesi;
+  $('#dxfSec').onclick = () => $('#dxfDosya').click();
+  $('#dxfDosya').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    toast('Proje okunuyor…');
+    try {
+      const bas = new Uint8Array(await f.slice(0, 6).arrayBuffer());
+      if (String.fromCharCode(...bas).startsWith('AC10')) throw new Error('DWG');
+      const d = H2.dxfOku(await f.text());
+      const gen = Math.max(d.sinir[2] - d.sinir[0], d.sinir[3] - d.sinir[1]);
+      const birim = d.birim && H2.METRE[d.birim] ? d.birim : gen > 2000 ? 4 : gen > 200 ? 5 : 6;
+      const uclar = []; for (const c of d.cizgiler){ if (c.merkez){ uclar.push(c.merkez); continue; } uclar.push(c.p[0], c.p[c.p.length - 1]); if (c.p.length < 40) for (const q of c.p) uclar.push(q); }
+      P = {d, birim, kal: 1, gizli: new Set(), uclar, ad: f.name, mod: 'olc', nokta: [], gorunum: null};
+      projeCiz();
+      $('#pTuval').scrollIntoView({block: 'center'});
+    } catch(err){
+      toast(err.message === 'DWG' ? 'Bu bir DWG dosyası. DXF olarak kaydedip açın.' : 'Dosya okunamadı. DXF biçiminde olduğundan emin olun.');
+    }
+  };
+  if (P) projeCiz();
+  scrollTo(0, 0);
+}
+const katmanRenk = k => { let h = 0; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h} 65% 45%)`; };
+function projeCiz(){
+  const birimAd = {4: 'mm', 5: 'cm', 6: 'm'};
+  $('#projeAlan').innerHTML = `<div class="kart" style="padding:12px">
+    <div class="satir" style="grid-template-columns:1fr auto"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${kacis(P.ad)}</b><select id="pBirim" style="width:auto">${Object.entries(birimAd).map(([k, a]) => `<option value="${k}" ${+k === P.birim ? 'selected' : ''}>Çizim birimi: ${a}</option>`).join('')}</select></div>
+    <div class="secenekler" style="grid-template-columns:repeat(3,1fr)"><button data-mod="olc" class="${P.mod === 'olc' ? 'on' : ''}">📏 Ölç</button><button data-mod="kaydir" class="${P.mod === 'kaydir' ? 'on' : ''}">✋ Kaydır</button><button data-mod="olcek" class="${P.mod === 'olcek' ? 'on' : ''}">⚖ Ölçek ayarla</button></div>
+    <div style="position:relative;margin-top:10px"><canvas id="pTuval" style="width:100%;height:58vh;border:1px solid var(--cizgi);border-radius:10px;background:#fff;touch-action:none;display:block"></canvas>
+      <div id="pOlcu" style="position:absolute;left:8px;top:8px;background:rgba(20,33,61,.9);color:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:15px"></div>
+      <div style="position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px"><button class="dugme ikincil" id="pYak" style="padding:6px 12px;background:var(--kart)">＋</button><button class="dugme ikincil" id="pUzak" style="padding:6px 12px;background:var(--kart)">－</button><button class="dugme ikincil" id="pSigdir" style="padding:6px 10px;background:var(--kart);font-size:12px">Sığdır</button></div></div>
+    <div class="yanyana"><button class="dugme ikincil" id="pGeri">Son noktayı sil</button><button class="dugme ikincil" id="pSil">Temizle</button><button class="dugme" id="pKaydet">Ölçüyü kaydet</button></div>
+    <div class="not">Ölç modunda güzergâh boyunca köşelere dokun; uç noktalara otomatik yapışır. İki parmakla büyüt, sürükleyerek kaydır.</div></div>
+  <div class="kart"><h2>Ölçümler</h2><div id="pListe"></div></div>
+  <div class="kart"><h2>Katmanlar</h2><p class="alt-baslik">Gizlemek için dokun.</p><div class="yanyana" id="pKatman">${P.d.katmanlar.map(k => `<button class="durum" data-k="${kacis(k)}" style="cursor:pointer;${P.gizli.has(k) ? 'opacity:.4;text-decoration:line-through' : ''}"><span style="color:${katmanRenk(k)}">●</span> ${kacis(k)}</button>`).join('')}</div></div>`;
+  const tv = $('#pTuval'), cx = tv.getContext('2d'); let W, Hh;
+  const boyut = () => { const r = tv.getBoundingClientRect(), dp = devicePixelRatio || 1; W = r.width; Hh = r.height; tv.width = W * dp; tv.height = Hh * dp; cx.setTransform(dp, 0, 0, dp, 0, 0); };
+  boyut();
+  const sigdir = () => { const [x1, y1, x2, y2] = P.d.sinir, s = Math.min(W / ((x2 - x1) || 1), Hh / ((y2 - y1) || 1)) * .92; P.gorunum = {s, ox: W / 2 - (x1 + x2) / 2 * s, oy: Hh / 2 + (y1 + y2) / 2 * s}; };
+  if (!P.gorunum) sigdir();
+  const ekr = ([x, y]) => [x * P.gorunum.s + P.gorunum.ox, -y * P.gorunum.s + P.gorunum.oy];
+  const dun = (sx, sy) => [(sx - P.gorunum.ox) / P.gorunum.s, -(sy - P.gorunum.oy) / P.gorunum.s];
+  const metre = () => H2.METRE[P.birim] * P.kal;
+  let bekliyor = false;
+  const ciz = () => { if (bekliyor) return; bekliyor = true; requestAnimationFrame(() => { bekliyor = false;
+    cx.clearRect(0, 0, W, Hh); cx.lineWidth = 1; cx.lineJoin = 'round';
+    const renkler = {}; for (const c of P.d.cizgiler){ if (P.gizli.has(c.k)) continue; (renkler[c.k] = renkler[c.k] || []).push(c); }
+    for (const [k, l] of Object.entries(renkler)){ cx.strokeStyle = katmanRenk(k); cx.beginPath();
+      for (const c of l){ let [a, b] = ekr(c.p[0]); cx.moveTo(a, b); for (let i = 1; i < c.p.length; i++){ [a, b] = ekr(c.p[i]); cx.lineTo(a, b); } } cx.stroke(); }
+    cx.fillStyle = '#333';
+    for (const y of P.d.yazilar){ if (P.gizli.has(y.k)) continue; const px = y.h * P.gorunum.s; if (px < 5 || px > 200) continue; const [a, b] = ekr([y.x, y.y]);
+      cx.save(); cx.translate(a, b); cx.rotate(-y.a * Math.PI / 180); cx.font = `${px}px system-ui`; cx.fillText(y.t, 0, 0); cx.restore(); }
+    // ölçü çizgisi
+    if (P.nokta.length){ cx.strokeStyle = P.mod === 'olcek' ? '#1f8a4c' : '#e85d04'; cx.lineWidth = 3; cx.beginPath(); P.nokta.forEach((q, i) => { const [a, b] = ekr(q); i ? cx.lineTo(a, b) : cx.moveTo(a, b); }); cx.stroke();
+      cx.fillStyle = cx.strokeStyle; for (const q of P.nokta){ const [a, b] = ekr(q); cx.beginPath(); cx.arc(a, b, 5, 0, 7); cx.fill(); } }
+    const L = H2.uzunluk(P.nokta) * metre();
+    $('#pOlcu').textContent = P.mod === 'olcek' ? (P.nokta.length < 2 ? 'Ölçek: bilinen bir ölçünün iki ucuna dokun' : 'Ölçek için gerçek uzunluğu girin') : P.nokta.length > 1 ? `${sayi(L, 2)} m` : P.mod === 'olc' ? 'Güzergâhın başlangıcına dokun' : 'Kaydırma modu';
+  }); };
+  const liste = () => { const top = olcumler.reduce((t, o) => t + o.m, 0);
+    $('#pListe').innerHTML = olcumler.length ? olcumler.map((o, i) => `<div class="ozet"><span>${kacis(o.ad)}</span><b>${sayi(o.m, 2)} m</b><span></span><span><button class="dugme ikincil" style="padding:5px 10px;font-size:13px" data-aktar="${i}">Kablo hesabına aktar</button> <button data-osil="${i}" style="border:0;background:none;color:var(--kotu);font-size:18px">×</button></span></div>`).join('') + `<div class="ozet"><b>Toplam</b><b>${sayi(top, 2)} m</b></div>` : '<div class="bos">Kaydedilen ölçü yok.</div>';
+    $('#pListe').querySelectorAll('[data-aktar]').forEach(b => b.onclick = () => hesapAc('kesit', {L: Math.ceil(olcumler[+b.dataset.aktar].m)}));
+    $('#pListe').querySelectorAll('[data-osil]').forEach(b => b.onclick = () => { olcumler.splice(+b.dataset.osil, 1); liste(); });
+  };
+  liste(); ciz();
+  // dokunma: tek parmak sürükle / dokun, iki parmak yakınlaştır
+  const ptr = new Map(); let surukle = null, iki = null;
+  tv.addEventListener('pointerdown', e => { tv.setPointerCapture(e.pointerId); ptr.set(e.pointerId, [e.offsetX, e.offsetY]);
+    if (ptr.size === 1) surukle = {x: e.offsetX, y: e.offsetY, ox: P.gorunum.ox, oy: P.gorunum.oy, oynadi: false};
+    else if (ptr.size === 2){ const [a, b] = [...ptr.values()]; iki = {d: Math.hypot(a[0] - b[0], a[1] - b[1]), s: P.gorunum.s, m: dun((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)}; surukle = null; } });
+  tv.addEventListener('pointermove', e => { if (!ptr.has(e.pointerId)) return; ptr.set(e.pointerId, [e.offsetX, e.offsetY]);
+    if (iki && ptr.size === 2){ const [a, b] = [...ptr.values()], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; P.gorunum.s = iki.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / (iki.d || 1); P.gorunum.ox = mx - iki.m[0] * P.gorunum.s; P.gorunum.oy = my + iki.m[1] * P.gorunum.s; ciz(); return; }
+    if (surukle){ const dx = e.offsetX - surukle.x, dy = e.offsetY - surukle.y; if (Math.hypot(dx, dy) > 8) surukle.oynadi = true; if (surukle.oynadi){ P.gorunum.ox = surukle.ox + dx; P.gorunum.oy = surukle.oy + dy; ciz(); } } });
+  const birak = e => { ptr.delete(e.pointerId); if (ptr.size < 2) iki = null;
+    if (surukle && !surukle.oynadi && P.mod !== 'kaydir'){
+      let q = dun(e.offsetX, e.offsetY); const y = H2.yapis(P.uclar, q[0], q[1], 14 / P.gorunum.s); if (y) q = y;
+      if (P.mod === 'olcek' && P.nokta.length >= 2) P.nokta = [];
+      P.nokta.push(q); ciz();
+      if (P.mod === 'olcek' && P.nokta.length === 2) setTimeout(olcekSor, 50);
+    }
+    if (!ptr.size) surukle = null; };
+  tv.addEventListener('pointerup', birak); tv.addEventListener('pointercancel', e => { ptr.delete(e.pointerId); surukle = null; iki = null; });
+  tv.addEventListener('wheel', e => { e.preventDefault(); const k = e.deltaY < 0 ? 1.2 : 1 / 1.2, m = dun(e.offsetX, e.offsetY); P.gorunum.s *= k; P.gorunum.ox = e.offsetX - m[0] * P.gorunum.s; P.gorunum.oy = e.offsetY + m[1] * P.gorunum.s; ciz(); }, {passive: false});
+  const zum = k => { const m = dun(W / 2, Hh / 2); P.gorunum.s *= k; P.gorunum.ox = W / 2 - m[0] * P.gorunum.s; P.gorunum.oy = Hh / 2 + m[1] * P.gorunum.s; ciz(); };
+  $('#pYak').onclick = () => zum(1.5); $('#pUzak').onclick = () => zum(1 / 1.5); $('#pSigdir').onclick = () => { sigdir(); ciz(); };
+  const olcekSor = () => {
+    const ham = H2.uzunluk(P.nokta) * H2.METRE[P.birim];
+    perde(`<h2>Ölçek ayarla</h2><p class="alt-baslik">Seçtiğin iki nokta arası projede ${sayi(ham, 3)} m görünüyor. Gerçekte kaç metre?</p><label>Gerçek uzunluk (m)</label><input id="gercek" type="number" step="0.01" inputmode="decimal">
+      <div class="yanyana"><button class="dugme" id="oTamam">Ayarla</button><button class="dugme ikincil" id="oSifir">Ölçeği sıfırla</button></div>`, (p, kapat) => {
+      p.querySelector('#oTamam').onclick = () => { const g = parseFloat(p.querySelector('#gercek').value.replace(',', '.')); if (!g || !ham) return toast('Uzunluk yazın'); P.kal = g / ham; P.nokta = []; P.mod = 'olc'; kapat(); projeCiz(); toast('Ölçek ayarlandı'); };
+      p.querySelector('#oSifir').onclick = () => { P.kal = 1; P.nokta = []; P.mod = 'olc'; kapat(); projeCiz(); };
+    });
+  };
+  $('#projeAlan').querySelectorAll('[data-mod]').forEach(b => b.onclick = () => { P.mod = b.dataset.mod; if (P.mod === 'olcek') P.nokta = []; projeCiz(); });
+  $('#pBirim').onchange = e => { P.birim = +e.target.value; ciz(); };
+  $('#pGeri').onclick = () => { P.nokta.pop(); ciz(); };
+  $('#pSil').onclick = () => { P.nokta = []; ciz(); };
+  $('#pKaydet').onclick = () => { if (P.nokta.length < 2) return toast('Önce güzergâhı işaretle');
+    perde(`<h2>Ölçüyü kaydet</h2><label>Adı</label><input id="oAd" value="Hat ${olcumler.length + 1}"><div class="not">${sayi(H2.uzunluk(P.nokta) * metre(), 2)} m</div><div class="yanyana"><button class="dugme tam" id="oK">Kaydet</button></div>`, (p, kapat) => {
+      p.querySelector('#oK').onclick = () => { olcumler.push({ad: p.querySelector('#oAd').value || 'Hat', m: H2.uzunluk(P.nokta) * metre()}); P.nokta = []; kapat(); liste(); ciz(); toast('Ölçü kaydedildi'); };
+    }); };
+  $('#pKatman').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; P.gizli.has(k) ? P.gizli.delete(k) : P.gizli.add(k); b.style.opacity = P.gizli.has(k) ? .4 : 1; b.style.textDecoration = P.gizli.has(k) ? 'line-through' : ''; ciz(); });
 }
 
 /* ---------- Firmam ---------- */
