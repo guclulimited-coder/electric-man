@@ -114,6 +114,7 @@ table.pt td.h sup{color:var(--vurgu);font-size:9px}
 import * as H from './hesap.mjs';
 import * as T from './tarama.mjs';
 import * as H2 from './dxf.mjs';
+import * as R from './radar.mjs';
 const $ = s => document.querySelector(s), ekran = $('#ekran');
 const sayi = (x, n = 2) => Number(x).toLocaleString('tr-TR', {maximumFractionDigits: n});
 const tl = x => Number(x).toLocaleString('tr-TR', {style: 'currency', currency: 'TRY'});
@@ -158,11 +159,12 @@ const v = id => parseFloat(String($('#' + id).value).replace(',', '.'));
 function hesapListesi(){
   ekran.innerHTML = `<div class="kart"><h2>Hesaplar</h2><p class="alt-baslik">Yönetmeliğe uygun hızlı hesaplar. Hepsi ücretsiz.</p>
   <button class="secim" id="projeAc" style="width:100%;margin-bottom:10px;flex-direction:row;align-items:center"><span class="ik">📐</span><span style="display:flex;flex-direction:column"><b style="color:var(--yazi);font-size:15px">Projeden ölçü al</b><span>Proje dosyasını aç, kablo metresini ölç, hesaba aktar</span></span></button>
+  <button class="secim" id="radarAc" style="width:100%;margin-bottom:10px;flex-direction:row;align-items:center"><span class="ik">📡</span><span style="display:flex;flex-direction:column"><b style="color:var(--yazi);font-size:15px">Metal ve akım bulucu</b><span>Duvardaki demiri ve akım çeken kabloyu sezer (ölçü aleti değildir)</span></span></button>
   <div class="izgara">${HESAPLAR.map(h => `<button class="secim" data-h="${h.id}"><span class="ik">${h.ik}</span><b>${h.ad}</b><span>${h.acik}</span></button>`).join('')}</div></div>
   <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif, aylık puantaj ve ödeme hesabı. İlk 7 gün ücretsiz.</p>
   <div class="yanyana"><button class="dugme" data-git="teklif">Teklif hazırla</button><button class="dugme ikincil" data-git="puantaj">Puantaj</button><button class="dugme ikincil" data-git="tarama">Belge tara</button></div></div>`;
   ekran.querySelectorAll('[data-h]').forEach(b => b.onclick = () => hesapAc(b.dataset.h));
-  $('#projeAc').onclick = projeEkrani;
+  $('#projeAc').onclick = projeEkrani; $('#radarAc').onclick = radarEkrani;
   ekran.querySelectorAll('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
 }
 
@@ -573,6 +575,52 @@ function projeCiz(){
   $('#pKatman').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; P.gizli.has(k) ? P.gizli.delete(k) : P.gizli.add(k); b.style.opacity = P.gizli.has(k) ? .4 : 1; b.style.textDecoration = P.gizli.has(k) ? 'line-through' : ''; ciz(); });
 }
 
+/* ---------- Metal ve akım bulucu ---------- */
+let radarDur = null;
+function radarEkrani(){
+  ekran.innerHTML = `<button class="geri">‹ Hesaplar</button>
+  <div class="kart" style="border-color:var(--kotu)"><b class="kotu">⚠ Güvenlik aracı değildir</b><div class="not" style="margin-top:4px">Telefon gerilim ölçemez. Bu bölüm yalnız manyetik alanı sezer: duvardaki demiri, çiviyi ve <b>o an akım çeken</b> kabloyu bulmaya yardım eder. Yüksüz kablo bulunamaz. Çalışmadan önce sigortayı kapatın ve gerilimi ölçü aletiyle kontrol edin.</div></div>
+  <div class="kart" style="text-align:center"><h2>Metal ve akım bulucu</h2><p class="alt-baslik">Telefonu duvardan uzakta tutup "Ayarla"ya bas, sonra duvarda yavaşça gezdir. Pusula algılayıcısı genelde telefonun üst kısmındadır.</p>
+    <svg viewBox="0 0 200 200" style="width:min(70vw,260px)"><circle cx="100" cy="100" r="86" fill="none" stroke="var(--cizgi)" stroke-width="14"/><circle id="rYay" cx="100" cy="100" r="86" fill="none" stroke="var(--vurgu)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 541" transform="rotate(-90 100 100)"/>
+      <text id="rYuzde" x="100" y="108" text-anchor="middle" font-size="38" font-weight="800" fill="var(--yazi)">—</text><text id="rAlan" x="100" y="136" text-anchor="middle" font-size="12" fill="var(--soluk)"></text></svg>
+    <div class="ozet" style="text-align:left"><span>Metal / sabit alan</span><b id="rMetal">—</b></div>
+    <div class="ozet" style="text-align:left"><span>Akım dalgalanması</span><b id="rAkim">—</b></div>
+    <div class="yanyana" style="justify-content:center"><button class="dugme" id="rBasla">Başlat</button><button class="dugme ikincil" id="rAyar">Ayarla</button><button class="dugme ikincil" id="rSes">🔊 Ses açık</button></div>
+    <div class="not" id="rNot"></div></div>`;
+  ekran.querySelector('.geri').onclick = () => { radarDurdur(); hesapListesi(); };
+  const radar = new R.Radar(); let ses = depo.al('radarSes', true), ac = null, sonBip = 0, calisiyor = false;
+  $('#rSes').textContent = ses ? '🔊 Ses açık' : '🔇 Ses kapalı';
+  $('#rSes').onclick = () => { ses = !ses; depo.koy('radarSes', ses); $('#rSes').textContent = ses ? '🔊 Ses açık' : '🔇 Ses kapalı'; };
+  $('#rAyar').onclick = () => { radar.ayarla(); toast('Ortam alanı öğreniliyor — telefonu duvardan uzak tut'); };
+  const bip = g => { const ara = R.bipAraligi(g), t = performance.now(); if (!ara || t - sonBip < ara) return; sonBip = t;
+    if (navigator.vibrate) navigator.vibrate(25);
+    if (!ses) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), k = ac.createGain();
+      o.frequency.value = 600 + 900 * g; k.gain.setValueAtTime(.25, ac.currentTime); k.gain.exponentialRampToValueAtTime(.001, ac.currentTime + .09); o.connect(k).connect(ac.destination); o.start(); o.stop(ac.currentTime + .1); } catch(e){} };
+  const goster = d => {
+    if (!d.hazir){ $('#rYuzde').textContent = '…'; return; }
+    const y = Math.round(d.guc * 100); $('#rYuzde').textContent = '%' + y; $('#rYay').setAttribute('stroke-dasharray', `${540 * d.guc} 541`);
+    $('#rYay').setAttribute('stroke', d.guc > .66 ? 'var(--kotu)' : d.guc > .33 ? 'var(--vurgu)' : 'var(--iyi)');
+    $('#rAlan').textContent = `${sayi(d.alan, 1)} µT (ayar ${sayi(d.taban, 1)})`;
+    $('#rMetal').textContent = '%' + Math.round(d.metal * 100); $('#rAkim').textContent = '%' + Math.round(d.akim * 100);
+    bip(d.guc);
+  };
+  const ornekAl = l => { let d; for (let i = 0; i + 2 < l.length; i += 3) d = radar.ekle(l[i], l[i + 1], l[i + 2]); if (d) goster(d); };
+  $('#rBasla').onclick = async () => {
+    if (calisiyor){ radarDurdur(); calisiyor = false; $('#rBasla').textContent = 'Başlat'; return; }
+    try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e){}
+    if (window.EMNative && window.EMNative.call){
+      window.__magOrnek = ornekAl;
+      try { await window.EMNative.call({action: 'magStart'}); radarDur = () => { window.EMNative.call({action: 'magStop'}).catch(() => {}); window.__magOrnek = null; }; }
+      catch(e){ $('#rNot').textContent = 'Bu telefonda pusula algılayıcısı bulunamadı.'; return; }
+    } else if ('Magnetometer' in window){
+      try { const s = new Magnetometer({frequency: 60}); s.onreading = () => ornekAl([s.x, s.y, s.z]); s.onerror = e => { $('#rNot').textContent = 'Algılayıcı açılamadı: izin verilmedi veya desteklenmiyor.'; }; s.start(); radarDur = () => s.stop(); }
+      catch(e){ $('#rNot').textContent = 'Algılayıcı açılamadı.'; return; }
+    } else { $('#rNot').textContent = 'Bu bölüm HızırUsta telefon uygulamasında çalışır; tarayıcı pusula algılayıcısına erişemez.'; return; }
+    calisiyor = true; radar.ayarla(); $('#rBasla').textContent = 'Durdur'; toast('Ortam alanı öğreniliyor…');
+  };
+}
+function radarDurdur(){ if (radarDur){ try { radarDur(); } catch(e){} radarDur = null; } }
+
 /* ---------- Firmam ---------- */
 function ayarEkrani(){
   const f = depo.al('firma', {});
@@ -593,7 +641,7 @@ function ayarEkrani(){
 /* ---------- Gezinme ---------- */
 let aktifSekme = 'hesap';
 function git(s){
-  aktifSekme = s; document.querySelectorAll('#altMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+  radarDurdur(); aktifSekme = s; document.querySelectorAll('#altMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
   ({hesap: hesapListesi, teklif: teklifListesi, puantaj: puantajEkrani, tarama: taramaEkrani, ayar: ayarEkrani})[s](); rozet(); scrollTo(0, 0);
 }
 document.querySelectorAll('#altMenu button').forEach(b => b.onclick = () => git(b.dataset.s));
