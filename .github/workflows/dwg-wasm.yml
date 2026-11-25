@@ -33,7 +33,7 @@ jobs:
           emmake make -C programs dwg2dxf.o > ../make2.log 2>&1 || { tail -30 ../make2.log; exit 1; }
           emcc -O2 programs/dwg2dxf.o src/.libs/libredwg.a -lm -o dwg2dxf.mjs \
             -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=DwgCevir -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 -sEXPORTED_RUNTIME_METHODS=FS,callMain \
-            -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sSTACK_SIZE=8MB -sENVIRONMENT=web,worker,node -sFILESYSTEM=1
+            -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sSTACK_SIZE=8MB -sENVIRONMENT=web,worker,node,shell -sFILESYSTEM=1
           ls -la dwg2dxf.*
       - name: Dene (örnek DWG)
         run: |
