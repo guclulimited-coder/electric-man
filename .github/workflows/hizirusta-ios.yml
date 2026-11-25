@@ -1,0 +1,164 @@
+name: HizirUsta iOS build
+on:
+  push:
+    branches: [main]
+    paths: ['hizirusta-app/ios/**', 'hizirusta-app/www/**', '.github/workflows/hizirusta-ios.yml']
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Sign and upload to App Store Connect (TestFlight)'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+env:
+  TEAM_ID: YMAU5R6AA4
+  BUNDLE_ID: com.tusneldax.hizirusta
+  PROFILE_NAME: HizirUsta App Store
+concurrency:
+  group: ios-imza
+  cancel-in-progress: false
+jobs:
+  build:
+    # macOS minutes are expensive: only run when an upload is requested
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[hu-ios-upload]') || contains(github.event.head_commit.message, '[hu-ios-check]')
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ci-signing
+          path: ci-vault
+          persist-credentials: false
+      - name: Uygulama sayfalarını pakete koy
+        run: mkdir -p hizirusta-app/ios/HizirUsta/www && cp hizirusta-app/www/*.html hizirusta-app/www/*.mjs hizirusta-app/ios/HizirUsta/www/
+      - name: Xcode 26 and project
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest/Contents/Developer"; fi
+          xcodebuild -version
+          brew install xcodegen >/dev/null
+          cd hizirusta-app/ios && xcodegen generate
+          grep -E '^HU_.*_IOS=.+' ../ads.env | sed 's/^/ /' | tr -d '\n' > ../../ads-settings.txt || true
+          echo "AD_SETTINGS=$(cat ../../ads-settings.txt)" >> "$GITHUB_ENV"
+      - name: Compile (simulator, official test ads)
+        run: |
+          set +e
+          xcodebuild -project hizirusta-app/ios/HizirUsta.xcodeproj -scheme HizirUsta -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build > build-sim.log 2>&1
+          code=$?
+          # surface results as annotations (readable through the API)
+          grep -E "error:|BUILD (SUCCEEDED|FAILED)" build-sim.log | sort -u | head -40 | while read -r l; do echo "::warning::$l"; done
+          echo "::notice::$(xcodebuild -version | head -1) · simulator build exit $code"
+          exit $code
+      - name: Archive with Xcode cloud signing and upload to App Store Connect
+        if: (github.event_name == 'workflow_dispatch' && inputs.upload) || contains(github.event.head_commit.message, '[hu-ios-upload]')
+        env:
+          API_PRIVATE_KEY: ${{ secrets.EM_ASC_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          set -euo pipefail
+          if [ -z "$API_PRIVATE_KEY" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER" ]; then echo "::error::EM_ASC_PRIVATE_KEY secret is missing"; exit 1; fi
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"
+          # normalise the pasted key (lost line breaks, literal \n, spaces) back into a valid PEM
+          python3 - "$KEY" <<'PY'
+          import os, re, sys, textwrap
+          raw = os.environ['API_PRIVATE_KEY'].replace('\\n', '\n')
+          body = re.sub(r'-----(BEGIN|END)[A-Z ]*-----', '', raw)
+          body = re.sub(r'[^A-Za-z0-9+/=]', '', body)
+          if len(body) < 100: print('::error::EM_ASC_PRIVATE_KEY looks incomplete (' + str(len(body)) + ' base64 chars)'); sys.exit(1)
+          open(sys.argv[1], 'w').write('-----BEGIN PRIVATE KEY-----\n' + '\n'.join(textwrap.wrap(body, 64)) + '\n-----END PRIVATE KEY-----\n')
+          print('::notice::API key normalised: ' + str(len(body)) + ' base64 chars, lines in secret: ' + str(raw.count(chr(10)) + 1))
+          PY
+          chmod 600 "$KEY"
+          # Signing without stored certificates: create a temporary Apple Distribution certificate + App Store profile
+          # through the App Store Connect API, sign and upload. The certificate is revoked only when the upload fails:
+          # revoking it after a successful upload makes Apple mark that build "Invalid Binary".
+          python3 -m venv "$RUNNER_TEMP/asc" && "$RUNNER_TEMP/asc/bin/pip" -q install 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/asc/bin/python" - "$KEY" <<'PY'
+          import base64, json, os, pathlib, plistlib, secrets, subprocess, sys, time, traceback, urllib.request, urllib.error, jwt
+          def report(t, v, tb):
+              print('::error::signing script: ' + ''.join(traceback.format_exception(t, v, tb))[-600:].replace(chr(10), ' | '))
+          sys.excepthook = report
+          env = os.environ; temp = pathlib.Path(env['RUNNER_TEMP']); key = open(sys.argv[1]).read()
+          def api(method, path, body=None):
+              tok = jwt.encode({'iss': env['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': env['KEY_ID'], 'typ': 'JWT'})
+              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, method=method, data=json.dumps(body).encode() if body else None, headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: return json.load(r) if r.status != 204 else {}
+              except urllib.error.HTTPError as e:
+                  msg = e.read().decode()[:400]; print('::error::' + method + ' ' + path + ' -> ' + str(e.code) + ' ' + msg.replace(chr(10), ' ')); raise
+          bid_name = env['BUNDLE_ID']
+          found = [b for b in api('GET', '/v1/bundleIds?filter[identifier]=' + bid_name)['data'] if b['attributes']['identifier'] == bid_name]
+          bid = found[0] if found else api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': bid_name, 'name': 'HizirUsta', 'platform': 'IOS'}}})['data']
+          # shared persistent CI distribution certificate (ci-signing branch, sealed with a key derived from the ASC API key).
+          # No certificate is created or revoked here any more: one app's upload can no longer invalidate another app's build.
+          sys.path.insert(0, 'ci-vault'); import ci_vault
+          v = ci_vault.load('ci-vault/ci-cert.enc.json')
+          cert = {'id': v['certId']}; sign_id = v['signId']; pw = v['password']
+          p12 = temp / 'em.p12'; p12.write_bytes(base64.b64decode(v['p12']))
+          (temp / 'em-sign-id').write_text(sign_id)
+          print('::notice::shared CI certificate ' + cert['id'] + ' (' + sign_id + ')')
+          kc = str(temp / 'em.keychain-db'); kpw = secrets.token_urlsafe(24)
+          for args in [['create-keychain', '-p', kpw, kc], ['set-keychain-settings', '-lut', '21600', kc], ['unlock-keychain', '-p', kpw, kc],
+                       ['import', str(p12), '-P', pw, '-A', '-t', 'cert', '-f', 'pkcs12', '-k', kc], ['set-key-partition-list', '-S', 'apple-tool:,apple:,codesign:', '-s', '-k', kpw, kc],
+                       ['list-keychains', '-d', 'user', '-s', kc, 'login.keychain-db']]:
+              r = subprocess.run(['security'] + args, capture_output=True, text=True)
+              if r.returncode: print('::error::security ' + args[0] + ': ' + r.stderr[:200]); sys.exit(1)
+          # App Store profile for this certificate
+          name = 'HizirUsta CI ' + time.strftime('%Y%m%d%H%M%S')
+          prof = api('POST', '/v1/profiles', {'data': {'type': 'profiles', 'attributes': {'name': name, 'profileType': 'IOS_APP_STORE'},
+                     'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': bid['id']}}, 'certificates': {'data': [{'type': 'certificates', 'id': cert['id']}]}}}})['data']
+          (temp / 'em-profile-id').write_text(prof['id'])
+          pf = temp / 'em.mobileprovision'; pf.write_bytes(base64.b64decode(prof['attributes']['profileContent']))
+          info = plistlib.loads(subprocess.check_output(['security', 'cms', '-D', '-i', str(pf)]))
+          for d in [pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles', pathlib.Path.home() / 'Library/Developer/Xcode/UserData/Provisioning Profiles']:
+              d.mkdir(parents=True, exist_ok=True); (d / (info['UUID'] + '.mobileprovision')).write_bytes(pf.read_bytes())
+          pathlib.Path('ExportOptions.plist').write_bytes(plistlib.dumps({'method': 'app-store-connect', 'destination': 'upload', 'signingStyle': 'manual', 'teamID': env['TEAM_ID'],
+              'signingCertificate': sign_id, 'provisioningProfiles': {bid_name: info['Name']}, 'manageAppVersionAndBuildNumber': False, 'uploadSymbols': True}))
+          (temp / 'em-profile-name').write_text(info['Name'])
+          apps = api('GET', '/v1/apps?filter[bundleId]=' + bid_name)['data']
+          print('::notice::distribution certificate ' + cert['id'] + ', profile ' + info['Name'] + ', app record ' + (apps[0]['id'] if apps else 'MISSING'))
+          PY
+          PROFILE_NAME_CI=$(cat "$RUNNER_TEMP/em-profile-name")
+          AUTH=(-authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
+          xcodebuild -project hizirusta-app/ios/HizirUsta.xcodeproj -scheme HizirUsta -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/HizirUsta.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$(cat $RUNNER_TEMP/em-sign-id)" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME_CI" DEVELOPMENT_TEAM="$TEAM_ID" OTHER_CODE_SIGN_FLAGS="--keychain $RUNNER_TEMP/em.keychain-db" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" $AD_SETTINGS archive > archive.log 2>&1 \
+            || { set +e; { grep -E "error:|Signing|signing" archive.log | sort -u | head -20; tail -15 archive.log; } | while read -r l; do echo "::error::$l"; done; exit 1; }
+          xcodebuild -exportArchive -archivePath build/HizirUsta.xcarchive -exportPath release -exportOptionsPlist ExportOptions.plist "${AUTH[@]}" > export.log 2>&1 \
+            || { set +e; tail -25 export.log | while read -r l; do echo "::error::$l"; done; exit 1; }
+          touch "$RUNNER_TEMP/em-uploaded"
+          echo "::notice::Uploaded build $GITHUB_RUN_NUMBER to App Store Connect"
+      - name: Clean up signing files (revoke the certificate only if nothing was uploaded)
+        if: always()
+        env:
+          KEY_ID: ${{ secrets.EM_ASC_KEY_ID || 'AMWHRWY3U4' }}
+          ISSUER: ${{ secrets.EM_ASC_ISSUER_ID || 'cab75b07-a305-412b-a205-a91b4280d965' }}
+        run: |
+          KEY=$(ls "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8 2>/dev/null | head -1 || true)
+          if [ -n "$KEY" ] && [ -x "$RUNNER_TEMP/asc/bin/python" ]; then
+            "$RUNNER_TEMP/asc/bin/python" - "$KEY" <<'PY' || true
+          import os, sys, time, pathlib, urllib.request, jwt
+          env = os.environ; temp = pathlib.Path(env['RUNNER_TEMP']); key = open(sys.argv[1]).read()
+          tok = jwt.encode({'iss': env['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': env['KEY_ID'], 'typ': 'JWT'})
+          kinds = [('profiles', 'em-profile-id')] + ([] if (temp / 'em-uploaded').exists() else [('certificates', 'em-cert-id')])
+          if (temp / 'em-uploaded').exists() and (temp / 'em-cert-id').exists(): print('::notice::kept distribution certificate ' + (temp / 'em-cert-id').read_text().strip() + ' (the uploaded build depends on it)')
+          for kind, f in kinds:
+              p = temp / f
+              if p.exists():
+                  try:
+                      urllib.request.urlopen(urllib.request.Request('https://api.appstoreconnect.apple.com/v1/' + kind + '/' + p.read_text().strip(), method='DELETE', headers={'Authorization': 'Bearer ' + tok}), timeout=60)
+                      print('::notice::removed temporary ' + kind[:-1])
+                  except Exception as e: print('::warning::could not remove temporary ' + kind[:-1] + ': ' + str(e))
+          PY
+          fi
+          security delete-keychain "$RUNNER_TEMP/em.keychain-db" 2>/dev/null || true
+          rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_"*.p8 "$RUNNER_TEMP"/em.*

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key><string>HızırUsta</string>
+	<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key><string>HizirUsta</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleDevelopmentRegion</key><string>tr</string>
+	<key>CFBundleLocalizations</key><array><string>tr</string></array>
+	<key>ITSAppUsesNonExemptEncryption</key><false/>
+	<key>LSRequiresIPhoneOS</key><true/>
+	<key>UILaunchScreen</key><dict><key>UIColorName</key><string></string></dict>
+	<key>UIStatusBarStyle</key><string>UIStatusBarStyleLightContent</string>
+	<key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>
+	<key>UIRequiresFullScreen</key><true/>
+	<key>GADApplicationIdentifier</key><string>$(HU_ADMOB_APP_IOS)</string>
+	<key>HUAdAppOpen</key><string>$(HU_AD_APP_OPEN_IOS)</string>
+	<key>HUAdInterstitial</key><string>$(HU_AD_INTERSTITIAL_IOS)</string>
+	<key>HUAdRewarded</key><string>$(HU_AD_REWARDED_IOS)</string>
+	<key>NSCameraUsageDescription</key><string>Belge taramak için fotoğraf çekmek amacıyla kullanılır. Fotoğraflar yalnızca telefonunda işlenir.</string>
+	<key>NSPhotoLibraryUsageDescription</key><string>Galeriden belge fotoğrafı seçmek için kullanılır. Fotoğraflar yalnızca telefonunda işlenir.</string>
+	<key>NSUserTrackingUsageDescription</key><string>Reklamları ilgi alanına göre göstermek ve uygulamanın temel bölümlerini ücretsiz tutmak için kullanılır.</string>
+	<key>SKAdNetworkItems</key>
+	<array><dict><key>SKAdNetworkIdentifier</key><string>cstr6suwn9.skadnetwork</string></dict></array>
+</dict>
+</plist>

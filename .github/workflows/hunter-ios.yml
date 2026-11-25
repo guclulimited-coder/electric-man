@@ -15,6 +15,9 @@ env:
   TEAM_ID: YMAU5R6AA4
   BUNDLE_ID: com.tusneldax.electrichunter
   PROFILE_NAME: Electric Hunter App Store
+concurrency:
+  group: ios-imza
+  cancel-in-progress: false
 jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
