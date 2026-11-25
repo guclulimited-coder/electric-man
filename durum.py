@@ -15,6 +15,3 @@ for b in ['com.tusneldax.electricman','com.tusneldax.electrichunter']:
         v=g(f"/v1/apps/{x['id']}/appStoreVersions?filter[platform]=IOS&limit=5")['data']
         for y in v:
             s=y['attributes']; print('ASC',b,s.get('versionString'),s.get('appStoreState'),s.get('appVersionState'),s.get('releaseType'),s.get('createdDate'))
-            # Ömer onayı 25 Kasım 20:08 "yayınla": yalnız Electric Hunter, onaylı sürüm
-            if b=='com.tusneldax.electrichunter' and s.get('appStoreState')=='PENDING_DEVELOPER_RELEASE':
-                print('YAYIN',b,post('/v1/appStoreVersionReleaseRequests',{'data':{'type':'appStoreVersionReleaseRequests','relationships':{'appStoreVersion':{'data':{'type':'appStoreVersions','id':y['id']}}}}}))
