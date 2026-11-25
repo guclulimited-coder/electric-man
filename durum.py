@@ -14,4 +14,4 @@ for b in ['com.tusneldax.electricman','com.tusneldax.electrichunter']:
     for x in a:
         v=g(f"/v1/apps/{x['id']}/appStoreVersions?filter[platform]=IOS&limit=5")['data']
         for y in v:
-            s=y['attributes']; print('ASC',b,s.get('versionString'),s.get('appStoreState'),s.get('appVersionState'),s.get('releaseType'),s.get('createdDate'))
+            s=y['attributes']; print('ASC',b,x['id'],s.get('versionString'),s.get('appStoreState'),s.get('appVersionState'),s.get('releaseType'),s.get('createdDate'))
