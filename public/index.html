@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Takım Çantası</title>
+<title>HızırUsta – Elektrikçi Asistanı</title>
 <meta name="description" content="Elektrikçiler için hesaplar, teklif, puantaj ve belge tarama.">
 <meta name="theme-color" content="#14213d">
 <style>
@@ -98,7 +98,7 @@ table.pt td.h sup{color:var(--vurgu);font-size:9px}
 </style>
 </head>
 <body>
-<header><div class="logo">🧰</div><h1>Takım Çantası</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
+<header><div class="logo">⚡</div><h1>HızırUsta</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
 <main id="ekran"></main>
 <nav class="alt" id="altMenu">
   <button data-s="hesap" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/></svg>Hesaplar</button>
@@ -583,7 +583,7 @@ function ayarEkrani(){
     <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button></div></div>
     <div class="kart"><h2>Paketim</h2><p class="alt-baslik">${depo.al('abone', false) ? 'Usta Paketi aktif.' : Paket.kalanGun > 0 ? `Ücretsiz denemenin bitmesine ${Paket.kalanGun} gün var.` : 'Ücretsiz sürüm: bütün hesaplar açık.'}</p>
     ${depo.al('abone', false) ? '' : `<button class="dugme ikincil" id="abone">Usta Paketi · aylık 149,99 ₺</button>`}</div>
-    <div class="not" style="text-align:center">Takım Çantası · TUSNELDAX · Hesaplar yol göstericidir; son karar yetkili elektrikçinindir.</div>`;
+    <div class="not" style="text-align:center">HızırUsta · TUSNELDAX · Hesaplar yol göstericidir; son karar yetkili elektrikçinindir.</div>`;
   $('#logo').onchange = e => { const d = e.target.files[0]; if (!d) return; const o = new FileReader(); o.onload = () => {
     const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 360 / img.width); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); f.logo = c.toDataURL('image/png'); depo.koy('firma', f); ayarEkrani(); toast('Logo eklendi'); }; img.src = o.result; }; o.readAsDataURL(d); };
   $('#kaydet').onclick = () => { ['ad', 'tel', 'adres', 'vergi'].forEach(k => f[k] = $('#' + k).value.trim()); depo.koy('firma', f); toast('Kaydedildi'); };

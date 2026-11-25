@@ -1,4 +1,4 @@
-// Takım Çantası — DXF proje okuyucu (25 Kasım 2026). Dış kütüphane yok.
+// HızırUsta — DXF proje okuyucu (25 Kasım 2026). Dış kütüphane yok.
 // Okunanlar: LINE, LWPOLYLINE, POLYLINE/VERTEX, CIRCLE, ARC, TEXT, MTEXT, INSERT (blok; konum, ölçek, dönme).
 // Çıktı: {birim, katmanlar, cizgiler: [{k: katman, p: [[x,y],...], kapali}], yazilar: [{k, x, y, h, t, a}], sinir}
 

@@ -1,4 +1,4 @@
-// Takım Çantası — belge tarama yardımcıları (25 Kasım 2026). Dış kütüphane yok: telefonda internetsiz çalışır.
+// HızırUsta — belge tarama yardımcıları (25 Kasım 2026). Dış kütüphane yok: telefonda internetsiz çalışır.
 // kenarBul: fotoğrafta kâğıdın dört köşesini tahmin eder; duzelt: dört köşeyi dikdörtgen sayfaya açar;
 // filtre: renkli / gri / siyah-beyaz; pdfYap: JPEG sayfalardan PDF dosyası üretir.
 
