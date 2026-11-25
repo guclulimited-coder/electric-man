@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as H from '../public/hesap.mjs';
+import * as H from '../www/hesap.mjs';
 const yak = (a, b, t = 0.02) => assert.ok(Math.abs(a - b) <= t, `${a} ≈ ${b}`);
 test('akım', () => { yak(H.akim({P: 2300}).I, 10); yak(H.akim({P: 10000, faz: 'tri', cos: .85}).I, 16.98); });
 test('gerilim düşümü', () => { yak(H.gerilimDusumu({P: 3000, L: 20, S: 2.5}).yuzde, 1.62); yak(H.gerilimDusumu({P: 20000, L: 50, S: 6, faz: 'tri'}).yuzde, 1.86); });

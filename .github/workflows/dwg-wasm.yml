@@ -1,0 +1,53 @@
+name: DWG cevirici (LibreDWG WASM)
+# HızırUsta: DWG -> DXF çeviricisini WebAssembly olarak derler; sonuç dwg-wasm dalına konur.
+# LibreDWG GPLv3'tür; çevirici yalnız sunucuda çalışır, uygulamanın içine konmaz.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/dwg-wasm.yml']
+permissions:
+  contents: write
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: LibreDWG/libredwg
+          submodules: true
+          path: libredwg
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.74
+      - name: Derle
+        run: |
+          set -e
+          cd libredwg && mkdir -p w && cd w
+          emcmake cmake .. -DCMAKE_BUILD_TYPE=Release -DDISABLE_WERROR=ON -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXE_LINKER_FLAGS="-sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=DwgCevir -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 -sEXPORTED_RUNTIME_METHODS=FS,callMain -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sENVIRONMENT=web,worker,node -sFILESYSTEM=1 -O3" > ../../cmake.log 2>&1 || { tail -40 ../../cmake.log; exit 1; }
+          emmake make -j4 dwg2dxf > ../../make.log 2>&1 || { grep -E "error" ../../make.log | head -30; tail -20 ../../make.log; exit 1; }
+          ls -la dwg2dxf*
+      - name: Dene (örnek DWG)
+        run: |
+          set -e
+          mkdir -p cikti && cp libredwg/w/dwg2dxf.js cikti/dwg2dxf.mjs && cp libredwg/w/dwg2dxf.wasm cikti/
+          cat > dene.mjs <<'JS'
+          import Mod from './cikti/dwg2dxf.mjs';
+          import {readFileSync} from 'node:fs';
+          for (const f of ['libredwg/test/test-data/example_2018.dwg', 'libredwg/test/test-data/example_2000.dwg']){
+            const m = await Mod({print: () => {}, printErr: () => {}});
+            m.FS.writeFile('/g.dwg', readFileSync(f));
+            const t = performance.now(); const kod = m.callMain(['-y', '-o', '/c.dxf', '/g.dwg']);
+            const out = m.FS.readFile('/c.dxf');
+            console.log(f, 'kod', kod, 'boyut', out.length, Math.round(performance.now() - t) + 'ms');
+          }
+          JS
+          node dene.mjs
+          ls -la cikti
+      - name: dwg-wasm dalına koy
+        run: |
+          cd cikti && cp ../libredwg/COPYING . && echo "LibreDWG $(cd ../libredwg && git rev-parse --short HEAD) — GPLv3, kaynak: https://github.com/LibreDWG/libredwg" > KAYNAK.txt
+          git init -q -b dwg-wasm && git config user.name "github-actions[bot]" && git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -qm "LibreDWG dwg2dxf WebAssembly" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" dwg-wasm

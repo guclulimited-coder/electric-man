@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as D from '../public/dxf.mjs';
+import * as D from '../www/dxf.mjs';
 const dxf = parcalar => parcalar.flat().join('\n') + '\n';
 const ORNEK = dxf([
   ['0', 'SECTION', '2', 'HEADER', '9', '$INSUNITS', '70', '4', '0', 'ENDSEC'],

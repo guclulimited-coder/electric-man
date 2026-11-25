@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as T from '../public/tarama.mjs';
+import * as T from '../www/tarama.mjs';
 test('homografi köşeleri eşler', () => {
   const src = [[10, 20], [200, 15], [220, 300], [5, 280]], H = T.homografi([[0, 0], [100, 0], [100, 150], [0, 150]], src);
   [[0, 0], [100, 0], [100, 150], [0, 150]].forEach((p, i) => { const [u, v] = T.uygula(H, ...p); assert.ok(Math.abs(u - src[i][0]) < 1e-6 && Math.abs(v - src[i][1]) < 1e-6); });
