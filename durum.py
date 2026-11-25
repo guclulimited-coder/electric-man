@@ -15,3 +15,6 @@ for b in ['com.tusneldax.electricman','com.tusneldax.electrichunter','com.tusnel
         v=g(f"/v1/apps/{x['id']}/appStoreVersions?filter[platform]=IOS&limit=5")['data']
         for y in v:
             s=y['attributes']; print('ASC',b,x['id'],s.get('versionString'),s.get('appStoreState'),s.get('appVersionState'),s.get('releaseType'),s.get('createdDate'))
+app = g('/v1/apps?filter[bundleId]=com.tusneldax.hizirusta')['data'][0]['id']
+for b in g(f'/v1/builds?filter[app]={app}&limit=5')['data']:
+    a = b['attributes']; print('YAPI', a.get('version'), a.get('processingState'), a.get('uploadedDate'))
