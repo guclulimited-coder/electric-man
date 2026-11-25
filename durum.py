@@ -15,15 +15,3 @@ for b in ['com.tusneldax.electricman','com.tusneldax.electrichunter','com.tusnel
         v=g(f"/v1/apps/{x['id']}/appStoreVersions?filter[platform]=IOS&limit=5")['data']
         for y in v:
             s=y['attributes']; print('ASC',b,x['id'],s.get('versionString'),s.get('appStoreState'),s.get('appVersionState'),s.get('releaseType'),s.get('createdDate'))
-# Ömer onayı 25 Kasım ("Testflight'a da yükle"): HızırUsta için dahili TestFlight grubu, ekip kullanıcıları içinde
-app = g('/v1/apps?filter[bundleId]=com.tusneldax.hizirusta')['data'][0]['id']
-for b in g(f'/v1/builds?filter[app]={app}&limit=5')['data']:
-    a = b['attributes']; print('YAPI', a.get('version'), a.get('processingState'), a.get('uploadedDate'))
-grup = [x for x in g(f'/v1/apps/{app}/betaGroups')['data'] if x['attributes'].get('isInternalGroup')]
-if not grup:
-    print('GRUP', post('/v1/betaGroups', {'data': {'type': 'betaGroups', 'attributes': {'name': 'Ekip', 'isInternalGroup': True, 'hasAccessToAllBuilds': True}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}}))
-    grup = [x for x in g(f'/v1/apps/{app}/betaGroups')['data'] if x['attributes'].get('isInternalGroup')]
-gid = grup[0]['id']
-for u in g('/v1/users?limit=50')['data']:
-    e = u['attributes'].get('username') or ''
-    print('KISI', e.split('@')[0][:3] + '…', post('/v1/betaTesters', {'data': {'type': 'betaTesters', 'attributes': {'email': e, 'firstName': u['attributes'].get('firstName', ''), 'lastName': u['attributes'].get('lastName', '')}, 'relationships': {'betaGroups': {'data': [{'type': 'betaGroups', 'id': gid}]}}}}))
