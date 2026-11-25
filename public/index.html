@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elektrikçi Cebi</title>
+<meta name="description" content="Elektrikçiler için kablo kesiti, gerilim düşümü, kompanzasyon, topraklama hesapları ve teklif hazırlama.">
+<meta name="theme-color" content="#14213d">
+<style>
+:root{--bg:#f4f5f7;--kart:#fff;--yazi:#16181d;--soluk:#5d6470;--cizgi:#e1e4ea;--ana:#14213d;--vurgu:#fca311;--iyi:#1f8a4c;--kotu:#c0392b;--alan:#f8f9fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1218;--kart:#181c24;--yazi:#eef0f4;--soluk:#9aa2b1;--cizgi:#2a303c;--ana:#e9edf5;--alan:#11151c}}
+:root[data-theme="dark"]{--bg:#0f1218;--kart:#181c24;--yazi:#eef0f4;--soluk:#9aa2b1;--cizgi:#2a303c;--ana:#e9edf5;--alan:#11151c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--yazi);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;background:#14213d;color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header .logo{width:30px;height:30px;border-radius:8px;background:var(--vurgu);display:grid;place-items:center;color:#14213d;font-weight:900}
+header h1{font-size:18px;margin:0;flex:1}
+header .rozet{font-size:12px;background:rgba(255,255,255,.14);padding:4px 9px;border-radius:99px}
+main{max-width:720px;margin:0 auto;padding:14px 16px calc(90px + env(safe-area-inset-bottom))}
+nav.alt{position:fixed;bottom:0;left:0;right:0;z-index:5;background:var(--kart);border-top:1px solid var(--cizgi);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav.alt button{flex:1;border:0;background:none;color:var(--soluk);padding:9px 0 8px;font:600 12px system-ui;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.alt button svg{width:22px;height:22px}
+nav.alt button.on{color:var(--vurgu)}
+.kart{background:var(--kart);border:1px solid var(--cizgi);border-radius:14px;padding:16px;margin-bottom:12px}
+h2{font-size:17px;margin:0 0 4px}
+.alt-baslik{color:var(--soluk);font-size:13px;margin:0 0 12px}
+.izgara{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.secim{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;border:1px solid var(--cizgi);background:var(--kart);color:var(--yazi);border-radius:14px;padding:14px;font:inherit;cursor:pointer}
+.secim b{font-size:15px}.secim span{font-size:12px;color:var(--soluk)}
+.secim .ik{width:34px;height:34px;border-radius:10px;background:rgba(252,163,17,.16);color:#b8740a;display:grid;place-items:center;font-weight:800}
+label{display:block;font-size:13px;color:var(--soluk);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--yazi);background:var(--alan);border:1px solid var(--cizgi);border-radius:10px;padding:10px 11px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--vurgu);outline-offset:-1px}
+.satir{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dugme{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:11px;padding:11px 16px;font:700 15px system-ui;background:var(--vurgu);color:#14213d;cursor:pointer}
+.dugme.ikincil{background:transparent;color:var(--yazi);border:1px solid var(--cizgi)}
+.dugme.tam{width:100%}
+.geri{border:0;background:none;color:var(--soluk);font:600 14px system-ui;padding:0 0 10px;cursor:pointer}
+.sonuc{margin-top:14px;border-radius:12px;background:var(--alan);border:1px solid var(--cizgi);padding:12px 14px}
+.sonuc .buyuk{font-size:26px;font-weight:800}
+.sonuc dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0 0;font-size:14px}
+.sonuc dt{color:var(--soluk)}.sonuc dd{margin:0;font-weight:600;text-align:right}
+.iyi{color:var(--iyi)}.kotu{color:var(--kotu)}
+.not{font-size:12px;color:var(--soluk);margin-top:10px}
+.kilit{text-align:center;padding:26px 18px}
+.kilit .ik{font-size:34px}
+.kalem{display:grid;grid-template-columns:1fr 64px 84px 34px;gap:6px;align-items:end;margin-bottom:8px}
+.kalem input{padding:9px 8px}
+.kalem button{height:42px;border:1px solid var(--cizgi);background:var(--kart);color:var(--kotu);border-radius:10px;font-size:18px}
+.toplam{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:14px;margin-top:10px}
+.toplam .son{font-size:18px;font-weight:800;border-top:1px solid var(--cizgi);padding-top:6px}
+.liste .is{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--cizgi);cursor:pointer}
+.liste .is:last-child{border:0}
+.durum{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--alan);border:1px solid var(--cizgi);white-space:nowrap}
+.bos{color:var(--soluk);text-align:center;padding:20px 0}
+.yanyana{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#14213d;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;opacity:0;transition:.2s;pointer-events:none}
+.toast.on{opacity:1}
+#belge{display:none}
+@media print{
+  body{background:#fff}header,nav.alt,main,.toast{display:none!important}
+  #belge{display:block;color:#000;font:12pt/1.45 system-ui,sans-serif;padding:0}
+  #belge table{width:100%;border-collapse:collapse;margin:14px 0}
+  #belge th,#belge td{border-bottom:1px solid #ccc;padding:6px 4px;text-align:left}
+  #belge td.s,#belge th.s{text-align:right}
+  #belge .bas{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #fca311;padding-bottom:10px}
+  #belge img{max-height:70px;max-width:180px}
+}
+</style>
+</head>
+<body>
+<header><div class="logo">⚡</div><h1>Elektrikçi Cebi</h1><span class="rozet" id="paketRozet">Ücretsiz</span></header>
+<main id="ekran"></main>
+<nav class="alt" id="altMenu">
+  <button data-s="hesap" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/></svg>Hesaplar</button>
+  <button data-s="teklif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Teklif</button>
+  <button data-s="isler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>İşlerim</button>
+  <button data-s="ayar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Firmam</button>
+</nav>
+<div id="belge"></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import * as H from './hesap.mjs';
+const $ = s => document.querySelector(s), ekran = $('#ekran');
+const sayi = (x, n = 2) => Number(x).toLocaleString('tr-TR', {maximumFractionDigits: n});
+const tl = x => Number(x).toLocaleString('tr-TR', {style: 'currency', currency: 'TRY'});
+const kacis = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const depo = {
+  al(k, v){ try { const x = localStorage.getItem('ec-' + k); return x === null ? v : JSON.parse(x); } catch(e){ return v; } },
+  koy(k, v){ try { localStorage.setItem('ec-' + k, JSON.stringify(v)); } catch(e){} }
+};
+function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._z); t._z = setTimeout(() => t.classList.remove('on'), 2200); }
+
+/* Usta Paketi: teklif ve iş kaydı ücretli; ilk kullanımda 7 gün ücretsiz deneme.
+   Telefon uygulamasında abonelik mağaza üzerinden alınır (window.EMNative, 2. aşama). */
+const Paket = {
+  DENEME_GUN: 7,
+  get aktif(){ return depo.al('abone', false) || this.kalanGun > 0; },
+  get kalanGun(){ const b = depo.al('denemeBas', 0); if (!b) return 0; return Math.max(0, this.DENEME_GUN - Math.floor((Date.now() - b) / 864e5)); },
+  get denemeBasladi(){ return !!depo.al('denemeBas', 0); },
+  denemeBaslat(){ if (!this.denemeBasladi) depo.koy('denemeBas', Date.now()); rozet(); },
+  async satinAl(){
+    if (window.EMNative && window.EMNative.call){
+      try { const r = await window.EMNative.call({action: 'subscribe', id: 'usta_paketi_aylik'}); if (r && r.ok){ depo.koy('abone', true); rozet(); return true; } } catch(e){}
+      toast('Satın alma tamamlanmadı'); return false;
+    }
+    toast('Abonelik telefon uygulamasından alınır'); return false;
+  }
+};
+function rozet(){ const r = $('#paketRozet'); r.textContent = depo.al('abone', false) ? 'Usta Paketi' : Paket.kalanGun > 0 ? `Deneme: ${Paket.kalanGun} gün` : 'Ücretsiz'; }
+
+/* ---------- Hesaplar ---------- */
+const HESAPLAR = [
+  {id: 'kesit', ad: 'Kablo kesiti ve sigorta', acik: 'Güce ve mesafeye göre kablo ve sigorta', ik: 'mm²'},
+  {id: 'dusum', ad: 'Gerilim düşümü', acik: 'Hattın sonundaki kayıp', ik: '%'},
+  {id: 'akim', ad: 'Akım hesabı', acik: 'Güçten akıma, monofaze ve trifaze', ik: 'A'},
+  {id: 'komp', ad: 'Kompanzasyon', acik: 'Gereken kondansatör gücü', ik: 'kVAr'},
+  {id: 'toprak', ad: 'Topraklama', acik: 'Çubuk direnci ve kaçak akım rölesi', ik: 'Ω'},
+  {id: 'ohm', ad: 'Ohm kanunu', acik: 'Gerilim, akım, direnç, güç', ik: 'V'}
+];
+const fazSec = (id = 'faz') => `<label>Besleme</label><select id="${id}"><option value="mono">Monofaze (230 V)</option><option value="tri">Trifaze (400 V)</option></select>`;
+const cosAlan = `<label>Güç katsayısı (cos φ)</label><input id="cos" type="number" step="0.01" min="0.5" max="1" value="1" inputmode="decimal">`;
+const v = id => parseFloat(String($('#' + id).value).replace(',', '.'));
+
+function hesapListesi(){
+  ekran.innerHTML = `<div class="kart"><h2>Hesaplar</h2><p class="alt-baslik">Yönetmeliğe uygun hızlı hesaplar. Hepsi ücretsiz.</p>
+  <div class="izgara">${HESAPLAR.map(h => `<button class="secim" data-h="${h.id}"><span class="ik">${h.ik}</span><b>${h.ad}</b><span>${h.acik}</span></button>`).join('')}</div></div>
+  <div class="kart"><h2>Usta Paketi</h2><p class="alt-baslik">Logolu teklif hazırla, WhatsApp'tan gönder, müşteri ve işlerini kaydet.</p>
+  <button class="dugme tam" data-git="teklif">Teklif hazırla</button></div>`;
+  ekran.querySelectorAll('[data-h]').forEach(b => b.onclick = () => hesapAc(b.dataset.h));
+  ekran.querySelector('[data-git]').onclick = () => git('teklif');
+}
+
+const FORMLAR = {
+  kesit: () => `${fazSec()}<div class="satir"><div><label>Güç (W)</label><input id="P" type="number" inputmode="decimal" value="3500"></div><div><label>Hat uzunluğu (m)</label><input id="L" type="number" inputmode="decimal" value="25"></div></div>
+    ${cosAlan}<label>Devre türü</label><select id="tur"><option value="kuvvet">Priz ve kuvvet (düşüm sınırı %3)</option><option value="aydinlatma">Aydınlatma (düşüm sınırı %1,5)</option></select>
+    <label>Döşeme şekli</label><select id="yontem"><option value="B2">Boru veya kanal içinde</option><option value="C">Duvara kelepçeli, açıkta</option></select>
+    <div class="satir"><div><label>Ortam sıcaklığı (°C)</label><input id="sic" type="number" value="30"></div><div><label>Yan yana devre sayısı</label><input id="devre" type="number" min="1" value="1"></div></div>`,
+  dusum: () => `${fazSec()}<div class="satir"><div><label>Güç (W)</label><input id="P" type="number" inputmode="decimal" value="3000"></div><div><label>Hat uzunluğu (m)</label><input id="L" type="number" inputmode="decimal" value="30"></div></div>
+    <div class="satir"><div><label>Kesit (mm²)</label><select id="S">${H.KESITLER.map(s => `<option ${s === 2.5 ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div><label>İletken</label><select id="mal"><option value="Cu">Bakır</option><option value="Al">Alüminyum</option></select></div></div>`,
+  akim: () => `${fazSec()}<label>Güç (W)</label><input id="P" type="number" inputmode="decimal" value="5000">${cosAlan}`,
+  komp: () => `<label>Kurulu aktif güç (kW)</label><input id="P" type="number" inputmode="decimal" value="50"><div class="satir"><div><label>Mevcut cos φ</label><input id="c1" type="number" step="0.01" value="0.80"></div><div><label>Hedef cos φ</label><input id="c2" type="number" step="0.01" value="0.98"></div></div>`,
+  toprak: () => `<label>Toprak cinsi</label><select id="rho">${Object.entries(H.TOPRAK).map(([k, x]) => `<option value="${x}" ${x === 100 ? 'selected' : ''}>${k} (${x} Ω·m)</option>`).join('')}</select>
+    <div class="satir"><div><label>Çubuk boyu (m)</label><input id="L" type="number" step="0.5" value="1.5"></div><div><label>Çubuk sayısı</label><input id="adet" type="number" min="1" value="1"></div></div>
+    <label>Kaçak akım rölesi</label><select id="ma"><option value="30">30 mA</option><option value="100">100 mA</option><option value="300">300 mA</option></select>`,
+  ohm: () => `<p class="alt-baslik">Bildiğin iki değeri yaz, diğerleri hesaplansın.</p><div class="satir"><div><label>Gerilim (V)</label><input id="U" type="number" inputmode="decimal"></div><div><label>Akım (A)</label><input id="I" type="number" inputmode="decimal"></div></div>
+    <div class="satir"><div><label>Direnç (Ω)</label><input id="R" type="number" inputmode="decimal"></div><div><label>Güç (W)</label><input id="Pw" type="number" inputmode="decimal"></div></div>`
+};
+const dl = rows => `<dl>${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
+const HESAPLA = {
+  kesit(){ const x = H.kesitSec({P: v('P'), L: v('L'), faz: $('#faz').value, cos: v('cos') || 1, devreTuru: $('#tur').value, yontem: $('#yontem').value, sicaklik: v('sic') || 30, devre: v('devre') || 1});
+    if (!x.ok) return `<div class="kotu"><b>Bu güç için tablodaki kesitler yetmiyor.</b></div>${dl([['Çekilen akım', sayi(x.Ib) + ' A']])}<div class="not">Hattı bölün, trifazeye geçin veya proje mühendisine danışın.</div>`;
+    return `<div class="alt-baslik">Önerilen kablo</div><div class="buyuk">${sayi(x.S, 1)} mm² · ${x.In} A sigorta</div>${dl([['Çekilen akım', sayi(x.Ib) + ' A'], ['Kablo taşıma akımı', sayi(x.Iz, 1) + ' A'], ['Düzeltme katsayısı', sayi(x.kat)], ['Gerilim düşümü', `<span class="iyi">%${sayi(x.dusum)}</span> (sınır %${sayi(x.sinir, 1)})`]])}
+      <div class="not">Koşul: çekilen akım ≤ sigorta ≤ kablo taşıma akımı. Bakır, PVC yalıtımlı kablo; TS HD 60364-5-52 tablolarına göre.</div>`; },
+  dusum(){ const x = H.gerilimDusumu({P: v('P'), L: v('L'), S: v('S'), faz: $('#faz').value, malzeme: $('#mal').value});
+    const ok = x.yuzde <= 3; return `<div class="alt-baslik">Gerilim düşümü</div><div class="buyuk ${ok ? 'iyi' : 'kotu'}">%${sayi(x.yuzde)}</div>${dl([['Kayıp gerilim', sayi(x.volt) + ' V'], ['Aydınlatma sınırı', '%1,5 ' + (x.yuzde <= 1.5 ? '✓' : '✗')], ['Priz ve kuvvet sınırı', '%3 ' + (ok ? '✓' : '✗')]])}`; },
+  akim(){ const x = H.akim({P: v('P'), faz: $('#faz').value, cos: v('cos') || 1}); const In = H.SIGORTALAR.find(s => s >= x.I);
+    return `<div class="alt-baslik">Çekilen akım</div><div class="buyuk">${sayi(x.I)} A</div>${dl([['Gerilim', x.U + ' V'], ['En yakın sigorta', In ? In + ' A' : '—']])}`; },
+  komp(){ const x = H.kompanzasyon({P: v('P'), cos1: v('c1'), cos2: v('c2')});
+    return `<div class="alt-baslik">Gereken kondansatör gücü</div><div class="buyuk">${sayi(x.Q)} kVAr</div>${dl([['Şu anki reaktif oran', '%' + sayi(x.reaktifOran, 1)], ['tan φ (mevcut → hedef)', sayi(x.tan1, 3) + ' → ' + sayi(x.tan2, 3)]])}
+      <div class="not">Ceza almamak için endüktif reaktif tüketim aktifin %20'sini, kapasitif %15'ini geçmemeli. Kademeleri yüke göre bölün.</div>`; },
+  toprak(){ const x = H.topraklama({rho: v('rho'), L: v('L'), adet: v('adet') || 1}); const sinir = H.kacakAkimSiniri(v('ma')); const ok = x.R <= sinir;
+    return `<div class="alt-baslik">Topraklama direnci (yaklaşık)</div><div class="buyuk">${sayi(x.R, 1)} Ω</div>${dl([['Tek çubuk', sayi(x.R1, 1) + ' Ω'], [`${v('ma')} mA röle için en fazla`, sayi(sinir, 0) + ' Ω'], ['Durum', ok ? '<span class="iyi">Uygun</span>' : '<span class="kotu">Yetersiz</span>']])}
+      <div class="not">Hesap tahminidir; teslimden önce ölçü aletiyle ölçün. Kaçak akım rölesi koşulu: direnç × röle akımı ≤ 50 V.</div>`; },
+  ohm(){ const g = id => { const s = $('#' + id).value; return s === '' ? undefined : parseFloat(s.replace(',', '.')); };
+    const x = H.ohm({U: g('U'), I: g('I'), R: g('R'), P: g('Pw')}); if (!x) return `<div class="not">İki değer girin.</div>`;
+    return dl([['Gerilim', sayi(x.U) + ' V'], ['Akım', sayi(x.I, 3) + ' A'], ['Direnç', sayi(x.R, 3) + ' Ω'], ['Güç', sayi(x.P) + ' W']]); }
+};
+function hesapAc(id){
+  const h = HESAPLAR.find(x => x.id === id);
+  ekran.innerHTML = `<button class="geri">‹ Hesaplar</button><div class="kart"><h2>${h.ad}</h2><p class="alt-baslik">${h.acik}</p><form id="f">${FORMLAR[id]()}</form><div class="sonuc" id="sonuc"></div></div>`;
+  ekran.querySelector('.geri').onclick = hesapListesi;
+  const calis = () => { try { $('#sonuc').innerHTML = HESAPLA[id](); } catch(e){ $('#sonuc').innerHTML = '<div class="not">Değerleri kontrol edin.</div>'; } };
+  $('#f').addEventListener('input', calis); $('#f').addEventListener('submit', e => e.preventDefault()); calis();
+  scrollTo(0, 0);
+}
+
+/* ---------- Teklif ---------- */
+const MALZEME = [['NYM 3x2,5 kablo', 'm'], ['NYM 3x1,5 kablo', 'm'], ['NYM 5x6 kablo', 'm'], ['Spiral boru 16 mm', 'm'], ['Sıva altı buat', 'adet'], ['Anahtar', 'adet'], ['Priz (topraklı)', 'adet'],
+  ['Otomat sigorta 16 A', 'adet'], ['Otomat sigorta 25 A', 'adet'], ['Kaçak akım rölesi 30 mA', 'adet'], ['Sigorta kutusu (12 modül)', 'adet'], ['Topraklama çubuğu', 'adet'], ['LED armatür', 'adet'], ['İşçilik', 'gün'], ['Proje ve test', 'iş']];
+const yeniTeklif = () => ({id: Date.now().toString(36), no: depo.al('sonNo', 0) + 1, tarih: new Date().toISOString().slice(0, 10), musteri: '', tel: '', adres: '', kalemler: [{ad: '', miktar: 1, birim: 'adet', fiyat: ''}], iskonto: 0, kdv: 20, not: 'Teklif 15 gün geçerlidir. Malzeme fiyatları değişirse güncellenir.', durum: 'Teklif verildi'});
+let taslak = null;
+
+function kilitEkrani(neIcin){
+  const deneme = !Paket.denemeBasladi;
+  ekran.innerHTML = `<div class="kart kilit"><div class="ik">🔒</div><h2>Usta Paketi</h2><p class="alt-baslik">${neIcin} Usta Paketi'nde.<br>Logolu teklif, WhatsApp'tan gönderme, müşteri ve iş kaydı.</p>
+  ${deneme ? `<button class="dugme tam" id="dene">7 gün ücretsiz dene</button>` : `<button class="dugme tam" id="al">Abone ol · aylık 99,99 ₺</button><div class="not">Deneme süreniz bitti.</div>`}</div>`;
+  const d = $('#dene'); if (d) d.onclick = () => { Paket.denemeBaslat(); toast('7 günlük deneme başladı'); git(aktifSekme); };
+  const a = $('#al'); if (a) a.onclick = async () => { if (await Paket.satinAl()) git(aktifSekme); };
+}
+
+function teklifEkrani(t){
+  if (!Paket.aktif) return kilitEkrani('Teklif hazırlama');
+  taslak = t || taslak || yeniTeklif();
+  const f = depo.al('firma', {});
+  ekran.innerHTML = `<div class="kart"><h2>Teklif No ${taslak.no}</h2><p class="alt-baslik">${f.ad ? kacis(f.ad) : '<a href="#" id="firmaGit">Firma bilgilerini girin</a> — teklifte görünür.'}</p>
+    <label>Müşteri adı</label><input id="musteri" value="${kacis(taslak.musteri)}" autocomplete="off">
+    <div class="satir"><div><label>Telefon</label><input id="tel" type="tel" value="${kacis(taslak.tel)}"></div><div><label>Tarih</label><input id="tarih" type="date" value="${taslak.tarih}"></div></div>
+    <label>Adres</label><input id="adres" value="${kacis(taslak.adres)}"></div>
+  <div class="kart"><h2>Malzeme ve işçilik</h2><p class="alt-baslik">Adı · miktar · birim fiyat (KDV hariç)</p><div id="kalemler"></div>
+    <datalist id="malzemeler">${MALZEME.map(m => `<option value="${m[0]}">`).join('')}</datalist>
+    <button class="dugme ikincil tam" id="ekle">+ Kalem ekle</button>
+    <div class="satir"><div><label>İskonto (%)</label><input id="iskonto" type="number" min="0" max="100" value="${taslak.iskonto}"></div><div><label>KDV (%)</label><select id="kdv">${[20, 10, 1, 0].map(k => `<option ${k == taslak.kdv ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
+    <div class="toplam" id="toplam"></div>
+    <label>Not</label><textarea id="not" rows="2">${kacis(taslak.not)}</textarea>
+    <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button><button class="dugme ikincil" id="yazdir">Belge / PDF</button><button class="dugme ikincil" id="wp">WhatsApp</button><button class="dugme ikincil" id="yeni">Yeni teklif</button></div></div>`;
+  const fg = $('#firmaGit'); if (fg) fg.onclick = e => { e.preventDefault(); git('ayar'); };
+  kalemCiz();
+  ['musteri', 'tel', 'adres', 'tarih', 'not'].forEach(k => $('#' + k).oninput = e => { taslak[k] = e.target.value; });
+  $('#iskonto').oninput = e => { taslak.iskonto = +e.target.value || 0; toplamCiz(); };
+  $('#kdv').onchange = e => { taslak.kdv = +e.target.value; toplamCiz(); };
+  $('#ekle').onclick = () => { taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''}); kalemCiz(); ekran.querySelectorAll('.kalem input[data-k="ad"]').forEach((x, i, a) => i === a.length - 1 && x.focus()); };
+  $('#kaydet').onclick = () => { kaydet(); toast('Teklif kaydedildi'); };
+  $('#yazdir').onclick = () => { kaydet(); belgeHazirla(); setTimeout(() => print(), 50); };
+  $('#wp').onclick = () => { kaydet(); whatsapp(); };
+  $('#yeni').onclick = () => { taslak = yeniTeklif(); teklifEkrani(taslak); };
+}
+function kalemCiz(){
+  $('#kalemler').innerHTML = taslak.kalemler.map((k, i) => `<div class="kalem" data-i="${i}"><input data-k="ad" list="malzemeler" placeholder="Malzeme veya iş" value="${kacis(k.ad)}"><input data-k="miktar" type="number" inputmode="decimal" value="${kacis(k.miktar)}"><input data-k="fiyat" type="number" inputmode="decimal" placeholder="₺" value="${kacis(k.fiyat)}"><button aria-label="Sil">×</button></div>`).join('');
+  $('#kalemler').querySelectorAll('.kalem').forEach(r => {
+    const i = +r.dataset.i;
+    r.querySelectorAll('input').forEach(inp => inp.oninput = () => { const k = taslak.kalemler[i]; k[inp.dataset.k] = inp.value; if (inp.dataset.k === 'ad'){ const m = MALZEME.find(m => m[0] === inp.value); if (m) k.birim = m[1]; } toplamCiz(); });
+    r.querySelector('button').onclick = () => { taslak.kalemler.splice(i, 1); if (!taslak.kalemler.length) taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''}); kalemCiz(); };
+  });
+  toplamCiz();
+}
+function toplamCiz(){
+  const t = H.teklifToplam(taslak.kalemler, taslak);
+  $('#toplam').innerHTML = `<span>Ara toplam</span><span>${tl(t.ara)}</span>${t.iskonto ? `<span>İskonto</span><span>−${tl(t.iskonto)}</span>` : ''}<span>KDV %${taslak.kdv}</span><span>${tl(t.kdv)}</span><span class="son">Genel toplam</span><span class="son">${tl(t.toplam)}</span>`;
+}
+function kaydet(){
+  const isler = depo.al('isler', []); const i = isler.findIndex(x => x.id === taslak.id);
+  taslak.kalemler = taslak.kalemler.filter(k => k.ad || k.fiyat); if (!taslak.kalemler.length) taslak.kalemler.push({ad: '', miktar: 1, birim: 'adet', fiyat: ''});
+  if (i < 0){ isler.unshift(taslak); depo.koy('sonNo', taslak.no); } else isler[i] = taslak;
+  depo.koy('isler', isler);
+}
+function belgeHazirla(){
+  const f = depo.al('firma', {}), t = H.teklifToplam(taslak.kalemler, taslak);
+  $('#belge').innerHTML = `<div class="bas"><div>${f.logo ? `<img src="${f.logo}" alt="">` : ''}<h2 style="margin:6px 0 0">${kacis(f.ad || 'Elektrik Tesisatı')}</h2><div>${kacis(f.tel || '')} ${kacis(f.adres || '')}</div>${f.vergi ? `<div>Vergi: ${kacis(f.vergi)}</div>` : ''}</div>
+    <div style="text-align:right"><h1 style="margin:0;font-size:22pt">FİYAT TEKLİFİ</h1><div>No: ${taslak.no}</div><div>Tarih: ${new Date(taslak.tarih).toLocaleDateString('tr-TR')}</div></div></div>
+    <p><b>Sayın ${kacis(taslak.musteri || '—')}</b><br>${kacis(taslak.adres)} ${kacis(taslak.tel)}</p>
+    <table><thead><tr><th>#</th><th>Açıklama</th><th class="s">Miktar</th><th class="s">Birim fiyat</th><th class="s">Tutar</th></tr></thead><tbody>
+    ${taslak.kalemler.filter(k => k.ad).map((k, i) => `<tr><td>${i + 1}</td><td>${kacis(k.ad)}</td><td class="s">${sayi(k.miktar)} ${kacis(k.birim)}</td><td class="s">${tl(k.fiyat || 0)}</td><td class="s">${tl((k.miktar || 0) * (k.fiyat || 0))}</td></tr>`).join('')}</tbody></table>
+    <table style="width:50%;margin-left:auto"><tr><td>Ara toplam</td><td class="s">${tl(t.ara)}</td></tr>${t.iskonto ? `<tr><td>İskonto %${taslak.iskonto}</td><td class="s">−${tl(t.iskonto)}</td></tr>` : ''}<tr><td>KDV %${taslak.kdv}</td><td class="s">${tl(t.kdv)}</td></tr><tr><th>Genel toplam</th><th class="s">${tl(t.toplam)}</th></tr></table>
+    <p>${kacis(taslak.not)}</p><p style="margin-top:40px">İmza / Kaşe</p>`;
+}
+function whatsapp(){
+  const f = depo.al('firma', {}), t = H.teklifToplam(taslak.kalemler, taslak);
+  const satir = taslak.kalemler.filter(k => k.ad).map(k => `• ${k.ad}: ${sayi(k.miktar)} ${k.birim} × ${tl(k.fiyat || 0)}`).join('\n');
+  const metin = `Sayın ${taslak.musteri || ''},\n${f.ad || ''} fiyat teklifimiz (No ${taslak.no}):\n\n${satir}\n\nKDV dahil toplam: ${tl(t.toplam)}\n${taslak.not}\n${f.tel ? '\nTel: ' + f.tel : ''}`;
+  const tel = (taslak.tel || '').replace(/\D/g, '').replace(/^0/, '90');
+  open(`https://wa.me/${tel.length >= 11 ? tel : ''}?text=${encodeURIComponent(metin)}`, '_blank');
+}
+
+/* ---------- İşlerim ---------- */
+const DURUMLAR = ['Teklif verildi', 'Onaylandı', 'İş bitti', 'Ödendi', 'İptal'];
+function islerEkrani(){
+  if (!Paket.aktif) return kilitEkrani('İş ve müşteri kaydı');
+  const isler = depo.al('isler', []);
+  const acik = isler.filter(x => x.durum === 'Onaylandı' || x.durum === 'İş bitti').reduce((s, x) => s + H.teklifToplam(x.kalemler, x).toplam, 0);
+  ekran.innerHTML = `<div class="kart"><h2>İşlerim</h2><p class="alt-baslik">${isler.length} kayıt · tahsil edilecek ${tl(acik)}</p><input id="ara" placeholder="Müşteri ara"><div class="liste" id="liste"></div></div>`;
+  const ciz = q => { const l = isler.filter(x => !q || (x.musteri || '').toLocaleLowerCase('tr').includes(q));
+    $('#liste').innerHTML = l.length ? l.map(x => `<div class="is" data-id="${x.id}"><div><b>${kacis(x.musteri || 'Adsız müşteri')}</b><div class="not" style="margin:2px 0 0">No ${x.no} · ${new Date(x.tarih).toLocaleDateString('tr-TR')} · ${tl(H.teklifToplam(x.kalemler, x).toplam)}</div></div><select class="durum" data-d="${x.id}">${DURUMLAR.map(d => `<option ${d === x.durum ? 'selected' : ''}>${d}</option>`).join('')}</select></div>`).join('') : '<div class="bos">Henüz kayıt yok. Teklif sekmesinden ilk teklifini hazırla.</div>';
+    $('#liste').querySelectorAll('.is').forEach(r => r.onclick = e => { if (e.target.tagName === 'SELECT') return; taslak = isler.find(x => x.id === r.dataset.id); git('teklif'); });
+    $('#liste').querySelectorAll('select').forEach(s => s.onchange = () => { isler.find(x => x.id === s.dataset.d).durum = s.value; depo.koy('isler', isler); toast('Durum güncellendi'); });
+  };
+  $('#ara').oninput = e => ciz(e.target.value.toLocaleLowerCase('tr')); ciz('');
+}
+
+/* ---------- Firmam ---------- */
+function ayarEkrani(){
+  const f = depo.al('firma', {});
+  ekran.innerHTML = `<div class="kart"><h2>Firma bilgileri</h2><p class="alt-baslik">Tekliflerin üstünde görünür.</p>
+    <label>Firma veya usta adı</label><input id="ad" value="${kacis(f.ad || '')}"><label>Telefon</label><input id="tel" type="tel" value="${kacis(f.tel || '')}">
+    <label>Adres</label><input id="adres" value="${kacis(f.adres || '')}"><label>Vergi dairesi ve numarası</label><input id="vergi" value="${kacis(f.vergi || '')}">
+    <label>Logo</label><input id="logo" type="file" accept="image/*">${f.logo ? `<img src="${f.logo}" alt="" style="max-height:60px;margin-top:8px">` : ''}
+    <div class="yanyana"><button class="dugme" id="kaydet">Kaydet</button></div></div>
+    <div class="kart"><h2>Paketim</h2><p class="alt-baslik">${depo.al('abone', false) ? 'Usta Paketi aktif.' : Paket.kalanGun > 0 ? `Ücretsiz denemenin bitmesine ${Paket.kalanGun} gün var.` : 'Ücretsiz sürüm: bütün hesaplar açık.'}</p>
+    ${depo.al('abone', false) ? '' : `<button class="dugme ikincil" id="abone">Usta Paketi · aylık 99,99 ₺</button>`}</div>
+    <div class="not" style="text-align:center">Elektrikçi Cebi · TUSNELDAX · Hesaplar yol göstericidir; son karar yetkili elektrikçinindir.</div>`;
+  $('#logo').onchange = e => { const d = e.target.files[0]; if (!d) return; const o = new FileReader(); o.onload = () => {
+    const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 360 / img.width); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); f.logo = c.toDataURL('image/png'); depo.koy('firma', f); ayarEkrani(); toast('Logo eklendi'); }; img.src = o.result; }; o.readAsDataURL(d); };
+  $('#kaydet').onclick = () => { ['ad', 'tel', 'adres', 'vergi'].forEach(k => f[k] = $('#' + k).value.trim()); depo.koy('firma', f); toast('Kaydedildi'); };
+  const a = $('#abone'); if (a) a.onclick = () => Paket.satinAl();
+}
+
+/* ---------- Gezinme ---------- */
+let aktifSekme = 'hesap';
+function git(s){
+  aktifSekme = s; document.querySelectorAll('#altMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+  ({hesap: hesapListesi, teklif: () => teklifEkrani(), isler: islerEkrani, ayar: ayarEkrani})[s](); rozet(); scrollTo(0, 0);
+}
+document.querySelectorAll('#altMenu button').forEach(b => b.onclick = () => git(b.dataset.s));
+git('hesap');
+</script>
+</body>
+</html>
