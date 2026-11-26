@@ -175,6 +175,40 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             WebViewCompat.addDocumentStartJavaScript(web, shim, origins);
         }
         web.loadUrl(START);
+        gelenDosya(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) { super.onNewIntent(intent); gelenDosya(intent); }
+
+    /** "HızırUsta ile aç / paylaş" ile gelen DWG-DXF dosyasını sayfaya verir (sayfa hazır olana kadar tekrar dener). */
+    private void gelenDosya(Intent it) {
+        if (it == null) return;
+        Uri u = null;
+        if (Intent.ACTION_VIEW.equals(it.getAction())) u = it.getData();
+        else if (Intent.ACTION_SEND.equals(it.getAction())) u = it.getParcelableExtra(Intent.EXTRA_STREAM);
+        if (u == null) return;
+        final Uri uri = u;
+        new Thread(() -> {
+            try {
+                String ad = "proje";
+                try (android.database.Cursor c = getContentResolver().query(uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+                    if (c != null && c.moveToFirst()) ad = c.getString(0);
+                } catch (Exception ignored) { }
+                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                try (java.io.InputStream in = getContentResolver().openInputStream(uri)) {
+                    byte[] b = new byte[65536]; int n; while ((n = in.read(b)) > 0) { bo.write(b, 0, n); if (bo.size() > 41_943_040) return; }
+                }
+                final String js = "window.__dosyaAc&&window.__dosyaAc(" + JSONObject.quote(ad) + "," + JSONObject.quote(Base64.encodeToString(bo.toByteArray(), Base64.NO_WRAP)) + ")";
+                final int[] deneme = {0};
+                main.post(new Runnable() { @Override public void run() {
+                    web.evaluateJavascript("!!window.__dosyaAc", v -> {
+                        if ("true".equals(v)) web.evaluateJavascript(js, null);
+                        else if (++deneme[0] < 40) main.postDelayed(this, 250);
+                    });
+                } });
+            } catch (Exception ignored) { }
+        }).start();
     }
 
     /* ---------------- köprü ---------------- */

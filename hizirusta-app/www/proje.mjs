@@ -365,6 +365,8 @@ export function kur(o){
   }
 
   let geriKanca = null;
+  // telefonun "HızırUsta ile aç" özelliği: yerli kabuk dosyayı base64 olarak verir
+  window.__dosyaAc = (ad, b64) => { try { const b = atob(b64), a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); const k = document.getElementById('cizici'); if (k) k.remove(); geriKanca = null; projeler().then(() => ice(new File([a], ad))); } catch(e){ toast('Dosya açılamadı'); } };
   return {projeler, geri: () => geriKanca ? geriKanca() : false};
 }
 
