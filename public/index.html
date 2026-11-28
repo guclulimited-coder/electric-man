@@ -1092,7 +1092,13 @@ else if (window.WebAds) WebAds.init({base: '', app: Native.app});
 const webAds = () => !Native.app && (PORTAL ? Portal.ready : !!(window.WebAds && WebAds.on));
 const Ads = {
   async show(kind){ if (PORTAL) return Portal.show(kind); if (!Native.app) return window.WebAds ? WebAds.show(kind) : {shown:false}; try { return await Native.call({action:'ad', kind}) || {shown:false}; } catch (e){ return {shown:false, error: e.message}; } },
-  launch(){ if (Native.app && !store.get('noAds', false)) setTimeout(() => this.show('appopen'), 400); },
+  launch(){
+    if (!Native.app || store.get('noAds', false)) return;
+    setTimeout(() => this.show('appopen'), 400);
+    // 28 Kasım 2026: uygulamaya 1 dakikadan uzun aradan sonra dönülünce de açılış reklamı (yerli taraf reklam kapandıktan sonraki 15 sn'yi atlar)
+    let gizli = 0;
+    document.addEventListener('visibilitychange', () => { if (document.hidden){ gizli = Date.now(); return; } if (gizli && Date.now() - gizli > 60000 && !store.get('noAds', false)) this.show('appopen'); gizli = 0; });
+  },
   won(){ if (Native.app || webAds()) store.set('adWins', store.get('adWins', 0) + 1); },
   afterWin(next){
     if ((Native.app || webAds()) && !store.get('noAds', false) && store.get('adWins', 0) >= 5){ store.set('adWins', 0); this.show('interstitial').finally(next); }

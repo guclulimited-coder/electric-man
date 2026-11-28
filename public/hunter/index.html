@@ -328,6 +328,10 @@ if (PORTAL){ Portal.init(); document.documentElement.classList.add('portal'); }
 else if (window.WebAds) WebAds.init({base: '../', app: Native.app});
 // 25 Kasım 2026: telefon uygulamasında her açılışta uygulama açılış reklamı (hazır değilse 4,5 sn'de vazgeçer); ilk oyun reklam kapanınca başlar
 const launchAd = Native.app && !PORTAL ? Native.call({action: 'ad', kind: 'appopen'}).catch(() => null) : Promise.resolve(null);
+// 28 Kasım 2026: 1 dakikadan uzun aradan sonra dönüşte açılış reklamı; ölünce en fazla 90 sn'de bir bölüm arası reklam
+if (Native.app && !PORTAL){ let gizli = 0; document.addEventListener('visibilitychange', () => { if (document.hidden){ gizli = Date.now(); return; } if (gizli && Date.now() - gizli > 60000) Native.call({action: 'ad', kind: 'appopen'}).catch(() => {}); gizli = 0; }); }
+let sonAra = 0;
+function araReklam(){ if (!Native.app || PORTAL || Date.now() - sonAra < 90000) return; sonAra = Date.now(); Native.call({action: 'ad', kind: 'interstitial'}).catch(() => {}); }
 /* 6 Kasım 2026: açılış hunisi — indirenler nerede kayboluyor? Yalnız günlük sayaç: aşama, bölüm kovası, platform, sürüm.
    Kimlik/hesap gönderilmez; aynı gün aynı aşama cihazda bir kez sayılır (src/funnel.mjs). */
 const Funnel = (() => {
@@ -2153,6 +2157,7 @@ function gameOver(){
   $('tKills').textContent = player.kills; $('tEat').textContent = player.eaten; $('tWave').textContent = curIsl + 1;
   $('over').hidden = false; for (const id of ['hint', 'joy', 'mini', 'sidebtns', 'hookBtn']) $(id).hidden = true;
   $('reviveBtn').hidden = !((Native.app || webAds()) && adsLeft() && reviveIsl !== curIsl);
+  setTimeout(araReklam, 1200);
 }
 // rewarded revive: once per island, keeps position and the boss fight, pushes nearby enemies back
 let reviveIsl = -1;

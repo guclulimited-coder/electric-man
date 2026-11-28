@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * AdMob: app-open ad on launch, interstitial every 5 cleared levels, rewarded ads for coins.
+ * AdMob: app-open ad on launch (preloaded, kept 4 h), interstitial, rewarded ads.
  * Consent (GDPR/UK) is collected with Google's UMP form before any ad request.
  * Debug builds use Google's official test units; release units come from CI.
  */
@@ -44,6 +44,11 @@ final class AdManager {
     private final List<Runnable> waiting = new ArrayList<>();
     private InterstitialAd interstitial;
     private RewardedAd rewarded;
+    // 28 Kasım 2026: açılış reklamı önceden yüklenip 4 saat hazır tutulur; geç gelen reklam boşa gitmez, sonraki açılışta gösterilir
+    private AppOpenAd appOpenAd;
+    private long appOpenAt, lastClosed;
+    private boolean appOpenLoading;
+    private final List<Runnable> appOpenWaiters = new ArrayList<>();
 
     AdManager(Activity act) { this.act = act; }
 
@@ -100,7 +105,21 @@ final class AdManager {
         if (!allowed()) return;
         if (interstitial == null && !BuildConfig.AD_INTERSTITIAL.isEmpty()) loadInterstitial(null);
         if (rewarded == null && !BuildConfig.AD_REWARDED.isEmpty()) loadRewarded(null);
+        if (!appOpenFresh() && !BuildConfig.AD_APP_OPEN.isEmpty()) loadAppOpen(null);
     }
+
+    private boolean appOpenFresh() { return appOpenAd != null && System.currentTimeMillis() - appOpenAt < 4 * 3600_000L; }
+
+    private void loadAppOpen(Runnable after) {
+        if (after != null) appOpenWaiters.add(after);
+        if (appOpenLoading) return;
+        appOpenLoading = true;
+        AppOpenAd.load(act, appOpenUnit(), new AdRequest.Builder().build(), new AppOpenAd.AppOpenAdLoadCallback() {
+            @Override public void onAdLoaded(@NonNull AppOpenAd ad) { appOpenAd = ad; appOpenAt = System.currentTimeMillis(); doneAppOpen(); }
+            @Override public void onAdFailedToLoad(@NonNull LoadAdError e) { appOpenAd = null; doneAppOpen(); }
+        });
+    }
+    private void doneAppOpen() { appOpenLoading = false; List<Runnable> w = new ArrayList<>(appOpenWaiters); appOpenWaiters.clear(); for (Runnable r : w) r.run(); }
 
     private void loadInterstitial(Runnable after) {
         InterstitialAd.load(act, interstitialUnit(), new AdRequest.Builder().build(), new InterstitialAdLoadCallback() {
@@ -132,29 +151,41 @@ final class AdManager {
     }
 
     private void appOpen(Cb cb) {
-        if (BuildConfig.AD_APP_OPEN.isEmpty()) { cb.done(null, result(false, false, false)); return; }
+        if (BuildConfig.AD_APP_OPEN.isEmpty() || System.currentTimeMillis() - lastClosed < 15000) { cb.done(null, result(false, false, false)); return; }
         final boolean[] settled = {false};
-        // only show at launch: give up if the ad is not ready within a few seconds
-        main.postDelayed(() -> { if (!settled[0]) { settled[0] = true; cb.done(null, result(false, false, false)); } }, 4500);
-        AppOpenAd.load(act, appOpenUnit(), new AdRequest.Builder().build(), new AppOpenAd.AppOpenAdLoadCallback() {
-            @Override public void onAdLoaded(@NonNull AppOpenAd ad) {
-                if (settled[0]) return;
-                settled[0] = true; showing = true;
-                ad.setFullScreenContentCallback(new FullScreenContentCallback() {
-                    @Override public void onAdDismissedFullScreenContent() { showing = false; cb.done(null, result(true, false, true)); }
-                    @Override public void onAdFailedToShowFullScreenContent(@NonNull AdError e) { showing = false; cb.done(null, result(false, false, false)); }
-                });
-                ad.show(act);
-            }
-            @Override public void onAdFailedToLoad(@NonNull LoadAdError e) { if (!settled[0]) { settled[0] = true; cb.done(null, result(false, false, false)); } }
-        });
+        Runnable present = () -> {
+            if (settled[0]) return;
+            settled[0] = true;
+            if (!appOpenFresh()) { cb.done(null, result(false, false, false)); return; }
+            AppOpenAd ad = appOpenAd; appOpenAd = null; showing = true;
+            ad.setFullScreenContentCallback(new FullScreenContentCallback() {
+                @Override public void onAdDismissedFullScreenContent() { showing = false; lastClosed = System.currentTimeMillis(); cb.done(null, result(true, false, true)); loadAppOpen(null); }
+                @Override public void onAdFailedToShowFullScreenContent(@NonNull AdError e) { showing = false; cb.done(null, result(false, false, false)); loadAppOpen(null); }
+            });
+            ad.show(act);
+        };
+        if (appOpenFresh()) { present.run(); return; }
+        // hazır değilse 8 sn bekle; geç gelirse bir sonraki açılış için saklanır
+        main.postDelayed(() -> { if (!settled[0]) { settled[0] = true; cb.done(null, result(false, false, false)); } }, 8000);
+        loadAppOpen(present);
     }
 
     private void showInterstitial(Cb cb) {
-        if (interstitial == null) { if (!BuildConfig.AD_INTERSTITIAL.isEmpty()) loadInterstitial(null); unityShow("Interstitial_Android", false, cb); return; }
+        if (interstitial == null && !BuildConfig.AD_INTERSTITIAL.isEmpty()) {
+            // 28 Kasım 2026: hazır değilse 5 sn yüklenmesini bekle, sonra göster
+            final boolean[] settled = {false};
+            main.postDelayed(() -> { if (!settled[0]) { settled[0] = true; unityShow("Interstitial_Android", false, cb); } }, 5000);
+            loadInterstitial(() -> { if (settled[0]) return; settled[0] = true; if (interstitial != null) presentInterstitial(cb); else unityShow("Interstitial_Android", false, cb); });
+            return;
+        }
+        if (interstitial == null) { unityShow("Interstitial_Android", false, cb); return; }
+        presentInterstitial(cb);
+    }
+
+    private void presentInterstitial(Cb cb) {
         InterstitialAd ad = interstitial; interstitial = null; showing = true;
         ad.setFullScreenContentCallback(new FullScreenContentCallback() {
-            @Override public void onAdDismissedFullScreenContent() { showing = false; cb.done(null, result(true, false, true)); loadInterstitial(null); }
+            @Override public void onAdDismissedFullScreenContent() { showing = false; lastClosed = System.currentTimeMillis(); cb.done(null, result(true, false, true)); loadInterstitial(null); }
             @Override public void onAdFailedToShowFullScreenContent(@NonNull AdError e) { showing = false; cb.done(null, result(false, false, false)); loadInterstitial(null); }
         });
         ad.show(act);
@@ -167,12 +198,13 @@ final class AdManager {
             RewardedAd ad = rewarded; rewarded = null; showing = true;
             final boolean[] earned = {false};
             ad.setFullScreenContentCallback(new FullScreenContentCallback() {
-                @Override public void onAdDismissedFullScreenContent() { showing = false; cb.done(null, result(true, earned[0], true)); loadRewarded(null); }
+                @Override public void onAdDismissedFullScreenContent() { showing = false; lastClosed = System.currentTimeMillis(); cb.done(null, result(true, earned[0], true)); loadRewarded(null); }
                 @Override public void onAdFailedToShowFullScreenContent(@NonNull AdError e) { showing = false; cb.done("AD_PRESENT_FAILED", null); loadRewarded(null); }
             });
             ad.show(act, reward -> earned[0] = true);
         };
-        if (rewarded != null) present.run(); else loadRewarded(present);
+        // 28 Kasım 2026: ilk yükleme başarısızsa bir kez daha dene, sonra yedek ağa geç
+        if (rewarded != null) present.run(); else loadRewarded(() -> { if (rewarded != null) present.run(); else main.postDelayed(() -> loadRewarded(present), 1200); });
     }
 
     /* 20 Kasım 2026: Google reklamı gelmezse (ör. AdMob askısı) Unity Ads yedek olarak gösterilir.
