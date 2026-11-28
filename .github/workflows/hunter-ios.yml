@@ -22,7 +22,7 @@ jobs:
   build:
     # macOS minutes are expensive: only run when an upload is requested
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[eh-ios-upload]') || contains(github.event.head_commit.message, '[eh-ios-check]')
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
       - name: Xcode 26 and project
         run: |
           set -euo pipefail
-          latest=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+          latest=$(ls -d /Applications/Xcode_27*.app /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
           if [ -n "$latest" ]; then sudo xcode-select -s "$latest/Contents/Developer"; fi
           xcodebuild -version
           brew install xcodegen >/dev/null
